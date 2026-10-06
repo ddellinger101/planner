@@ -70,12 +70,36 @@ jobs:
       - run: npm run build
 
       - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.CLOUDWAYS_SSH_KEY }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.CLOUDWAYS_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          missing=0
+          for name in SSH_HOST SSH_USER APP_PATH SSH_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::The CLOUDWAYS_$name secret is empty or missing."
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
 
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if ! ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null; then
+            echo "::error::CLOUDWAYS_SSH_KEY is not a valid private key. Paste the whole file, including the BEGIN and END lines."
+            exit 1
+          fi
+
+          ssh-keyscan -T 20 -H "$SSH_HOST" >> ~/.ssh/known_hosts 2> /dev/null || true
+          if [ ! -s ~/.ssh/known_hosts ]; then
+            echo "::error::Could not reach the server in CLOUDWAYS_SSH_HOST on port 22."
+            exit 1
+          fi
+
+          if ! ssh -o BatchMode=yes "$SSH_USER@$SSH_HOST" true; then
+            echo "::error::The server refused the login. Check CLOUDWAYS_SSH_USER and that the public key is added in Cloudways."
+            exit 1
+          fi
       - name: Sync files
         run: |
           # Not -a: the deploy user doesn't own public_html itself, so rsync
