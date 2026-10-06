@@ -63,7 +63,7 @@ Repository > Settings > Secrets and variables > Actions.
 | Secret   | `CLOUDWAYS_SSH_KEY`  | The private half of the deploy key                                       |
 | Secret   | `CLOUDWAYS_APP_PATH` | Absolute path to `public_html` (run `pwd` there over SSH), no trailing slash |
 
-The deploy job runs in the GitHub environment named `Main Environment`, so the secrets can be
+The deploy job runs in the GitHub environment named `production`, so the secrets can be
 stored either there or at the repository level.
 
 ## What a deploy leaves alone
