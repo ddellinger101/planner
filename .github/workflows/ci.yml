@@ -47,7 +47,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # The Cloudways secrets live in this GitHub environment.
-    environment: Main Environment
+    environment: production
     env:
       SSH_HOST: ${{ secrets.CLOUDWAYS_SSH_HOST }}
       SSH_USER: ${{ secrets.CLOUDWAYS_SSH_USER }}
