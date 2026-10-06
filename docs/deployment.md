@@ -46,6 +46,7 @@ cache, then a health check against https://plan.dustindellinger.com/health.
     GOOGLE_CLIENT_SECRET=
     PLANNER_ALLOWED_EMAILS=dustindellinger@gmail.com,<Elizabeth's address>
     PLANNER_HOUSEHOLD_NAME="Our Planner"
+    PLANNER_CONTACT_EMAIL=          # shown on the public /privacy and /terms pages
     ```
 
 8. **Cron.** Application > Cron Job Management > Advanced:

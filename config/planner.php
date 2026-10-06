@@ -13,4 +13,7 @@ return [
 
     'household_name' => env('PLANNER_HOUSEHOLD_NAME', 'Our Planner'),
 
+    // Shown on the public privacy and terms pages. Leave empty to show no address.
+    'contact_email' => env('PLANNER_CONTACT_EMAIL'),
+
 ];
