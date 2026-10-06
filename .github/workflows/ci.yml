@@ -120,10 +120,12 @@ jobs:
       - name: Migrate and cache
         run: |
           # The server's default CLI PHP is 8.2; the app runs on 8.3.
+          # chmod only what the deploy user owns: PHP-FPM runs as a different
+          # user and its files in storage/ can't be chmod-ed from here.
           ssh "$SSH_USER@$SSH_HOST" "cd '$APP_PATH' && umask 002 \
             && mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
-            && chmod -R ug+rwX storage bootstrap/cache \
-            && find storage bootstrap/cache -type d -exec chmod g+s {} + \
+            && find storage bootstrap/cache -user "\$(id -un)" -exec chmod ug+rwX {} + \
+            && find storage bootstrap/cache -user "\$(id -un)" -type d -exec chmod g+s {} + \
             && php8.3 artisan migrate --force \
             && php8.3 artisan storage:link --force \
             && php8.3 artisan optimize \
