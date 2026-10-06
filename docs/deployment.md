@@ -6,9 +6,9 @@ skipped until the repository variable `DEPLOY_ENABLED` is `true`.
 
 ## One-time Cloudways setup
 
-1. **Create the application.** Choose the **Custom PHP** application type (listed as "PHP
-   Stack" or "Custom App" in some versions of the panel) and name it `planner`. The Laravel type
-   also works, but it installs its own copy of Laravel, which the deploy then replaces.
+1. **Create the application.** In the Select Application list choose **Custom App**, under the
+   PHP heading, and name it `planner`. Don't choose Laravel: that entry installs Laravel 10.11,
+   and this project is on Laravel 13.
 2. **PHP version.** Server > Settings & Packages > Packages: PHP 8.3 or newer. This setting is
    server-wide, so check that the other applications on the server run on it.
 3. **Domain and SSL.** Application > Domain Management: add `plan.dustindellinger.com` as the

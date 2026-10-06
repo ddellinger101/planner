@@ -3,7 +3,7 @@
 A web app that replaces the printed yearly planner (a bullet journal) Dustin builds every year.
 Live at https://plan.dustindellinger.com. Two users, Dustin and Elizabeth, share one planner.
 
-The full build plan is the Google Doc linked from [docs/PLAN.md](docs/PLAN.md). Work one phase at
+The full build plan is [docs/PLAN.md](docs/PLAN.md). Work one phase at
 a time, on a branch per phase, and open a PR at the end of each phase with a short summary and
 screenshots at mobile and desktop widths. Stop for Dustin's review after each PR. Anything under
 the plan's Open Questions must be confirmed with Dustin before building the part that depends on it.
@@ -76,7 +76,7 @@ npm run build
   whose name differs from another only by case: the repo is developed on Windows.
 - `resources/scss/app.scss` holds the Bootstrap theme overrides.
 - `routes/web.php` serves `/health` and falls through to the SPA for every other path.
-- `docs/` holds the plan pointer, deployment notes, Google API notes and inspiration images.
+- `docs/` holds the plan, deployment notes, Google API notes and inspiration images.
 
 ## Conventions
 
