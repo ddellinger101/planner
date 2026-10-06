@@ -1,8 +1,7 @@
 # Deployment
 
 Pushing to `main` runs `.github/workflows/ci.yml`: test, build, rsync to Cloudways, migrate,
-cache, then a health check against https://plan.dustindellinger.com/health. The deploy job is
-skipped until the repository variable `DEPLOY_ENABLED` is `true`.
+cache, then a health check against https://plan.dustindellinger.com/health.
 
 ## One-time Cloudways setup
 
@@ -63,9 +62,9 @@ Repository > Settings > Secrets and variables > Actions.
 | Secret   | `CLOUDWAYS_SSH_USER` | The application SSH user from step 6                                     |
 | Secret   | `CLOUDWAYS_SSH_KEY`  | The private half of the deploy key                                       |
 | Secret   | `CLOUDWAYS_APP_PATH` | Absolute path to `public_html` (run `pwd` there over SSH), no trailing slash |
-| Variable | `DEPLOY_ENABLED`     | `true`                                                                   |
 
-The deploy job uses a GitHub environment named `production`; GitHub creates it on first run.
+The deploy job runs in the GitHub environment named `Main Environment`, so the secrets can be
+stored either there or at the repository level.
 
 ## What a deploy leaves alone
 
