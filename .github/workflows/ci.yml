@@ -79,7 +79,10 @@ jobs:
 
       - name: Sync files
         run: |
-          rsync -az --delete \
+          # Not -a: the deploy user doesn't own public_html itself, so rsync
+          # can't set its permissions or times. New files get group-writable
+          # modes so PHP-FPM (same www-data group) can use them.
+          rsync -rltz --omit-dir-times --chmod=D2775,F664 --delete \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='.env' \
@@ -93,12 +96,15 @@ jobs:
 
       - name: Migrate and cache
         run: |
-          ssh "$SSH_USER@$SSH_HOST" "cd '$APP_PATH' \
+          # The server's default CLI PHP is 8.2; the app runs on 8.3.
+          ssh "$SSH_USER@$SSH_HOST" "cd '$APP_PATH' && umask 002 \
             && mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
-            && php artisan migrate --force \
-            && php artisan storage:link --force \
-            && php artisan optimize \
-            && php artisan queue:restart"
+            && chmod -R ug+rwX storage bootstrap/cache \
+            && find storage bootstrap/cache -type d -exec chmod g+s {} + \
+            && php8.3 artisan migrate --force \
+            && php8.3 artisan storage:link --force \
+            && php8.3 artisan optimize \
+            && php8.3 artisan queue:restart"
 
       - name: Health check
         run: curl --fail --silent --show-error --retry 3 --retry-delay 5 https://plan.dustindellinger.com/health

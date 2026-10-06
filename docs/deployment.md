@@ -47,8 +47,11 @@ skipped until the repository variable `DEPLOY_ENABLED` is `true`.
 8. **Cron.** Application > Cron Job Management > Advanced:
 
     ```
-    * * * * * cd /home/master/applications/<app folder>/public_html && php artisan schedule:run >> /dev/null 2>&1
+    * * * * * cd /home/master/applications/qbphznqzbn/public_html && /usr/bin/php8.3 artisan schedule:run >> /dev/null 2>&1
     ```
+
+Use `php8.3` explicitly on the server's command line: the default `php` there is 8.2, while the
+application's web pool runs 8.3.
 
 ## GitHub settings
 
