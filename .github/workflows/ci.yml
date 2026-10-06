@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, pdo_mysql, intl, bcmath, gd, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci
+
+      - run: vendor/bin/pint --test
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Pest
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test
+
+  deploy:
+    needs: test
+    # Set the repository variable DEPLOY_ENABLED=true once the Cloudways
+    # secrets exist (see docs/deployment.md).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ secrets.CLOUDWAYS_SSH_HOST }}
+      SSH_USER: ${{ secrets.CLOUDWAYS_SSH_USER }}
+      APP_PATH: ${{ secrets.CLOUDWAYS_APP_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+      - run: npm ci
+      - run: npm run build
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CLOUDWAYS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync files
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            --exclude='docs/' \
+            --exclude='/storage/' \
+            --exclude='/public/storage' \
+            --exclude='/bootstrap/cache/*.php' \
+            ./ "$SSH_USER@$SSH_HOST:$APP_PATH/"
+
+      - name: Migrate and cache
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" "cd '$APP_PATH' \
+            && mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+            && php artisan migrate --force \
+            && php artisan storage:link --force \
+            && php artisan optimize \
+            && php artisan queue:restart"
+
+      - name: Health check
+        run: curl --fail --silent --show-error --retry 3 --retry-delay 5 https://plan.dustindellinger.com/health
