@@ -1,0 +1,610 @@
+// A section of the page, drawn like a ruled box in a bullet journal.
+.planner-card {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-card);
+}
+
+// A heading with a swipe of highlighter behind it, in the category color.
+.highlight-heading {
+    display: inline-block;
+    padding: 0 0.45rem;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    // Slightly uneven, like a real marker stroke.
+    background: linear-gradient(
+        178deg,
+        transparent 30%,
+        var(--cat-highlight) 32%,
+        var(--cat-highlight) 90%,
+        transparent 92%
+    );
+    border-radius: 0.2rem;
+}
+
+.icon-button {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    border-radius: 0.6rem;
+
+    &:hover {
+        color: var(--ink);
+        background: color-mix(in srgb, var(--ink) 7%, transparent);
+    }
+
+    &:disabled {
+        opacity: 0.4;
+    }
+}
+
+// Category box ---------------------------------------------------------------
+
+.category-box {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.category-box-header {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.8rem 0.9rem 0.5rem;
+    color: var(--ink);
+}
+
+.category-box-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    color: var(--cat-strong);
+}
+
+.category-box-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+.category-box-empty {
+    padding: 0.1rem 0.9rem 0.4rem 3.4rem;
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+}
+
+.task-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.inline-add {
+    display: flex;
+    align-items: center;
+    padding: 0 0.35rem 0.35rem;
+    margin-top: auto;
+
+    input {
+        flex: 1;
+        min-width: 0;
+        min-height: 2.75rem;
+        padding: 0 0.4rem;
+        color: var(--ink);
+        background: none;
+        border: 0;
+        border-bottom: 1.5px dashed transparent;
+        border-radius: 0;
+
+        &::placeholder {
+            color: var(--ink-soft);
+        }
+
+        &:focus {
+            outline: none;
+            border-bottom-color: var(--cat-strong);
+        }
+    }
+}
+
+// Task row and its checkbox ---------------------------------------------------
+
+.task-row {
+    display: flex;
+    align-items: center;
+    padding: 0 0.35rem;
+
+    & + & {
+        border-top: 1px dashed var(--line-soft);
+    }
+}
+
+.task-body {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.5rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.45rem 0;
+}
+
+.task-title {
+    overflow-wrap: anywhere;
+    // The strike-through is a background line so it can be drawn across.
+    background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0 1.5px;
+    transition:
+        background-size 0.3s ease,
+        color 0.3s ease;
+
+    .is-done & {
+        color: var(--ink-soft);
+        background-size: 100% 1.5px;
+    }
+}
+
+.task-badge {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+    padding: 0.05rem 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    background: var(--cat-highlight);
+    border-radius: 1rem;
+}
+
+.person-dot {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #fff;
+    background: var(--person, var(--ink-soft));
+    border-radius: 50%;
+}
+
+.check {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem; // 44px tap target
+    height: 2.75rem;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+
+.check-box {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    color: var(--on-cat);
+    border: 2px solid var(--cat-strong);
+    border-radius: 0.5rem;
+    transition:
+        background-color 0.15s ease,
+        transform 0.15s ease;
+
+    svg {
+        stroke-dasharray: 24;
+        stroke-dashoffset: 24;
+    }
+
+    .check:hover & {
+        background: var(--cat-highlight);
+    }
+
+    .check[aria-checked='true'] & {
+        background: var(--cat-strong);
+
+        svg {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    // Only the moment of checking is animated, not every already-done row.
+    .check.just-checked & {
+        animation: check-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+
+        svg {
+            animation: check-draw 0.3s 0.08s ease-out backwards;
+        }
+    }
+}
+
+.star {
+    &[aria-pressed='true'] {
+        color: var(--star);
+
+        svg {
+            fill: currentColor;
+        }
+    }
+
+    &.just-starred svg {
+        animation: check-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+    }
+}
+
+// The delete button stays out of the way until the row is hovered or focused;
+// on touch screens there is no hover, so it is always shown.
+.task-delete {
+    opacity: 0;
+
+    .task-row:hover &,
+    .task-row:focus-within & {
+        opacity: 1;
+    }
+
+    &:hover {
+        color: var(--danger);
+    }
+
+    @media (hover: none) {
+        opacity: 0.55;
+    }
+}
+
+// Confetti: a few dots thrown outward from the checkbox.
+.burst {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    pointer-events: none;
+
+    i {
+        position: absolute;
+        width: 0.4rem;
+        height: 0.4rem;
+        background: var(--cat-strong);
+        border-radius: 50%;
+        animation: burst-fly 0.6s ease-out forwards;
+
+        &:nth-child(3n) {
+            background: var(--star);
+            border-radius: 0.1rem;
+        }
+
+        &:nth-child(3n + 1) {
+            background: var(--cat);
+        }
+    }
+
+    &.is-big i {
+        width: 0.5rem;
+        height: 0.5rem;
+        animation-duration: 0.9s;
+    }
+}
+
+@keyframes check-pop {
+    0% {
+        transform: scale(0.7);
+    }
+
+    60% {
+        transform: scale(1.18);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes check-draw {
+    from {
+        stroke-dashoffset: 24;
+    }
+
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes burst-fly {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.4);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1);
+    }
+}
+
+// Period navigation and person filter ----------------------------------------
+
+.period-nav {
+    display: flex;
+    gap: 0.15rem;
+    align-items: center;
+    min-width: 0;
+}
+
+.period-nav-title {
+    position: relative;
+    min-width: 0;
+    padding: 0 0.35rem;
+
+    // The real date field is kept out of sight; the button under the heading
+    // opens its picker.
+    input[type='date'] {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        pointer-events: none;
+        border: 0;
+        opacity: 0;
+    }
+}
+
+.date-jump {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.1rem 0;
+    white-space: nowrap;
+    background: none;
+    border: 0;
+
+    &:hover {
+        color: var(--ink);
+    }
+}
+
+.today-button {
+    min-height: 2.25rem;
+    padding: 0 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: none;
+    border: 1.5px solid var(--line);
+    border-radius: 2rem;
+
+    &:hover {
+        background: color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+}
+
+.segmented {
+    display: inline-flex;
+    flex: none;
+    padding: 0.15rem;
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 2rem;
+
+    button {
+        display: inline-flex;
+        gap: 0.35rem;
+        align-items: center;
+        min-height: 2.1rem;
+        padding: 0 0.7rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        background: none;
+        border: 0;
+        border-radius: 2rem;
+
+        @include media-breakpoint-down(sm) {
+            padding: 0 0.5rem;
+        }
+
+        &[aria-pressed='true'] {
+            color: var(--paper);
+            background: var(--ink);
+        }
+    }
+}
+
+// Empty states, sheets and forms ---------------------------------------------
+
+.empty-state {
+    display: grid;
+    gap: 0.4rem;
+    justify-items: center;
+    padding: 2.5rem 1.25rem;
+    text-align: center;
+
+    .empty-state-icon {
+        display: grid;
+        place-items: center;
+        width: 4rem;
+        height: 4rem;
+        color: var(--ink);
+        background: color-mix(in srgb, var(--accent) 26%, transparent);
+        border-radius: 50%;
+    }
+
+    p {
+        max-width: 28rem;
+        margin: 0;
+        color: var(--ink-soft);
+    }
+}
+
+.sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: $zindex-modal;
+    display: grid;
+    align-items: end;
+    background: rgb(0 0 0 / 45%);
+    animation: fade-in 0.15s ease;
+
+    @include media-breakpoint-up(md) {
+        place-items: center;
+    }
+}
+
+.sheet {
+    width: 100%;
+    max-height: 92dvh;
+    padding: 1.1rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-bottom: 0;
+    border-radius: 1.2rem 1.2rem 0 0;
+    animation: sheet-up 0.22s ease;
+
+    @include media-breakpoint-up(md) {
+        width: min(32rem, calc(100vw - 2rem));
+        padding-bottom: 1.1rem;
+        border-bottom: 1.5px solid var(--line);
+        border-radius: 1.2rem;
+    }
+}
+
+.field-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.field-input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.7rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 0.7rem;
+
+    &:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+    }
+}
+
+.chip {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.8rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: none;
+    border: 1.5px solid var(--line-soft);
+    border-radius: 2rem;
+
+    svg {
+        color: var(--cat-strong);
+    }
+
+    &[aria-pressed='true'],
+    &[aria-checked='true'] {
+        background: var(--cat-highlight);
+        border-color: var(--cat-strong);
+    }
+}
+
+.button-ink {
+    min-height: 2.75rem;
+    padding: 0 1.2rem;
+    font-weight: 800;
+    color: var(--paper);
+    background: var(--ink);
+    border: 1.5px solid var(--ink);
+    border-radius: 2rem;
+
+    &:disabled {
+        opacity: 0.45;
+    }
+}
+
+.button-plain {
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: none;
+    border: 1.5px solid var(--line);
+    border-radius: 2rem;
+}
+
+.more-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    a {
+        display: flex;
+        gap: 0.85rem;
+        align-items: center;
+        min-height: 3.5rem;
+        padding: 0 1rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    li + li {
+        border-top: 1px dashed var(--line-soft);
+    }
+}
+
+.avatar {
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+    border: 1.5px solid var(--line);
+    border-radius: 50%;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes sheet-up {
+    from {
+        transform: translateY(1.5rem);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    .burst {
+        display: none;
+    }
+}

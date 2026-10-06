@@ -8,6 +8,16 @@
 
         <title>{{ config('app.name') }}</title>
 
+        {{-- Follow the device's light or dark setting, before first paint. --}}
+        <script>
+            (() => {
+                const dark = window.matchMedia('(prefers-color-scheme: dark)');
+                const apply = () => (document.documentElement.dataset.bsTheme = dark.matches ? 'dark' : 'light');
+                apply();
+                dark.addEventListener('change', apply);
+            })();
+        </script>
+
         @viteReactRefresh
         @vite(['resources/scss/app.scss', 'resources/js/main.tsx'])
     </head>
