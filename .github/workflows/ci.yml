@@ -44,11 +44,10 @@ jobs:
 
   deploy:
     needs: test
-    # Set the repository variable DEPLOY_ENABLED=true once the Cloudways
-    # secrets exist (see docs/deployment.md).
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
+    # The Cloudways secrets live in this GitHub environment.
+    environment: Main Environment
     env:
       SSH_HOST: ${{ secrets.CLOUDWAYS_SSH_HOST }}
       SSH_USER: ${{ secrets.CLOUDWAYS_SSH_USER }}
