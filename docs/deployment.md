@@ -41,6 +41,11 @@ cache, then a health check against https://plan.dustindellinger.com/health.
     SESSION_SECURE_COOKIE=true
     CACHE_STORE=database
     QUEUE_CONNECTION=database
+
+    GOOGLE_CLIENT_ID=
+    GOOGLE_CLIENT_SECRET=
+    PLANNER_ALLOWED_EMAILS=dustindellinger@gmail.com,<Elizabeth's address>
+    PLANNER_HOUSEHOLD_NAME="Our Planner"
     ```
 
 8. **Cron.** Application > Cron Job Management > Advanced:

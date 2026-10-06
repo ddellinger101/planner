@@ -75,8 +75,22 @@ npm run build
 - `resources/js/main.tsx` is the Vite entry; `App.tsx` is the root component. Don't add a file
   whose name differs from another only by case: the repo is developed on Windows.
 - `resources/scss/app.scss` holds the Bootstrap theme overrides.
-- `routes/web.php` serves `/health` and falls through to the SPA for every other path.
+- `routes/web.php` serves `/health` and Google sign-in under `/auth`, and falls through to the
+  SPA for every other path. `routes/api.php` is the JSON API, all behind `auth:sanctum`.
+- `app/Support/Period.php` and `resources/js/lib/period.ts` are twins. Their tests share the
+  same cases; change both together.
 - `docs/` holds the plan, deployment notes, Google API notes and inspiration images.
+
+## Data model notes
+
+- Household data uses the `BelongsToHousehold` trait: a global scope limits every query to the
+  signed-in user's household and new rows are stamped with it. In jobs and commands there is no
+  signed-in user, so set `household_id` explicitly and filter by it yourself.
+- "Both people" is a null user id: `items.assignee_user_id` and `rewards.beneficiary_user_id`.
+- Weight and journal entries are per person; everything else is shared by the household.
+- Categories are seeded by a migration, so `migrate` alone sets up production.
+- Controllers return models directly. Dates serialize as `YYYY-MM-DD`, item times as `HH:MM`.
+- Tests run on SQLite locally; CI runs them again on MariaDB, which is what production uses.
 
 ## Conventions
 

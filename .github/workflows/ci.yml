@@ -12,6 +12,18 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      # Same major version as the Cloudways server.
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: planner_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +53,17 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           php artisan test
+
+      # Production is MariaDB, so run the suite and the migrations there too.
+      - name: Pest (MariaDB)
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: planner_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test
 
   deploy:
     needs: test
