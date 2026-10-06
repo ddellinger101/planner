@@ -77,6 +77,21 @@ describe('App', () => {
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
+    it('links a visitor to the privacy policy and terms', async () => {
+        mockApi({ 'GET /api/me': { status: 401 } });
+
+        renderApp();
+
+        expect(await screen.findByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
+            'href',
+            '/privacy',
+        );
+        expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute(
+            'href',
+            '/terms',
+        );
+    });
+
     it('explains why an account was turned away', async () => {
         window.history.replaceState(null, '', '/?auth_error=not_allowed');
         mockApi({ 'GET /api/me': { status: 401 } });

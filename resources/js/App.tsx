@@ -48,6 +48,10 @@ function Card({ children }: { children: ReactNode }) {
                             {children}
                         </div>
                     </div>
+                    <p className="text-center small mt-3 mb-0">
+                        <a href="/privacy">Privacy Policy</a> ·{' '}
+                        <a href="/terms">Terms of Service</a>
+                    </p>
                 </div>
             </div>
         </main>
@@ -64,6 +68,10 @@ function SignIn() {
                     <CircleAlert aria-hidden="true" size={18} /> {error}
                 </p>
             )}
+            <p className="text-secondary">
+                A private planner for one household: daily tasks, weekly and monthly goals, routines
+                and habits, kept in step with Google Tasks and Google Calendar.
+            </p>
             <a
                 className="btn btn-primary d-inline-flex align-items-center gap-2"
                 href="/auth/google/redirect"
