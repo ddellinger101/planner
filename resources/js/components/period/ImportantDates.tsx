@@ -1,5 +1,6 @@
-import { CalendarHeart, Pencil, Repeat, Trash2 } from 'lucide-react';
+import { CalendarCheck, CalendarHeart, Pencil, Repeat, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { useGoogle } from '@/api/google';
 import { useDeleteImportantDate, useSaveImportantDate, type ImportantDate } from '@/api/planning';
 import { parsePeriod, type Period } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
@@ -17,12 +18,17 @@ export default function ImportantDates({ month, dates }: Props) {
     const [title, setTitle] = useState('');
     const [date, setDate] = useState('');
     const [yearly, setYearly] = useState(false);
+    const [onCalendar, setOnCalendar] = useState(false);
+    // Offered once Google Calendar is connected, and kept visible for a date already there.
+    const canMirror =
+        Boolean(useGoogle().data?.calendar_connected) || Boolean(editing?.add_to_calendar);
 
     const reset = () => {
         setEditing(null);
         setTitle('');
         setDate('');
         setYearly(false);
+        setOnCalendar(false);
     };
 
     const startEditing = (entry: ImportantDate) => {
@@ -30,6 +36,7 @@ export default function ImportantDates({ month, dates }: Props) {
         setTitle(entry.title);
         setDate(entry.date);
         setYearly(entry.repeats_yearly);
+        setOnCalendar(entry.add_to_calendar);
     };
 
     const submit = (event: FormEvent) => {
@@ -37,7 +44,13 @@ export default function ImportantDates({ month, dates }: Props) {
 
         if (title.trim() && date) {
             save.mutate(
-                { id: editing?.id, title: title.trim(), date, repeats_yearly: yearly },
+                {
+                    id: editing?.id,
+                    title: title.trim(),
+                    date,
+                    repeats_yearly: yearly,
+                    ...(canMirror ? { add_to_calendar: onCalendar } : {}),
+                },
                 { onSuccess: reset },
             );
         }
@@ -65,6 +78,12 @@ export default function ImportantDates({ month, dates }: Props) {
                                     <>
                                         <Repeat aria-hidden="true" size={13} />
                                         <span className="visually-hidden">Repeats every year</span>
+                                    </>
+                                )}
+                                {entry.add_to_calendar && (
+                                    <>
+                                        <CalendarCheck aria-hidden="true" size={13} />
+                                        <span className="visually-hidden">On Google Calendar</span>
                                     </>
                                 )}
                             </span>
@@ -133,6 +152,16 @@ export default function ImportantDates({ month, dates }: Props) {
                     />
                     Every year
                 </label>
+                {canMirror && (
+                    <label className="date-form-yearly">
+                        <input
+                            type="checkbox"
+                            checked={onCalendar}
+                            onChange={(event) => setOnCalendar(event.target.checked)}
+                        />
+                        Add to Google Calendar
+                    </label>
+                )}
                 <div className="d-flex gap-2">
                     <button
                         type="submit"

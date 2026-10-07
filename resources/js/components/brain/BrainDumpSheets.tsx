@@ -25,7 +25,7 @@ type SheetProps = {
     children: ReactNode;
 };
 
-function Sheet({ title, labelledBy, onClose, onSubmit, children }: SheetProps) {
+export function Sheet({ title, labelledBy, onClose, onSubmit, children }: SheetProps) {
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {

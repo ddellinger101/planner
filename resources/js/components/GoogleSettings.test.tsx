@@ -44,7 +44,7 @@ describe('Google settings', () => {
         renderApp('/settings?google=declined');
 
         expect(await (await card()).findByRole('status')).toHaveTextContent(
-            'Google didn’t grant access to Tasks or Contacts.',
+            'Google didn’t grant access to Tasks, Calendar or Contacts.',
         );
     });
 

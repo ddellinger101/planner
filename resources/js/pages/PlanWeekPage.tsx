@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, Gift, MapPinOff, Star } from 'lucide-reac
 import { useEffect, useState, type CSSProperties, type DragEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { CHEF_URL, useMeals } from '@/api/day';
+import { eventsFor, useEvents } from '@/api/events';
 import { useCreateItem, useItems, useUpdateItem, type Item } from '@/api/items';
 import { useImportantDates, useItemsBetween } from '@/api/planning';
 import { fetchCategories } from '@/api/session';
@@ -317,6 +318,8 @@ function Place({ week }: StepProps) {
     const goals = useItems({ periodKey: week.key, person: null });
     const tasks = useItemsBetween(week.start, week.end, null);
     const dates = useImportantDates(week.start, week.end);
+    // Both people's events: the plan has to fit around all of them.
+    const events = useEvents(week.start, week.end);
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
     const open = (goals.data ?? []).filter((goal) => goal.status === 'open');
@@ -369,6 +372,7 @@ function Place({ week }: StepProps) {
                 week={week}
                 items={tasks.data ?? []}
                 dates={dates.data ?? []}
+                events={eventsFor(events.data ?? [], null)}
                 categories={categories}
                 members={household.members}
                 today={today}

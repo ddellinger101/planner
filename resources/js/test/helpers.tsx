@@ -65,6 +65,9 @@ export const notConnected: GoogleStatus = {
     pending: 0,
     errors: 0,
     lists: [],
+    calendar_connected: false,
+    calendar_last_synced_at: null,
+    calendars: [],
 };
 
 type Reply = { status?: number; body?: unknown };
@@ -117,6 +120,7 @@ export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/habits/stats': { body: {} },
     'GET /api/rewards': { body: [] },
     'GET /api/google': { body: notConnected },
+    'GET /api/events': { body: [] },
     'GET /api/brain-dump': { body: { items: [], assigned_this_week: 0 } },
 });
 

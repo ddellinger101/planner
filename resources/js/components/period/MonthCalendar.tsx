@@ -1,13 +1,16 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
+import { eventsOn, type CalendarEvent } from '@/api/events';
 import type { Item } from '@/api/items';
 import type { ImportantDate } from '@/api/planning';
 import type { Category } from '@/api/session';
+import { useSession } from '@/context/SessionContext';
 import { nextPeriod, periodFromDate, type Period } from '@/lib/period';
 import { periodLabel } from '@/lib/periodLabels';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MAX_DOTS = 6;
+const MAX_EVENTS = 2;
 
 /** Every day shown for a month: whole weeks, Monday first. */
 export function calendarDays(month: Period): Period[] {
@@ -30,6 +33,8 @@ type Props = {
     /** Day tasks in the range shown. */
     items: Item[];
     dates: ImportantDate[];
+    /** Calendar events in the range shown, already narrowed to the person filter. */
+    events?: CalendarEvent[];
     categories: Category[];
     today: string;
     /** A small version for the quarter view: no chips, no days from other months. */
@@ -37,7 +42,16 @@ type Props = {
 };
 
 /** A month as a grid of days. Each day links to its Day view. */
-export default function MonthCalendar({ month, items, dates, categories, today, compact }: Props) {
+export default function MonthCalendar({
+    month,
+    items,
+    dates,
+    events = [],
+    categories,
+    today,
+    compact,
+}: Props) {
+    const { user } = useSession();
     const colorOf = (item: Item) =>
         categories.find((category) => category.id === item.category_id)?.color ?? 'var(--accent)';
 
@@ -61,12 +75,14 @@ export default function MonthCalendar({ month, items, dates, categories, today, 
                     );
                     const done = tasks.filter((item) => item.status === 'done').length;
                     const marked = dates.filter((date) => date.occurs_on === day.key);
+                    const dayEvents = eventsOn(events, day.key, user.timezone);
                     const { title, subtitle } = periodLabel(day);
 
                     const summary = [
                         `${title}, ${subtitle}`,
                         tasks.length > 0 ? `${done} of ${tasks.length} tasks done` : 'no tasks',
                         ...marked.map((date) => date.title),
+                        ...dayEvents.map((event) => event.title),
                     ].join(', ');
 
                     return (
@@ -93,6 +109,24 @@ export default function MonthCalendar({ month, items, dates, categories, today, 
                                             {date.title}
                                         </span>
                                     ))}
+                                    {dayEvents.slice(0, MAX_EVENTS).map((event) => (
+                                        <span
+                                            key={event.id}
+                                            className="month-day-chip is-event"
+                                            style={
+                                                event.color
+                                                    ? ({ '--event': event.color } as CSSProperties)
+                                                    : undefined
+                                            }
+                                        >
+                                            {event.title}
+                                        </span>
+                                    ))}
+                                    {dayEvents.length > MAX_EVENTS && (
+                                        <span className="month-day-more">
+                                            +{dayEvents.length - MAX_EVENTS} more
+                                        </span>
+                                    )}
                                     <span className="month-day-dots">
                                         {tasks.slice(0, MAX_DOTS).map((item) => (
                                             <span

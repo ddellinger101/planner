@@ -138,7 +138,7 @@ describe('schedule', () => {
         const schedule = within(await region('Schedule'));
 
         expect(await schedule.findByRole('checkbox', { name: 'Stretch' })).toBeInTheDocument();
-        const timed = within(schedule.getByRole('list', { name: 'Timed tasks' }));
+        const timed = within(schedule.getByRole('list', { name: 'Timed tasks and events' }));
         expect(timed.getByRole('checkbox', { name: 'Dentist' })).toBeInTheDocument();
         expect(timed.getByText('3:30 PM')).toBeInTheDocument();
         expect(timed.queryByRole('checkbox', { name: 'Stretch' })).not.toBeInTheDocument();
@@ -190,9 +190,9 @@ describe('schedule', () => {
 
         await waitFor(() =>
             expect(
-                within(within(schedule).getByRole('list', { name: 'Timed tasks' })).getByText(
-                    '8:00 AM',
-                ),
+                within(
+                    within(schedule).getByRole('list', { name: 'Timed tasks and events' }),
+                ).getByText('8:00 AM'),
             ).toBeInTheDocument(),
         );
 
@@ -330,7 +330,7 @@ describe('meals and events', () => {
         );
     });
 
-    it('says so when nothing is planned, and explains where events will come from', async () => {
+    it('says so when nothing is planned, and points to Settings for the calendar', async () => {
         mockApi(signedIn());
 
         renderApp('/day/2027-01-04');
@@ -339,7 +339,7 @@ describe('meals and events', () => {
             await within(await region('Meal plan')).findByText('Nothing planned for this day yet.'),
         ).toBeInTheDocument();
         expect(
-            within(await region('Today’s events')).getByText(/Google Calendar/),
+            await within(await region('Events')).findByText(/Connect Google Calendar/),
         ).toBeInTheDocument();
     });
 });

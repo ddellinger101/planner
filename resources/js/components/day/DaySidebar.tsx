@@ -1,7 +1,13 @@
-import { CalendarClock, ChefHat, ChevronDown, ExternalLink } from 'lucide-react';
+import { CalendarClock, ChefHat, ChevronDown, ExternalLink, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { CHEF_URL, useMeals, type MealSlot } from '@/api/day';
+import { Link } from 'react-router';
+import { CHEF_URL, useMeals, type Meal, type MealSlot } from '@/api/day';
+import type { CalendarEvent } from '@/api/events';
+import { useGoogle } from '@/api/google';
 import type { Item, ItemChanges } from '@/api/items';
+import EventChip from '@/components/EventChip';
+import { useEventEditor } from '@/context/EventEditorContext';
+import { useSession } from '@/context/SessionContext';
 import { parsePeriod } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
 
@@ -11,6 +17,24 @@ const SLOTS: { slot: MealSlot; label: string }[] = [
     { slot: 'dinner', label: 'Dinner' },
     { slot: 'snack', label: 'Snacks' },
 ];
+
+/** A meal's main dish, linked to Chef, with anything served alongside it. */
+function MealLine({ meal }: { meal: Meal }) {
+    return (
+        <span className="meal-line">
+            {meal.chef_url ? (
+                <a href={meal.chef_url} target="_blank" rel="noreferrer">
+                    {meal.title}
+                </a>
+            ) : (
+                meal.title
+            )}
+            {meal.description && (
+                <small className="text-soft">with {meal.description.split('\n').join(', ')}</small>
+            )}
+        </span>
+    );
+}
 
 /** The day's meals, as planned in Chef. The planner only reads them. */
 export function MealPlan({ date }: { date: string }) {
@@ -40,20 +64,7 @@ export function MealPlan({ date }: { date: string }) {
                             {inSlot(slot).length === 0 ? (
                                 <span className="text-soft">—</span>
                             ) : (
-                                inSlot(slot).map((meal) =>
-                                    meal.chef_url ? (
-                                        <a
-                                            key={meal.id}
-                                            href={meal.chef_url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            {meal.title}
-                                        </a>
-                                    ) : (
-                                        <span key={meal.id}>{meal.title}</span>
-                                    ),
-                                )
+                                inSlot(slot).map((meal) => <MealLine key={meal.id} meal={meal} />)
                             )}
                         </dd>
                     </div>
@@ -66,18 +77,70 @@ export function MealPlan({ date }: { date: string }) {
     );
 }
 
-/** Calendar events arrive with Google Calendar sync; until then, a note. */
-export function EventsPlaceholder() {
+type DayEventsProps = {
+    date: string;
+    isToday: boolean;
+    /** The day's events, already narrowed to the person filter. */
+    events: CalendarEvent[];
+};
+
+/** The day's calendar events, with a way to add one. */
+export function DayEvents({ date, isToday, events }: DayEventsProps) {
+    const { household } = useSession();
+    const { newEvent } = useEventEditor();
+    const google = useGoogle();
+
     return (
         <section className="planner-card side-card" aria-labelledby="events-heading">
-            <h2 id="events-heading" className="font-display h4 routine-heading">
-                <CalendarClock aria-hidden="true" size={20} />
-                Today’s events
-            </h2>
-            <p className="text-soft small mb-0">
-                Your Google Calendar events will show here, and on the schedule, once the calendar
-                is connected.
-            </p>
+            <div className="d-flex align-items-center justify-content-between">
+                <h2 id="events-heading" className="font-display h4 routine-heading">
+                    <CalendarClock aria-hidden="true" size={20} />
+                    {isToday ? 'Today’s events' : 'Events'}
+                </h2>
+                <button
+                    type="button"
+                    className="icon-button is-small"
+                    aria-label="Add an event"
+                    onClick={() => newEvent({ date })}
+                >
+                    <Plus aria-hidden="true" size={18} />
+                </button>
+            </div>
+            {events.length === 0 ? (
+                <p className="text-soft small mb-0">
+                    {google.data && !google.data.calendar_connected ? (
+                        <>
+                            Connect Google Calendar in <Link to="/settings">Settings</Link> to see
+                            your events here.
+                        </>
+                    ) : (
+                        'Nothing on the calendar.'
+                    )}
+                </p>
+            ) : (
+                <ul className="event-list">
+                    {events.map((event) => {
+                        const owner = household.members.find(
+                            (member) => member.id === event.owner_user_id,
+                        );
+
+                        return (
+                            <li key={event.id}>
+                                <EventChip event={event} day={date} />
+                                {household.members.length > 1 && owner && (
+                                    <span
+                                        className="person-dot"
+                                        style={{ background: owner.color }}
+                                        title={owner.name}
+                                    >
+                                        {owner.name.charAt(0)}
+                                    </span>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
         </section>
     );
 }

@@ -17,6 +17,21 @@ export type GoogleStatus = {
     /** Tasks Google refused; they are retried on each sync. */
     errors: number;
     lists: { id: number; title: string; category_id: number | null }[];
+    calendar_connected: boolean;
+    calendar_last_synced_at: string | null;
+    calendars: GoogleCalendar[];
+};
+
+/** What a calendar is used for: left out, shown as events, or read as Chef's meals. */
+export type CalendarMode = 'hidden' | 'events' | 'menu';
+
+export type GoogleCalendar = {
+    id: number;
+    summary: string;
+    color: string | null;
+    is_primary: boolean;
+    writable: boolean;
+    mode: CalendarMode;
 };
 
 const KEY = ['google'];
@@ -33,6 +48,8 @@ type Action =
     | { kind: 'refresh-lists' }
     | { kind: 'create-missing-lists' }
     | { kind: 'map-list'; listId: number; categoryId: number | null }
+    | { kind: 'refresh-calendars' }
+    | { kind: 'calendar-mode'; calendarId: number; mode: CalendarMode }
     | { kind: 'birthdays'; enabled: boolean };
 
 const send = (action: Action) => {
@@ -47,6 +64,13 @@ const send = (action: Action) => {
             return api<GoogleStatus>(`/api/google/lists/${action.listId}`, {
                 method: 'PATCH',
                 body: { category_id: action.categoryId },
+            });
+        case 'refresh-calendars':
+            return api<GoogleStatus>('/api/google/calendars/refresh', { method: 'POST' });
+        case 'calendar-mode':
+            return api<GoogleStatus>(`/api/google/calendars/${action.calendarId}`, {
+                method: 'PATCH',
+                body: { mode: action.mode },
             });
         case 'birthdays':
             return api<GoogleStatus>('/api/google', {
@@ -65,11 +89,21 @@ export function useGoogleAction() {
         onSuccess: (status, action) => {
             queryClient.setQueryData(KEY, status);
 
-            // A sync can bring in tasks, Brain Dump items and birthdays.
-            if (action.kind === 'sync' || action.kind === 'birthdays') {
-                ['items', 'item-summary', 'brain-dump', 'important-dates', 'rewards'].forEach(
-                    (key) => queryClient.invalidateQueries({ queryKey: [key] }),
-                );
+            // A sync can bring in tasks, Brain Dump items, events, meals and birthdays.
+            if (
+                action.kind === 'sync' ||
+                action.kind === 'birthdays' ||
+                action.kind === 'calendar-mode'
+            ) {
+                [
+                    'items',
+                    'item-summary',
+                    'brain-dump',
+                    'important-dates',
+                    'rewards',
+                    'events',
+                    'meals',
+                ].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
             }
         },
     });
