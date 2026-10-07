@@ -98,6 +98,7 @@ export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/items/summary': { body: [] },
     'GET /api/weight/goals': { body: [] },
     'GET /api/reviews/pending': { body: [] },
+    'GET /api/habits/stats': { body: {} },
     'GET /api/brain-dump': { body: { items: [], assigned_this_week: 0 } },
 });
 

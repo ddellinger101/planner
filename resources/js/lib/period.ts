@@ -265,3 +265,18 @@ export function periodMonths(period: Period): Period[] {
 
     return months;
 }
+
+/** Every day in the period, whatever its scope. */
+export function periodDays(period: Period): Period[] {
+    const days: Period[] = [];
+
+    for (
+        let day = periodFromDate('day', period.start);
+        day.key <= period.end;
+        day = nextPeriod(day)
+    ) {
+        days.push(day);
+    }
+
+    return days;
+}
