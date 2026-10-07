@@ -244,6 +244,8 @@ describe('routines', () => {
                 scope: 'day',
                 period_key: '2027-01-04',
                 routine: 'evening',
+                // A routine is always your own.
+                assignee_user_id: 1,
             }),
         );
     });

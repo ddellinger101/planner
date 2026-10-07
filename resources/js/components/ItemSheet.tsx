@@ -14,6 +14,7 @@ import {
 } from '@/api/items';
 import { fetchCategories } from '@/api/session';
 import type { EventDraft } from '@/context/EventEditorContext';
+import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 import { parsePeriod, periodFromDate, todayPeriod, type Period } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
@@ -53,6 +54,7 @@ type Pending = { action: 'save'; changes: ItemChanges } | { action: 'delete' };
 /** The sheet for adding a task or goal, and for editing or deleting one. */
 export default function ItemSheet({ target, onClose, onMakeEvent }: Props) {
     const { user, household } = useSession();
+    const { person } = usePersonFilter();
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
@@ -85,7 +87,12 @@ export default function ItemSheet({ target, onClose, onMakeEvent }: Props) {
     const isDay = period.scope === 'day';
     const selectedCategory = categoryId ?? categories.data?.at(-1)?.id ?? null;
     // Day tasks default to whoever adds them, goals to both people.
-    const selectedAssignee = assignee === undefined ? (isDay ? user.id : null) : assignee;
+    // A new day task, or anything in Health, belongs to whoever's planner is on screen,
+    // or else to its maker. Other goals start out belonging to both.
+    const isHealth =
+        categories.data?.find((category) => category.id === categoryId)?.slug === 'health';
+    const selectedAssignee =
+        assignee === undefined ? (isDay || isHealth ? (person ?? user.id) : null) : assignee;
     const busy = createItem.isPending || updateItem.isPending || deleteItem.isPending;
     const canSave = title.trim() !== '' && selectedCategory !== null && !busy;
     const noun = (item?.scope ?? basePeriod.scope) === 'day' ? 'task' : 'goal';

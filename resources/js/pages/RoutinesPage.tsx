@@ -29,7 +29,6 @@ import RadialTracker from '@/components/habits/RadialTracker';
 import PageHeader from '@/components/PageHeader';
 import { RoutineGrid } from '@/components/period/WeekExtras';
 import { useItemEditor } from '@/context/ItemEditorContext';
-import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 import { nextPeriod, periodFromDate, previousPeriod, type Period } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
@@ -44,7 +43,8 @@ const SECTIONS: { routine: Habit['routine']; title: string; icon: LucideIcon }[]
 
 /** Routines and habits: what's in each routine, and how the habits are going. */
 export default function RoutinesPage() {
-    const { person } = usePersonFilter();
+    // Routines and habits are personal: always your own, whatever view is chosen.
+    const person = useSession().user.id;
     const today = useToday();
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories }).data ?? [];
     const [week, setWeek] = useState(() => periodFromDate('week', today));
@@ -76,7 +76,7 @@ export default function RoutinesPage() {
 
     return (
         <>
-            <PageHeader>Routines &amp; Habits</PageHeader>
+            <PageHeader showPersonFilter={false}>Routines &amp; Habits</PageHeader>
             <main className="container-fluid page-body">
                 <div className="row g-3">
                     {SECTIONS.map((section) => (
@@ -318,7 +318,8 @@ function RoutineEditor({
 
 /** The repeating tasks in a routine. They are edited like any other task. */
 function RepeatingTasks({ routine }: { routine: Routine }) {
-    const { person } = usePersonFilter();
+    // Routines and habits are personal: always your own, whatever view is chosen.
+    const person = useSession().user.id;
     const { editItem } = useItemEditor();
     const series = useRoutineSeries(routine, person);
 
@@ -356,7 +357,8 @@ function RepeatingTasks({ routine }: { routine: Routine }) {
 
 /** The month's habit wheel, for the Month view. */
 export function MonthHabits({ month }: { month: Period }) {
-    const { person } = usePersonFilter();
+    // Routines and habits are personal: always your own, whatever view is chosen.
+    const person = useSession().user.id;
     const today = useToday();
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories }).data ?? [];
     const habits = useHabitsBetween(month.start, month.end, person);

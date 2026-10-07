@@ -1,16 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { Item } from './items';
+import { withPerson, type Item } from './items';
+import { usePersonFilter } from '@/context/PersonFilterContext';
 
 // Day tasks across a range of dates (the week strip, the month calendar) ------
 
 export function useItemsBetween(from: string, to: string, person: number | null) {
+    const { ownHealth } = usePersonFilter();
+
     return useQuery({
         // Under "items" so optimistic item updates reach this list too.
-        queryKey: ['items', 'range', from, to, person],
+        queryKey: ['items', 'range', from, to, person, ownHealth],
         queryFn: () =>
             api<Item[]>(
-                `/api/items?from=${from}&to=${to}${person === null ? '' : `&person=${person}`}`,
+                `/api/items?${withPerson(new URLSearchParams({ from, to }), person, ownHealth)}`,
             ),
     });
 }
@@ -23,16 +26,14 @@ export type Completion = { total: number; done: number };
 
 /** How many goals each of the given periods has, and how many are done. */
 export function useGoalSummary(periodKeys: string[], person: number | null) {
+    const { ownHealth } = usePersonFilter();
+
     return useQuery({
         // Not under "items": the cached value isn't a list of items.
-        queryKey: ['item-summary', periodKeys, person],
+        queryKey: ['item-summary', periodKeys, person, ownHealth],
         queryFn: async () => {
-            const query = new URLSearchParams();
+            const query = withPerson(new URLSearchParams(), person, ownHealth);
             periodKeys.forEach((key) => query.append('period_keys[]', key));
-
-            if (person !== null) {
-                query.set('person', String(person));
-            }
 
             const rows = await api<SummaryRow[]>(`/api/items/summary?${query}`);
             const byPeriod: Record<string, Completion> = {};

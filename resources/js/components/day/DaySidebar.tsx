@@ -8,7 +8,6 @@ import type { Item, ItemChanges } from '@/api/items';
 import EventChip from '@/components/EventChip';
 import MealNote from '@/components/MealNote';
 import { useEventEditor } from '@/context/EventEditorContext';
-import { useSession } from '@/context/SessionContext';
 import { parsePeriod } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
 
@@ -93,7 +92,6 @@ type DayEventsProps = {
 
 /** The day's calendar events, with a way to add one. */
 export function DayEvents({ date, isToday, events }: DayEventsProps) {
-    const { household } = useSession();
     const { newEvent } = useEventEditor();
     const google = useGoogle();
 
@@ -126,26 +124,11 @@ export function DayEvents({ date, isToday, events }: DayEventsProps) {
                 </p>
             ) : (
                 <ul className="event-list">
-                    {events.map((event) => {
-                        const owner = household.members.find(
-                            (member) => member.id === event.owner_user_id,
-                        );
-
-                        return (
-                            <li key={event.id}>
-                                <EventChip event={event} day={date} />
-                                {household.members.length > 1 && owner && (
-                                    <span
-                                        className="person-dot"
-                                        style={{ background: owner.color }}
-                                        title={owner.name}
-                                    >
-                                        {owner.name.charAt(0)}
-                                    </span>
-                                )}
-                            </li>
-                        );
-                    })}
+                    {events.map((event) => (
+                        <li key={event.id}>
+                            <EventChip event={event} day={date} />
+                        </li>
+                    ))}
                 </ul>
             )}
         </section>

@@ -20,6 +20,16 @@ export type GoogleStatus = {
     calendar_connected: boolean;
     calendar_last_synced_at: string | null;
     calendars: GoogleCalendar[];
+    /** Calendars other people in the household show, and whether you see each one. */
+    shared_calendars: SharedCalendar[];
+};
+
+export type SharedCalendar = {
+    id: number;
+    summary: string;
+    color: string | null;
+    owner_user_id: number;
+    visible: boolean;
 };
 
 /** What a calendar is used for: left out, shown as events, or read as Chef's meals. */
@@ -50,6 +60,7 @@ type Action =
     | { kind: 'map-list'; listId: number; categoryId: number | null }
     | { kind: 'refresh-calendars' }
     | { kind: 'calendar-mode'; calendarId: number; mode: CalendarMode }
+    | { kind: 'shared-calendar'; calendarId: number; visible: boolean }
     | { kind: 'birthdays'; enabled: boolean };
 
 const send = (action: Action) => {
@@ -72,6 +83,11 @@ const send = (action: Action) => {
                 method: 'PATCH',
                 body: { mode: action.mode },
             });
+        case 'shared-calendar':
+            return api<GoogleStatus>(`/api/google/shared-calendars/${action.calendarId}`, {
+                method: 'PATCH',
+                body: { visible: action.visible },
+            });
         case 'birthdays':
             return api<GoogleStatus>('/api/google', {
                 method: 'PATCH',
@@ -93,7 +109,8 @@ export function useGoogleAction() {
             if (
                 action.kind === 'sync' ||
                 action.kind === 'birthdays' ||
-                action.kind === 'calendar-mode'
+                action.kind === 'calendar-mode' ||
+                action.kind === 'shared-calendar'
             ) {
                 [
                     'items',

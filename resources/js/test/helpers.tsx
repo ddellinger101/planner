@@ -68,6 +68,7 @@ export const notConnected: GoogleStatus = {
     calendar_connected: false,
     calendar_last_synced_at: null,
     calendars: [],
+    shared_calendars: [],
 };
 
 type Reply = { status?: number; body?: unknown };

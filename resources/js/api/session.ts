@@ -40,8 +40,13 @@ export async function fetchSession(): Promise<Session | null> {
 }
 
 export const updateProfile = (
-    changes: Partial<Pick<Session['user'], 'color' | 'day_start_hour' | 'day_end_hour'>>,
+    changes: Partial<
+        Pick<Session['user'], 'name' | 'color' | 'timezone' | 'day_start_hour' | 'day_end_hour'>
+    >,
 ) => api<Session>('/api/me', { method: 'PATCH', body: changes });
+
+/** The colors a person can pick; the same list as `User::PERSON_COLORS` on the server. */
+export const PERSON_COLORS = ['#2f8f83', '#e8677a', '#3b7dd8', '#8257d6', '#d9822b', '#64748b'];
 
 export const fetchCategories = () => api<Category[]>('/api/categories');
 

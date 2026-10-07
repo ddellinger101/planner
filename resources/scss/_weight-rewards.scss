@@ -488,3 +488,79 @@ a.button-plain {
         box-shadow: 0 0 0 2px var(--accent);
     }
 }
+
+// Shown once to someone who hasn't connected Google yet.
+.welcome-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--accent) 16%, var(--card));
+    border-bottom: 1.5px solid var(--line);
+}
+
+// Profile ----------------------------------------------------------------------------
+
+.color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.color-swatch {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #fff;
+    border: 2px solid transparent;
+    border-radius: 50%;
+
+    &[aria-checked='true'] {
+        border-color: var(--card);
+        box-shadow: 0 0 0 2px var(--line);
+    }
+
+    &:disabled:not([aria-checked='true']) {
+        cursor: not-allowed;
+        opacity: 0.45;
+    }
+}
+
+.person-dot.is-large {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.3rem;
+}
+
+.event-chip-owner {
+    align-self: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-left: auto;
+    font-size: 0.62rem;
+}
+
+.shared-calendars {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    border: 0;
+
+    legend {
+        float: none;
+        width: auto;
+        padding: 0;
+    }
+
+    p {
+        margin: 0;
+    }
+}
