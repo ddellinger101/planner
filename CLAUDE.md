@@ -174,6 +174,17 @@ Bothdocs/` holds the plan, deployment notes, Google API notes and inspiration im
 - Contacts' birthdays are `important_dates` rows with `source = google_contacts`, owned by the
   person whose contacts they are, shown to the household, read-only in the planner, and stored
   in year 1904 when the contact has no birth year.
+- The app is installable: `public/manifest.webmanifest`, icons in `public/icons/`, and a
+  hand-written service worker, `public/sw.js`, registered in production builds only. It tries
+  the network first for pages and `GET /api/*` and falls back to what it kept, so the last
+  pages opened can be read offline; hashed build assets are cache-first. Sign-out tells it to
+  drop the kept API answers. Bump `CACHE` in `sw.js` to discard an old cache.
+- Push notifications (`app/Services/Push/`): `ReminderPlanner` runs every minute and works
+  out what is due from the current state, so nothing is scheduled ahead and a task that is
+  moved or finished needs no cleanup. `PushNotifier::notifyOnce` records a key per reminder
+  and person in `scheduled_notifications`, which is what keeps each to one send. Sending goes
+  through the `PushSender` interface (`minishlink/web-push`; faked in tests). Preferences are
+  JSON on the user, with defaults in `App\Support\NotificationPreferences`.
 - The queue is the database driver, drained every minute by the scheduler (`routes/console.php`),
   so the server needs no worker process beyond the cron entry.
 - Scrolling containers that hold task rows need `position: relative`: Bootstrap's

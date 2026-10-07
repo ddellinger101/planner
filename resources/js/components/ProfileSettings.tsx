@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, LogOut } from 'lucide-react';
 import { PERSON_COLORS, signOut, updateProfile } from '@/api/session';
 import { useSession } from '@/context/SessionContext';
+import { clearOfflineData } from '@/lib/push';
 import { useDraft } from '@/lib/useDraft';
 
 const COLOR_NAMES: Record<string, string> = {
@@ -31,7 +32,12 @@ export default function ProfileSettings() {
     });
     const logout = useMutation({
         mutationFn: signOut,
-        onSuccess: () => queryClient.setQueryData(['session'], null),
+        onSuccess: () => {
+            // Don't leave this person's planner readable offline on a shared device.
+            clearOfflineData();
+            queryClient.setQueryData(['session'], null);
+            queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' });
+        },
     });
     const name = useDraft(user.name);
     const takenBy = (color: string) =>

@@ -8,6 +8,8 @@ use App\Services\Google\GoogleTasksService;
 use App\Services\Google\HttpGoogleCalendarService;
 use App\Services\Google\HttpGoogleContactsService;
 use App\Services\Google\HttpGoogleTasksService;
+use App\Services\Push\PushSender;
+use App\Services\Push\WebPushSender;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GoogleTasksService::class, HttpGoogleTasksService::class);
         $this->app->bind(GoogleContactsService::class, HttpGoogleContactsService::class);
         $this->app->bind(GoogleCalendarService::class, HttpGoogleCalendarService::class);
+        $this->app->bind(PushSender::class, WebPushSender::class);
     }
 
     /**
