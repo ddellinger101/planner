@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\JournalController;
 use App\Http\Controllers\Api\MealController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RewardController;
 use App\Http\Controllers\Api\WeightController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/items/overdue', [ItemController::class, 'overdue']);
     Route::get('/items/summary', [ItemController::class, 'summary']);
     Route::apiResource('items', ItemController::class);
+
+    Route::post('/items/{item}/carry', [ReviewController::class, 'carry']);
+
+    Route::get('/reviews/pending', [ReviewController::class, 'pending']);
+    Route::post('/reviews', [ReviewController::class, 'store']);
 
     Route::apiResource('important-dates', ImportantDateController::class)->except('show');
 
