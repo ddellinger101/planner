@@ -1,10 +1,7 @@
-// Theme overrides go before the Bootstrap import. The full design system
-// (category colors, typography, dark mode tokens) lands in Phase 2.
-$body-bg: #fbf8f1;
-$body-color: #2b2a33;
-$primary: #2f8f83;
-$border-radius: 0.75rem;
+// Bootstrap is used for its grid, reset and utilities only. The planner's own
+// look (paper, ink boxes, highlighter headings) lives in the partials below.
 $font-family-sans-serif:
+    'Nunito Variable',
     system-ui,
     -apple-system,
     'Segoe UI',
@@ -12,12 +9,15 @@ $font-family-sans-serif:
     'Helvetica Neue',
     Arial,
     sans-serif;
+$body-bg: #fbf8f1;
+$body-color: #2b2a33;
+$primary: #2f8f83;
+$border-radius: 0.75rem;
+$link-decoration: none;
+$color-mode-type: data;
 
 @import 'bootstrap/scss/bootstrap';
 
-body {
-    min-height: 100dvh;
-    // Dotted bullet-journal paper.
-    background-image: radial-gradient(rgba($body-color, 0.14) 1px, transparent 1px);
-    background-size: 20px 20px;
-}
+@import 'tokens';
+@import 'shell';
+@import 'components';

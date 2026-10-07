@@ -13,8 +13,8 @@
         <main class="container py-5">
             <div class="row justify-content-center">
                 <div class="col-12 col-lg-8">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-body p-4 p-md-5">
+                    <div class="planner-card">
+                        <div class="p-4 p-md-5">
                             <p class="mb-4"><a href="/">&larr; {{ config('app.name') }}</a></p>
                             <h1 class="h2">@yield('title')</h1>
                             <p class="text-secondary">Last updated October 6, 2026</p>

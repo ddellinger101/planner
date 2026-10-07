@@ -74,7 +74,25 @@ npm run build
 
 - `resources/js/main.tsx` is the Vite entry; `App.tsx` is the root component. Don't add a file
   whose name differs from another only by case: the repo is developed on Windows.
-- `resources/scss/app.scss` holds the Bootstrap theme overrides.
+- `resources/js/components/AppShell.tsx` is the frame around every signed-in page: the left
+  rail (tablet and up), the bottom bar (phones) and the quick-add button. Pages live in
+  `resources/js/pages/`; the Day, Week, Month, Quarter and Year views share `PeriodPage.tsx`.
+- `resources/js/api/` holds the fetch client and the TanStack Query hooks. Item changes are
+  optimistic: the cache updates first and rolls back if the request fails.
+- `resources/scss/` holds the styles: `_tokens.scss` (colors, fonts, dark mode), `_shell.scss`
+  (navigation and page frame) and `_components.scss`.
+
+## Design system
+
+- Colors and fonts are CSS custom properties on `:root` in `_tokens.scss`, with a second set
+  under `[data-bs-theme='dark']`. The theme follows the device setting.
+- Category colors come from the API. Wrap anything category-colored in an element with the
+  `cat` class and set `--cat` inline; `--cat-strong` and `--cat-highlight` derive from it.
+- Sections are `planner-card` boxes with an ink border, not shadows. Headings that name a
+  category use `highlight-heading`. The hand-lettered display font is for titles only.
+- Every category icon renders through `CategoryIcon`; checkable rows through `TaskRow`.
+- Bootstrap supplies the grid, reset and utilities only. Don't use its components.
+- Check new screens at 375, 768, 1280 and 1920 px wide, in light and dark mode.
 - `routes/web.php` serves `/health` and Google sign-in under `/auth`, and falls through to the
   SPA for every other path. `routes/api.php` is the JSON API, all behind `auth:sanctum`.
 - `app/Support/Period.php` and `resources/js/lib/period.ts` are twins. Their tests share the

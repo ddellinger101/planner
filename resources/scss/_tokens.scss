@@ -1,0 +1,85 @@
+// Design tokens. Everything themeable is a custom property on :root so dark
+// mode is a second set of values, not a second stylesheet.
+:root {
+    --paper: #fbf8f1;
+    --paper-dot: rgb(43 42 51 / 16%);
+    --card: #fffdf8;
+    --ink: #2b2a33;
+    --ink-soft: #6c6a78;
+    --line: #2b2a33;
+    --line-soft: #e6dfd0;
+    --accent: #2f8f83;
+    --star: #e2a400;
+    --danger: #c2413b;
+
+    // Text and marks drawn on top of a category color.
+    --on-cat: #fff;
+    // How far a category color is pushed toward ink (light) or paper (dark)
+    // so checkboxes and icons keep enough contrast.
+    --cat-mix: #000;
+    --cat-mix-amount: 16%;
+    --cat-highlight-alpha: 34%;
+
+    --font-display: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', cursive;
+
+    --rail-width: 5.5rem;
+    --bottom-nav-height: 4rem;
+    --header-height: 3.75rem;
+    --radius-card: 0.9rem;
+
+    --bs-body-bg: var(--paper);
+    --bs-body-color: var(--ink);
+    --bs-link-color-rgb: 47, 143, 131;
+    --bs-link-hover-color-rgb: 37, 114, 104;
+}
+
+[data-bs-theme='dark'] {
+    --paper: #1b1a21;
+    --paper-dot: rgb(255 255 255 / 9%);
+    --card: #24232c;
+    --ink: #f3efe6;
+    --ink-soft: #aba8b6;
+    --line: #6a6778;
+    --line-soft: #34323d;
+    --accent: #56b8ab;
+    --star: #f2c230;
+    --danger: #ef7d77;
+
+    --on-cat: #1b1a21;
+    --cat-mix: #fff;
+    --cat-mix-amount: 30%;
+    --cat-highlight-alpha: 42%;
+
+    --bs-link-color-rgb: 86, 184, 171;
+    --bs-link-hover-color-rgb: 124, 205, 194;
+}
+
+// Anything inside .cat is tinted with that category's color, which comes
+// from the API as the --cat custom property.
+.cat {
+    --cat: var(--accent);
+    --cat-strong: color-mix(in srgb, var(--cat), var(--cat-mix) var(--cat-mix-amount));
+    --cat-highlight: color-mix(in srgb, var(--cat) var(--cat-highlight-alpha), transparent);
+}
+
+body {
+    min-height: 100dvh;
+    color: var(--ink);
+    background-color: var(--paper);
+    // Dotted bullet-journal paper.
+    background-image: radial-gradient(var(--paper-dot) 1px, transparent 1.5px);
+    background-size: 20px 20px;
+}
+
+.font-display {
+    font-family: var(--font-display);
+}
+
+.text-soft {
+    color: var(--ink-soft);
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
