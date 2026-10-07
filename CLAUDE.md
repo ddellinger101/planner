@@ -139,7 +139,8 @@ npm run build
 - Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the
   `item-summary` query key (not `items`, whose caches are lists that optimistic updates edit).
 - Google sync lives in `app/Services/Google/`. It calls Google's REST APIs with Laravel's HTTP
-  client (no `google/apiclient`), behind `GoogleTasksService` and `GoogleContactsService` so
+  client (no `google/apiclient`), behind `GoogleTasksService`, `GoogleCalendarService` and
+  `GoogleContactsService` so
   tests swap in `tests/Fakes/`. Tests forbid stray HTTP requests.
 - Signing in grants no API access. Each person connects from Settings (`/auth/google/connect`),
   which asks for Tasks and read-only Contacts; `GoogleAccount::hasGranted()` is the check.
@@ -152,6 +153,20 @@ npm run build
   are sent seven days ahead. `TaskSync::pending()` is the one definition of "waiting to send".
 - A Google task with no due date becomes a Brain Dump "Other" item that keeps its Google ids;
   adding it to the plan carries them onto the item, in the category of the list it came from.
+- Calendar sync (`CalendarSync`) reads each calendar a person set to "Show events" into
+  `events`, and the one set to "Meals from Chef" into `meal_entries` through `ChefMealParser`
+  (format in `docs/chef-calendar-format.md`); that calendar is never written to. It asks Google
+  for a window of days (60 back, 365 ahead) with repeating events expanded: changes every
+  poll, the whole window once a day. There is no sync token.
+- Events made in the planner go to their maker's primary Google calendar. An event is
+  `editable` unless it is on a read-only calendar or is one occurrence of a repeating event.
+  Timed events are stored in UTC, all-day events as first and last day (`ends_on` inclusive,
+  unlike Google's). The API returns both people's events; the client filters by person and
+  drops duplicates from a calendar both follow (`eventsFor` in `resources/js/api/events.ts`).
+- An important date with `add_to_calendar` is mirrored as an all-day (yearly) Google event.
+  Its occurrences are skipped when the calendar is read, so it isn't shown twice.
+- A 403 from Google is a `GoogleAuthException` with `revoked: false`: the request was refused
+  but reconnecting would not help. Calendar sync only asks to reconnect when `revoked`.
 - Contacts' birthdays are `important_dates` rows with `source = google_contacts`, owned by the
   person whose contacts they are, shown to the household, read-only in the planner, and stored
   in year 1904 when the contact has no birth year.
@@ -170,8 +185,8 @@ npm run build
   TIME in the user's local zone.
 - Weeks start Monday (ISO weeks).
 - Every user-facing list respects the person filter (Dustin / Elizabeth / Both).
-- All Google calls go through service classes (`GoogleTasksService`, `GoogleContactsService`,
-  later `GoogleCalendarService`) behind interfaces so they can be mocked in tests.
+- All Google calls go through service classes (`GoogleTasksService`, `GoogleCalendarService`,
+  `GoogleContactsService`) behind interfaces so they can be mocked in tests.
 - Never block the UI on Google; all pushes to Google are queued.
 - Secrets live only in the server's `.env` and in GitHub Actions secrets. Never commit
   credentials or tokens.
