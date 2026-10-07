@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/journal/{periodKey}/{type}', [JournalController::class, 'update']);
 
     Route::get('/meals', [MealController::class, 'index']);
+    Route::put('/meals', [MealController::class, 'update']);
 
     Route::get('/weight', [WeightController::class, 'index']);
     Route::post('/weight', [WeightController::class, 'store']);

@@ -158,6 +158,10 @@ npm run build
   (format in `docs/chef-calendar-format.md`); that calendar is never written to. It asks Google
   for a window of days (60 back, 365 ahead) with repeating events expanded: changes every
   poll, the whole window once a day. There is no sync token.
+- A meal slot Chef hasn't planned can hold a note typed in the planner: a `meal_entries` row
+  with no Google ids (`source` is `note`). Reading a Chef meal for the same day and slot
+  deletes the note, and a slot Chef has planned can't be written to (409). An unlabelled Chef
+  meal counts as dinner (`MealEntry::slotsShownAs`).
 - Events made in the planner go to their maker's primary Google calendar. An event is
   `editable` unless it is on a read-only calendar or is one occurrence of a repeating event.
   Timed events are stored in UTC, all-day events as first and last day (`ends_on` inclusive,

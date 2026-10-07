@@ -6,6 +6,7 @@ import type { CalendarEvent } from '@/api/events';
 import { useGoogle } from '@/api/google';
 import type { Item, ItemChanges } from '@/api/items';
 import EventChip from '@/components/EventChip';
+import MealNote from '@/components/MealNote';
 import { useEventEditor } from '@/context/EventEditorContext';
 import { useSession } from '@/context/SessionContext';
 import { parsePeriod } from '@/lib/period';
@@ -36,7 +37,7 @@ function MealLine({ meal }: { meal: Meal }) {
     );
 }
 
-/** The day's meals, as planned in Chef. The planner only reads them. */
+/** The day's meals as planned in Chef, with a line to write on wherever Chef has nothing. */
 export function MealPlan({ date }: { date: string }) {
     const meals = useMeals(date, date);
     // A meal Chef didn't label is most likely dinner.
@@ -61,18 +62,24 @@ export function MealPlan({ date }: { date: string }) {
                     <div key={slot}>
                         <dt>{label}</dt>
                         <dd>
-                            {inSlot(slot).length === 0 ? (
-                                <span className="text-soft">—</span>
-                            ) : (
+                            {inSlot(slot).some((meal) => meal.source === 'chef') ? (
                                 inSlot(slot).map((meal) => <MealLine key={meal.id} meal={meal} />)
+                            ) : (
+                                <MealNote
+                                    date={date}
+                                    slot={slot as Exclude<MealSlot, 'unknown'>}
+                                    note={inSlot(slot)[0]}
+                                    label={label}
+                                />
                             )}
                         </dd>
                     </div>
                 ))}
             </dl>
-            {meals.isSuccess && meals.data.length === 0 && (
-                <p className="text-soft small mb-0">Nothing planned for this day yet.</p>
-            )}
+            <p className="text-soft small mb-0">
+                Jot a meal on any empty line. Chef’s plan replaces it once that meal is planned
+                there.
+            </p>
         </section>
     );
 }

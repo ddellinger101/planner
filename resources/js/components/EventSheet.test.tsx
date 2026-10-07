@@ -426,6 +426,7 @@ describe('important dates and meals', () => {
                         title: 'Chicken Tikka Masala',
                         description: 'Naan\nCucumber salad',
                         chef_url: 'https://chef.dustindellinger.com/tonight?date=2027-01-04',
+                        source: 'chef',
                     },
                 ],
             },

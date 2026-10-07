@@ -3,12 +3,13 @@ import type { CSSProperties } from 'react';
 import { CHEF_URL, type Habit, type Meal } from '@/api/day';
 import type { Item, ItemChanges } from '@/api/items';
 import type { Category } from '@/api/session';
+import MealNote from '@/components/MealNote';
 import { childPeriods, type Period } from '@/lib/period';
 import { periodLabel } from '@/lib/periodLabels';
 
 const SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'unknown', 'snack'];
 
-/** The week's meals from Chef, one row per day. */
+/** The week's meals from Chef, one row per day, with a line for dinner where Chef has none. */
 export function WeekMeals({ week, meals }: { week: Period; meals: Meal[] }) {
     return (
         <section className="planner-card p-3 h-100" aria-labelledby="week-meals">
@@ -26,22 +27,21 @@ export function WeekMeals({ week, meals }: { week: Period; meals: Meal[] }) {
                     const dayMeals = meals
                         .filter((meal) => meal.date === day.key)
                         .sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+                    const dinners = dayMeals.filter(
+                        (meal) => meal.slot === 'dinner' || meal.slot === 'unknown',
+                    );
+                    const chefDinner = dinners.some((meal) => meal.source === 'chef');
+                    const dinnerNote = chefDinner
+                        ? undefined
+                        : dinners.find((meal) => meal.source === 'note');
 
                     return (
                         <div key={day.key}>
                             <dt>{periodLabel(day).title.slice(0, 3)}</dt>
                             <dd>
-                                {dayMeals.length === 0 ? (
-                                    <a
-                                        className="text-soft"
-                                        href={CHEF_URL}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        Plan in Chef
-                                    </a>
-                                ) : (
-                                    dayMeals.map((meal) =>
+                                {dayMeals
+                                    .filter((meal) => meal !== dinnerNote)
+                                    .map((meal) =>
                                         meal.chef_url ? (
                                             <a
                                                 key={meal.id}
@@ -54,7 +54,15 @@ export function WeekMeals({ week, meals }: { week: Period; meals: Meal[] }) {
                                         ) : (
                                             <span key={meal.id}>{meal.title}</span>
                                         ),
-                                    )
+                                    )}
+                                {/* Until Chef plans dinner, the day has a line to write one on. */}
+                                {!chefDinner && (
+                                    <MealNote
+                                        date={day.key}
+                                        slot="dinner"
+                                        note={dinnerNote}
+                                        label={`Dinner on ${periodLabel(day).title}`}
+                                    />
                                 )}
                             </dd>
                         </div>

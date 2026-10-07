@@ -347,4 +347,37 @@ describe('meals', function () {
         $this->getJson('/api/meals')->assertJsonValidationErrors(['from', 'to']);
         $this->postJson('/api/meals', ['title' => 'Pizza'])->assertStatus(405);
     });
+
+    it('keeps a note for a meal Chef hasn\'t planned', function () {
+        signIn();
+
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'dinner', 'title' => ' Chicken soup '])
+            ->assertOk()
+            ->assertJsonPath('title', 'Chicken soup')
+            ->assertJsonPath('source', 'note')
+            ->assertJsonPath('chef_url', null);
+
+        // Writing again changes the same note; an empty one clears it.
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'dinner', 'title' => 'Chicken noodle soup'])->assertOk();
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'lunch', 'title' => 'Leftovers'])->assertOk();
+
+        $this->getJson('/api/meals?from=2027-01-08&to=2027-01-08')
+            ->assertJsonPath('*.title', ['Chicken noodle soup', 'Leftovers']);
+
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'dinner', 'title' => ''])->assertNoContent();
+
+        expect(MealEntry::pluck('title')->all())->toBe(['Leftovers']);
+
+        $this->putJson('/api/meals', ['date' => 'Friday', 'slot' => 'brunch'])
+            ->assertJsonValidationErrors(['date', 'slot', 'title']);
+    });
+
+    it('keeps each household\'s notes apart', function () {
+        signIn();
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'dinner', 'title' => 'Chicken soup'])->assertOk();
+
+        signIn();
+
+        $this->getJson('/api/meals?from=2027-01-08&to=2027-01-08')->assertJsonCount(0);
+    });
 });

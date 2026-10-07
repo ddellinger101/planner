@@ -224,6 +224,14 @@ class CalendarSync
             'etag' => $remote['etag'],
             ...$meal,
         ]);
+
+        // Chef's plan replaces a note typed into the planner for the same meal.
+        MealEntry::withoutGlobalScope('household')
+            ->where('household_id', $account->user->household_id)
+            ->whereNull('google_event_id')
+            ->whereDate('date', $meal['date'])
+            ->whereIn('slot', MealEntry::slotsShownAs($meal['slot']))
+            ->delete();
     }
 
     /** Send every event and important date of this account's that is waiting. */
