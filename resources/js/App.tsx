@@ -6,18 +6,12 @@ import AppShell from './components/AppShell';
 import { PersonFilterProvider } from './context/PersonFilterContext';
 import { SessionProvider } from './context/SessionContext';
 import { SCOPES } from './lib/periodLabels';
+import BrainDumpPage from './pages/BrainDumpPage';
 import PeriodPage from './pages/PeriodPage';
 import PlanWeekPage from './pages/PlanWeekPage';
 import RoutinesPage from './pages/RoutinesPage';
 import SignIn, { WelcomeCard } from './pages/SignIn';
-import {
-    BrainDumpPage,
-    MorePage,
-    NotFoundPage,
-    RewardsPage,
-    SettingsPage,
-    WeightPage,
-} from './pages/SimplePages';
+import { MorePage, NotFoundPage, RewardsPage, SettingsPage, WeightPage } from './pages/SimplePages';
 
 export default function App() {
     const session = useQuery({ queryKey: ['session'], queryFn: fetchSession, retry: false });

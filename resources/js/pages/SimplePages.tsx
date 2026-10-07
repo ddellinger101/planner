@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Brain, Gift, LogOut, MapPinOff, Scale, type LucideIcon } from 'lucide-react';
+import { Gift, LogOut, MapPinOff, Scale, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { signOut, updateProfile } from '@/api/session';
@@ -28,13 +28,6 @@ function ComingSoon({ title, icon, heading, children }: ComingSoonProps) {
         </>
     );
 }
-
-export const BrainDumpPage = () => (
-    <ComingSoon title="Brain Dump" icon={Brain} heading="Get it out of your head">
-        A board for everything on your mind, sorted into Must Do, Should Do, Could Do, Call, Email,
-        Buy and more. It’s on its way.
-    </ComingSoon>
-);
 
 export const WeightPage = () => (
     <ComingSoon title="Weight" icon={Scale} heading="Track the trend">
