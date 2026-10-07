@@ -229,6 +229,32 @@ describe('brain dump', function () {
             ->assertJson(['scope' => 'week', 'period_key' => '2027-W02', 'due_date' => null, 'due_time' => null, 'assignee_user_id' => null]);
     });
 
+    it('starts a repeating series when an item is added to the plan with a rule', function () {
+        $this->travelTo('2027-01-04 17:00:00');
+        signIn();
+        $id = $this->postJson('/api/brain-dump', ['bucket' => 'health_habits', 'title' => 'Take vitamins'])->json('id');
+
+        $this->postJson("/api/brain-dump/{$id}/assign", ['period_key' => '2027-01-04', 'recurrence_rule' => 'FREQ=DAILY'])
+            ->assertCreated()
+            ->assertJson(['recurrence_rule' => 'FREQ=DAILY', 'recurrence_date' => '2027-01-04']);
+
+        expect(Item::count())->toBe(61);
+    });
+
+    it('rejects a bad rule, and ignores a rule on a goal', function () {
+        signIn();
+        $a = $this->postJson('/api/brain-dump', ['bucket' => 'call', 'title' => 'A'])->json('id');
+        $b = $this->postJson('/api/brain-dump', ['bucket' => 'call', 'title' => 'B'])->json('id');
+
+        $this->postJson("/api/brain-dump/{$a}/assign", ['period_key' => '2027-01-04', 'recurrence_rule' => 'FREQ=NEVER'])
+            ->assertJsonValidationErrors('recurrence_rule');
+        $this->postJson("/api/brain-dump/{$b}/assign", ['period_key' => '2027-W01', 'recurrence_rule' => 'FREQ=WEEKLY'])
+            ->assertCreated()
+            ->assertJson(['recurrence_rule' => null]);
+
+        expect(Item::count())->toBe(1);
+    });
+
     it('moves an item between buckets and is hidden from other households', function () {
         $stranger = User::factory()->create();
         $theirs = BrainDumpItem::create([

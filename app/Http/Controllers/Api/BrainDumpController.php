@@ -10,7 +10,9 @@ use App\Models\BrainDumpItem;
 use App\Models\Category;
 use App\Models\Item;
 use App\Rules\PeriodKey;
+use App\Services\RecurrenceService;
 use App\Support\Period;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,6 +21,8 @@ use Illuminate\Validation\Rule;
 
 class BrainDumpController extends Controller
 {
+    public function __construct(private RecurrenceService $recurrence) {}
+
     public function index(Request $request): JsonResponse
     {
         $week = Period::today(Scope::Week, $request->user()->timezone);
@@ -78,7 +82,14 @@ class BrainDumpController extends Controller
             'category_id' => ['integer', Rule::exists('categories', 'id')],
             'due_time' => ['nullable', 'date_format:H:i'],
             'starred' => ['boolean'],
-            'recurrence_rule' => ['nullable', 'string', 'max:255'],
+            'recurrence_rule' => [
+                'nullable', 'string', 'max:255',
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (! RecurrenceService::isValidRule($value)) {
+                        $fail('The :attribute is not a valid recurrence rule.');
+                    }
+                },
+            ],
         ]);
 
         $period = Period::parse($data['period_key']);
@@ -95,13 +106,18 @@ class BrainDumpController extends Controller
                 'due_date' => $isDay ? $period->key() : null,
                 'due_time' => $isDay ? ($data['due_time'] ?? null) : null,
                 'starred' => $data['starred'] ?? false,
-                'recurrence_rule' => $data['recurrence_rule'] ?? null,
+                // Only day tasks repeat.
+                'recurrence_rule' => $isDay ? ($data['recurrence_rule'] ?? null) : null,
                 'source' => ItemSource::BrainDump,
                 'created_by' => $request->user()->id,
                 'assignee_user_id' => $isDay ? $request->user()->id : null,
             ]);
 
             $brainDumpItem->update(['assigned_item_id' => $item->id, 'assigned_at' => now()]);
+
+            if ($item->recurrence_rule) {
+                $this->recurrence->start($item, $request->user());
+            }
 
             return $item;
         });

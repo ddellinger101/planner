@@ -1,18 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Check, MapPinOff, Star, Trash2 } from 'lucide-react';
-import { useEffect, useState, type CSSProperties, type DragEvent, type FormEvent } from 'react';
+import { ArrowLeft, ArrowRight, Check, MapPinOff, Star } from 'lucide-react';
+import { useEffect, useState, type CSSProperties, type DragEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { CHEF_URL, useMeals } from '@/api/day';
 import { useCreateItem, useItems, useUpdateItem, type Item } from '@/api/items';
 import { useImportantDates, useItemsBetween } from '@/api/planning';
-import {
-    BUCKET_NAMES,
-    useAddBrainDump,
-    useBrainDump,
-    useDeleteBrainDump,
-    type BrainDumpBucket,
-} from '@/api/review';
 import { fetchCategories } from '@/api/session';
+import BrainDumpBoard from '@/components/brain/BrainDumpBoard';
 import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/PageHeader';
 import GoalBoxes from '@/components/period/GoalBoxes';
@@ -131,71 +125,13 @@ const useCategories = () =>
 // 1. Capture --------------------------------------------------------------------
 
 function Capture() {
-    const dump = useBrainDump();
-    const add = useAddBrainDump();
-    const remove = useDeleteBrainDump();
-    const [title, setTitle] = useState('');
-    const [bucket, setBucket] = useState<BrainDumpBucket>('must_do');
-
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-
-        if (title.trim()) {
-            add.mutate({ bucket, title: title.trim() });
-            setTitle('');
-        }
-    };
-
     return (
         <>
             <StepIntro title="Get it out of your head">
-                Write down everything on your mind. It all goes to the Brain Dump, where it waits
-                until you give it a day.
+                Write down everything on your mind. It waits on the Brain Dump until you give it a
+                day, which you can do right here.
             </StepIntro>
-            <form className="capture-form" onSubmit={submit}>
-                <input
-                    type="text"
-                    className="field-input"
-                    aria-label="Something on your mind"
-                    placeholder="Something on your mind…"
-                    value={title}
-                    maxLength={255}
-                    onChange={(event) => setTitle(event.target.value)}
-                />
-                <select
-                    className="field-input"
-                    aria-label="Kind"
-                    value={bucket}
-                    onChange={(event) => setBucket(event.target.value as BrainDumpBucket)}
-                >
-                    {Object.entries(BUCKET_NAMES).map(([value, name]) => (
-                        <option key={value} value={value}>
-                            {name}
-                        </option>
-                    ))}
-                </select>
-                <button type="submit" className="button-ink" disabled={!title.trim()}>
-                    Add
-                </button>
-            </form>
-            <ul className="review-list mt-3" aria-label="Brain dump">
-                {(dump.data?.items ?? []).map((item) => (
-                    <li key={item.id}>
-                        <span className="review-title">
-                            {item.title}
-                            <span className="task-badge">{BUCKET_NAMES[item.bucket]}</span>
-                        </span>
-                        <button
-                            type="button"
-                            className="icon-button is-small task-delete-always"
-                            aria-label={`Delete ${item.title}`}
-                            onClick={() => remove.mutate(item.id)}
-                        >
-                            <Trash2 aria-hidden="true" size={15} />
-                        </button>
-                    </li>
-                ))}
-            </ul>
+            <BrainDumpBoard />
         </>
     );
 }

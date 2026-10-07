@@ -220,7 +220,7 @@ describe('planning a week', () => {
         ).toHaveAttribute('aria-current', 'page');
     });
 
-    it('captures thoughts into the brain dump', async () => {
+    it('captures thoughts on the Brain Dump board, right in the first step', async () => {
         const { calls } = mockApi({
             ...signedIn(),
             'GET /api/brain-dump': {
@@ -229,16 +229,19 @@ describe('planning a week', () => {
                     assigned_this_week: 0,
                 },
             },
-            'POST /api/brain-dump': ({ body }) => ({ status: 201, body }),
-            'DELETE /api/brain-dump/5': { status: 204 },
+            'POST /api/brain-dump': ({ body }) => ({
+                status: 201,
+                body: { id: 6, notes: null, ...(body as object) },
+            }),
         });
 
         renderApp('/plan/2027-W01');
         expect(await screen.findByText('Call the vet')).toBeInTheDocument();
 
-        await userEvent.type(screen.getByLabelText('Something on your mind'), 'Order filters');
-        await userEvent.selectOptions(screen.getByLabelText('Kind'), 'buy');
-        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+        await userEvent.type(
+            screen.getByRole('textbox', { name: 'Add to Buy' }),
+            'Order filters{Enter}',
+        );
 
         await waitFor(() =>
             expect(calls.find((call) => call.method === 'POST')?.body).toEqual({
@@ -246,9 +249,10 @@ describe('planning a week', () => {
                 title: 'Order filters',
             }),
         );
-
-        await userEvent.click(screen.getByRole('button', { name: 'Delete Call the vet' }));
-        await waitFor(() => expect(calls.some((call) => call.method === 'DELETE')).toBe(true));
+        // Anything captured can be given a day without leaving the flow.
+        expect(
+            screen.getByRole('button', { name: 'Add Call the vet to plan' }),
+        ).toBeInTheDocument();
     });
 
     it('reviews last week with this week as the destination', async () => {

@@ -1,0 +1,121 @@
+// The Brain Dump board and its sheets.
+
+.dump-intro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    align-items: center;
+    color: var(--ink-soft);
+}
+
+.dump-nudge {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.1rem 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--star) 30%, transparent);
+    border-radius: 2rem;
+}
+
+// Laid out like the paper template: three priority boxes on top, then
+// Call, Email and Buy, then the last four across the bottom.
+.dump-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+
+    @include media-breakpoint-up(md) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include media-breakpoint-up(xl) {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+}
+
+.dump-box {
+    display: flex;
+    flex-direction: column;
+    min-height: 11rem;
+
+    @include media-breakpoint-up(xl) {
+        grid-column: span 4;
+
+        &.is-other,
+        &.is-health_habits,
+        &.is-kids_stuff,
+        &.is-only_4_you {
+            grid-column: span 3;
+        }
+    }
+
+    &.is-drop-target {
+        background: color-mix(in srgb, var(--cat) 14%, var(--card));
+    }
+}
+
+.dump-list {
+    padding: 0 0.6rem;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: 0.25rem 0.3rem;
+        cursor: grab;
+        border-bottom: 1px dashed var(--line-soft);
+    }
+}
+
+// The open circle from the paper template: not a checkbox, just a bullet.
+.dump-marker {
+    flex: none;
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 2px solid var(--cat-strong);
+    border-radius: 50%;
+}
+
+.dump-title {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.dump-box .inline-add {
+    padding-right: 0.6rem;
+    padding-left: 0.6rem;
+}
+
+.plan-quick {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+
+    button {
+        padding: 0 0.5rem;
+    }
+}
+
+.plan-more {
+    margin-top: 1rem;
+
+    summary {
+        display: inline-block;
+        min-height: 2.25rem;
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--ink-soft);
+        cursor: pointer;
+
+        &:hover {
+            color: var(--ink);
+        }
+    }
+}
