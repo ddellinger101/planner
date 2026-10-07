@@ -1,26 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import { CircleAlert, MapPinOff } from 'lucide-react';
-import { useCreateItem, useDeleteItem, useItems, useUpdateItem } from '@/api/items';
-import { fetchCategories } from '@/api/session';
-import CategoryBox from '@/components/CategoryBox';
+import { MapPinOff } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/PageHeader';
 import PeriodNav from '@/components/PeriodNav';
-import { useItemEditor } from '@/context/ItemEditorContext';
-import { usePersonFilter } from '@/context/PersonFilterContext';
-import { useSession } from '@/context/SessionContext';
-import type { Period, Scope } from '@/lib/period';
 import { useCurrentPeriod } from '@/lib/useCurrentPeriod';
 import DayPage from './DayPage';
+import { MonthPage, QuarterPage, WeekPage, YearPage } from './GoalPages';
 
-const SECTION_TITLES: Record<Exclude<Scope, 'day'>, string> = {
-    week: 'Weekly goals',
-    month: 'Monthly goals',
-    quarter: 'Quarter goals',
-    year: 'One-year goals',
+const PAGES = {
+    week: WeekPage,
+    month: MonthPage,
+    quarter: QuarterPage,
+    year: YearPage,
 };
 
-/** The route for every period: the Day view, or the goals of a longer period. */
+/** The route for every period: it picks the view for the period's scope. */
 export default function PeriodPage() {
     const period = useCurrentPeriod();
 
@@ -42,68 +35,16 @@ export default function PeriodPage() {
         return <DayPage key={period.key} period={period} />;
     }
 
+    const Page = PAGES[period.scope];
+
     return (
         <>
             <PageHeader>
                 <PeriodNav period={period} />
             </PageHeader>
             <main className="container-fluid page-body">
-                <PeriodGoals period={period} />
+                <Page period={period} />
             </main>
-        </>
-    );
-}
-
-function PeriodGoals({ period }: { period: Period }) {
-    const { household } = useSession();
-    const { person } = usePersonFilter();
-    const { editItem } = useItemEditor();
-    const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
-    const items = useItems({ periodKey: period.key, person });
-    const createItem = useCreateItem();
-    const updateItem = useUpdateItem();
-    const deleteItem = useDeleteItem();
-
-    if (categories.isError || items.isError) {
-        return (
-            <EmptyState icon={CircleAlert} title="This page didn’t load">
-                Check your connection and try again.
-            </EmptyState>
-        );
-    }
-
-    return (
-        <>
-            <h2 className="visually-hidden">
-                {SECTION_TITLES[period.scope as Exclude<Scope, 'day'>]}
-            </h2>
-            <div className="row g-3" aria-busy={items.isPending}>
-                {categories.data?.map((category) => (
-                    <div key={category.id} className="col-12 col-md-6 col-xl-4">
-                        <CategoryBox
-                            category={category}
-                            items={(items.data ?? []).filter(
-                                (item) => item.category_id === category.id,
-                            )}
-                            members={household.members}
-                            noun="goal"
-                            onAdd={(title) =>
-                                createItem.mutate({
-                                    title,
-                                    category_id: category.id,
-                                    scope: period.scope,
-                                    period_key: period.key,
-                                })
-                            }
-                            onChange={(item, changes) =>
-                                updateItem.mutate({ id: item.id, changes })
-                            }
-                            onEdit={editItem}
-                            onDelete={(item) => deleteItem.mutate({ id: item.id })}
-                        />
-                    </div>
-                ))}
-            </div>
         </>
     );
 }

@@ -10,6 +10,7 @@ import {
     type Item,
     type ItemChanges,
 } from '@/api/items';
+import { useImportantDates } from '@/api/planning';
 import { fetchCategories } from '@/api/session';
 import CategoryBox from '@/components/CategoryBox';
 import {
@@ -52,7 +53,8 @@ export default function DayPage({ period }: { period: Period }) {
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
     const deleteItem = useDeleteItem();
-    const checkHabit = useCheckHabit(date);
+    const checkHabit = useCheckHabit();
+    const importantDates = useImportantDates(date, date);
 
     const change = (item: Item, changes: ItemChanges) =>
         updateItem.mutate({ id: item.id, changes });
@@ -89,6 +91,15 @@ export default function DayPage({ period }: { period: Period }) {
                                           : 'of today’s list done'}
                                 </span>
                             </div>
+                            {(importantDates.data ?? []).length > 0 && (
+                                <ul className="date-chips" aria-label="Important dates">
+                                    {importantDates.data!.map((entry) => (
+                                        <li key={entry.id} className="month-day-chip">
+                                            {entry.title}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                             <JournalCard date={date} />
                             <OverdueStrip
                                 items={overdue.data ?? []}
@@ -156,7 +167,7 @@ export default function DayPage({ period }: { period: Period }) {
                                 onChange={change}
                                 onEdit={editItem}
                                 onCheckHabit={(habit, done) =>
-                                    checkHabit.mutate({ id: habit.id, done })
+                                    checkHabit.mutate({ id: habit.id, date, done })
                                 }
                             />
                             <MealPlan date={date} />

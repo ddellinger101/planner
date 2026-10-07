@@ -92,6 +92,9 @@ export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/weight': { body: [] },
     'GET /api/habits': { body: [] },
     'GET /api/meals': { body: [] },
+    'GET /api/important-dates': { body: [] },
+    'GET /api/items/summary': { body: [] },
+    'GET /api/weight/goals': { body: [] },
 });
 
 export function renderApp(path = '/') {
