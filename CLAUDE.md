@@ -107,6 +107,13 @@ npm run build
 - "Both people" is a null user id: `items.assignee_user_id` and `rewards.beneficiary_user_id`.
 - Weight and journal entries are per person; everything else is shared by the household.
 - Categories are seeded by a migration, so `migrate` alone sets up production.
+- A repeating task is a series of ordinary items (`app/Services/RecurrenceService.php`). The
+  first occurrence holds the RRULE and has no `recurrence_parent_id`; the rest point at it.
+  `recurrence_date` is the date the rule produced an occurrence for and never changes, which is
+  what stops a moved or deleted occurrence from being generated again. Occurrences exist 60
+  days ahead, topped up by a daily scheduled job and whenever items are listed.
+- On the Day view, tasks with a `routine` appear in the routine checklists and not in the
+  category boxes. Every item editor goes through `ItemSheet`, opened with `useItemEditor()`.
 - Controllers return models directly. Dates serialize as `YYYY-MM-DD`, item times as `HH:MM`.
 - Tests run on SQLite locally; CI runs them again on MariaDB, which is what production uses.
 

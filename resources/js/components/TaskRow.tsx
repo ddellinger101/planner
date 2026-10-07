@@ -1,16 +1,31 @@
 import { Clock, Repeat, Star, Trash2 } from 'lucide-react';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties, type DragEvent } from 'react';
 import type { Item, ItemChanges } from '@/api/items';
 import type { Member } from '@/api/session';
 import { formatTime } from '@/lib/periodLabels';
 import Burst from './Burst';
+
+/** The drag-and-drop payload type for a task being dragged to a new time or day. */
+export const ITEM_DRAG_TYPE = 'application/x-planner-item';
 
 type Props = {
     item: Item;
     /** Who the item is assigned to, shown when the household has two people. */
     assignee?: Member;
     onChange: (changes: ItemChanges) => void;
-    onDelete: () => void;
+    /** Open the full editor. Without it, the title is plain text. */
+    onEdit?: () => void;
+    /** Without it, there is no delete button on the row. */
+    onDelete?: () => void;
+    /** Leave out the star and badges, for tight spots like the timeline. */
+    compact?: boolean;
+    /**
+     * The category color, for a row that isn't already inside a `.cat`
+     * element (a list that mixes categories, such as the timeline).
+     */
+    color?: string;
+    className?: string;
+    style?: CSSProperties;
 };
 
 /** Briefly true after `trigger()`, to play a one-off animation. */
@@ -31,10 +46,20 @@ function useFlash(duration: number): [boolean, () => void] {
 }
 
 /**
- * One checkable task or goal. It must sit inside a `.cat` element, which
- * supplies the category color.
+ * One checkable task or goal. Its color comes from the `.cat` element it
+ * sits in, or from the `color` prop.
  */
-export default function TaskRow({ item, assignee, onChange, onDelete }: Props) {
+export default function TaskRow({
+    item,
+    assignee,
+    onChange,
+    onEdit,
+    onDelete,
+    compact,
+    color,
+    className = '',
+    style,
+}: Props) {
     const done = item.status === 'done';
     const [justChecked, flashCheck] = useFlash(700);
     const [justStarred, flashStar] = useFlash(450);
@@ -57,8 +82,18 @@ export default function TaskRow({ item, assignee, onChange, onDelete }: Props) {
         onChange({ starred: !item.starred });
     };
 
+    const startDrag = (event: DragEvent) => {
+        event.dataTransfer.setData(ITEM_DRAG_TYPE, String(item.id));
+        event.dataTransfer.effectAllowed = 'move';
+    };
+
     return (
-        <li className={`task-row${done ? ' is-done' : ''}`}>
+        <li
+            className={`task-row${done ? ' is-done' : ''}${compact ? ' is-compact' : ''}${color ? ' cat' : ''} ${className}`.trim()}
+            style={color ? ({ '--cat': color, ...style } as CSSProperties) : style}
+            draggable={item.scope === 'day'}
+            onDragStart={startDrag}
+        >
             <button
                 type="button"
                 role="checkbox"
@@ -86,14 +121,28 @@ export default function TaskRow({ item, assignee, onChange, onDelete }: Props) {
             </button>
 
             <div className="task-body">
-                <span className="task-title">{item.title}</span>
-                {item.due_time && (
+                {compact && item.due_time && (
+                    <span className="task-time">{formatTime(item.due_time)}</span>
+                )}
+                {onEdit ? (
+                    <button
+                        type="button"
+                        className="task-title task-title-button"
+                        aria-label={`Edit ${item.title}`}
+                        onClick={onEdit}
+                    >
+                        {item.title}
+                    </button>
+                ) : (
+                    <span className="task-title">{item.title}</span>
+                )}
+                {!compact && item.due_time && (
                     <span className="task-badge">
                         <Clock aria-hidden="true" size={12} />
                         {formatTime(item.due_time)}
                     </span>
                 )}
-                {item.recurrence_rule && (
+                {!compact && item.recurrence_rule && (
                     <span className="task-badge" title="Repeats">
                         <Repeat aria-hidden="true" size={12} />
                         <span className="visually-hidden">Repeats</span>
@@ -111,23 +160,27 @@ export default function TaskRow({ item, assignee, onChange, onDelete }: Props) {
                 )}
             </div>
 
-            <button
-                type="button"
-                className="icon-button task-delete"
-                aria-label={`Delete ${item.title}`}
-                onClick={onDelete}
-            >
-                <Trash2 aria-hidden="true" size={17} />
-            </button>
-            <button
-                type="button"
-                className={`icon-button star${justStarred ? ' just-starred' : ''}`}
-                aria-pressed={item.starred}
-                aria-label={`Star ${item.title}`}
-                onClick={toggleStar}
-            >
-                <Star aria-hidden="true" size={19} />
-            </button>
+            {onDelete && (
+                <button
+                    type="button"
+                    className="icon-button task-delete"
+                    aria-label={`Delete ${item.title}`}
+                    onClick={onDelete}
+                >
+                    <Trash2 aria-hidden="true" size={17} />
+                </button>
+            )}
+            {!compact && (
+                <button
+                    type="button"
+                    className={`icon-button star${justStarred ? ' just-starred' : ''}`}
+                    aria-pressed={item.starred}
+                    aria-label={`Star ${item.title}`}
+                    onClick={toggleStar}
+                >
+                    <Star aria-hidden="true" size={19} />
+                </button>
+            )}
         </li>
     );
 }

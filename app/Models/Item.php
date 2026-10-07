@@ -40,6 +40,7 @@ class Item extends Model
             'source' => ItemSource::class,
             'sync_state' => SyncState::class,
             'due_date' => 'date:Y-m-d',
+            'recurrence_date' => 'date:Y-m-d',
             'starred' => 'boolean',
             'completed_at' => 'datetime',
             'google_updated_at' => 'datetime',

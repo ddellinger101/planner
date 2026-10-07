@@ -1,0 +1,479 @@
+// The Day view, and the task-row and form pieces that arrived with it.
+
+.task-title-button {
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    border: 0;
+
+    &:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 0.2em;
+    }
+}
+
+.task-time {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.task-row.is-compact {
+    .check {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+
+    .check-box {
+        width: 1.3rem;
+        height: 1.3rem;
+        border-radius: 0.4rem;
+    }
+
+    .task-body {
+        padding: 0.2rem 0;
+        font-size: 0.92rem;
+    }
+}
+
+.task-row[draggable='true'] {
+    cursor: grab;
+}
+
+// Habits use a round box, to tell them apart from one-off tasks.
+.check-box.is-round {
+    border-radius: 50%;
+}
+
+.task-delete-always:hover {
+    color: var(--danger);
+}
+
+.button-plain.is-small {
+    min-height: 2.1rem;
+    padding: 0 0.7rem;
+    font-size: 0.8rem;
+}
+
+.day-toggle {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--ink);
+    background: none;
+    border: 1.5px solid var(--line-soft);
+    border-radius: 50%;
+
+    &[aria-pressed='true'] {
+        color: var(--paper);
+        background: var(--ink);
+        border-color: var(--ink);
+    }
+}
+
+.interval-input {
+    width: 4rem;
+    min-height: 2.25rem;
+    padding: 0.2rem 0.5rem;
+}
+
+// One column on phones, in reading order. Two on tablets, three on desktop,
+// with the schedule running the full height of its column.
+.day-grid {
+    display: grid;
+    grid-template-areas:
+        'journal'
+        'boxes'
+        'timeline'
+        'side';
+    gap: 1rem;
+    align-items: start;
+
+    @include media-breakpoint-up(md) {
+        grid-template-areas:
+            'journal timeline'
+            'boxes timeline'
+            'side timeline';
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    @include media-breakpoint-up(xl) {
+        grid-template-areas:
+            'journal boxes timeline'
+            'side boxes timeline';
+        grid-template-rows: auto 1fr;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 4fr);
+    }
+}
+
+.day-journal,
+.day-boxes,
+.day-side {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    min-width: 0;
+}
+
+.day-journal {
+    grid-area: journal;
+}
+
+.day-boxes {
+    grid-area: boxes;
+}
+
+.day-timeline {
+    grid-area: timeline;
+    min-width: 0;
+}
+
+.day-side {
+    grid-area: side;
+}
+
+.day-progress {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.progress-ring {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+
+    svg {
+        position: absolute;
+        inset: 0;
+    }
+
+    circle {
+        fill: none;
+        stroke-width: 4;
+    }
+}
+
+.progress-ring-track {
+    stroke: var(--line-soft);
+}
+
+.progress-ring-value {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.4s ease;
+}
+
+.journal-card {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.9rem;
+}
+
+.journal-line {
+    display: grid;
+    gap: 0.1rem;
+
+    label {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        line-height: 1.2;
+
+        svg {
+            color: var(--accent);
+        }
+    }
+}
+
+.journal-field {
+    display: flex;
+    gap: 0.4rem;
+    align-items: baseline;
+
+    input {
+        flex: 1;
+        min-width: 0;
+        min-height: 2.4rem;
+        padding: 0 0.1rem;
+        color: var(--ink);
+        background: none;
+        border: 0;
+        // A ruled line to write on.
+        border-bottom: 1.5px dashed var(--line-soft);
+        border-radius: 0;
+
+        &:focus {
+            outline: none;
+            border-bottom-color: var(--accent);
+        }
+
+        &[type='number'] {
+            flex: 0 0 4.5rem;
+        }
+    }
+}
+
+.journal-hint {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+}
+
+.weight-entry {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0 0.9rem 0.4rem;
+    font-size: 0.9rem;
+
+    label {
+        display: inline-flex;
+        gap: 0.35rem;
+        align-items: center;
+        font-weight: 700;
+        color: var(--ink-soft);
+    }
+
+    input {
+        width: 5rem;
+        min-height: 2.25rem;
+        padding: 0 0.4rem;
+        color: var(--ink);
+        text-align: right;
+        background: none;
+        border: 0;
+        border-bottom: 1.5px dashed var(--cat-strong);
+        border-radius: 0;
+
+        &:focus {
+            outline: none;
+            border-bottom-style: solid;
+        }
+    }
+}
+
+.timeline {
+    padding: 0.9rem 0.9rem 1.1rem;
+}
+
+.timeline-heading,
+.routine-heading {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0 0 0.5rem;
+
+    svg {
+        color: var(--accent);
+    }
+}
+
+.timeline-anytime {
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    border: 1.5px dashed var(--line-soft);
+    border-radius: 0.7rem;
+
+    &.is-drop-target {
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+        border-color: var(--accent);
+    }
+
+    .task-row + .task-row {
+        border-top: 0;
+    }
+}
+
+.timeline-hours {
+    position: relative;
+    // Room on the left for the hour labels.
+    margin-left: 3.2rem;
+}
+
+.timeline-hour {
+    position: relative;
+    border-top: 1px solid var(--line-soft);
+
+    &.is-drop-target {
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+}
+
+.timeline-hour-label {
+    position: absolute;
+    top: -0.6rem;
+    left: -3.2rem;
+    width: 2.8rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-align: right;
+}
+
+.timeline-now {
+    position: absolute;
+    right: 0;
+    left: -0.4rem;
+    z-index: 2;
+    height: 0;
+    pointer-events: none;
+    border-top: 2px solid var(--danger);
+
+    &::before {
+        position: absolute;
+        top: -5px;
+        left: -4px;
+        width: 8px;
+        height: 8px;
+        content: '';
+        background: var(--danger);
+        border-radius: 50%;
+    }
+}
+
+.timeline-blocks {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    // Drops fall through to the hours underneath.
+    pointer-events: none;
+}
+
+.timeline-block {
+    position: absolute;
+    align-items: flex-start;
+    padding: 0 0.15rem;
+    overflow: hidden;
+    pointer-events: auto;
+    background: color-mix(in srgb, var(--cat) 22%, var(--card));
+    border: 1px solid var(--card);
+    border-left: 4px solid var(--cat-strong);
+    border-radius: 0.5rem;
+
+    & + & {
+        border-top: 1px solid var(--card);
+    }
+
+    // A half-hour block is one short line: keep everything on it.
+    .check {
+        width: 1.9rem;
+        height: 1.9rem;
+    }
+
+    .task-body {
+        flex-wrap: nowrap;
+        padding: 0.3rem 0;
+    }
+
+    .task-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.routine-card,
+.side-card {
+    padding: 0.8rem 0.35rem 0.35rem;
+
+    .routine-heading,
+    > .d-flex,
+    > p,
+    > dl {
+        padding-right: 0.55rem;
+        padding-left: 0.55rem;
+    }
+}
+
+.side-card {
+    padding-bottom: 0.8rem;
+}
+
+.meal-list {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0 0 0.4rem;
+
+    > div {
+        display: grid;
+        grid-template-columns: 5.5rem 1fr;
+        gap: 0.5rem;
+    }
+
+    dt {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--ink-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    dd {
+        display: grid;
+        margin: 0;
+    }
+}
+
+.overdue {
+    padding: 0.3rem 0.5rem;
+}
+
+.overdue-toggle {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.3rem;
+    font-size: 1.2rem;
+    color: var(--ink);
+    background: none;
+    border: 0;
+
+    svg {
+        transition: transform 0.15s ease;
+
+        &.is-closed {
+            transform: rotate(-90deg);
+        }
+    }
+}
+
+.overdue-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.5rem 0.3rem;
+        border-top: 1px dashed var(--line-soft);
+    }
+}
+
+.overdue-title {
+    display: grid;
+    overflow-wrap: anywhere;
+}
+
+.overdue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}

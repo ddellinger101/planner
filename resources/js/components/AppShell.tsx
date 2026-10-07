@@ -14,14 +14,16 @@ import {
     Target,
     type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
+import type { Item } from '@/api/items';
 import { todayPeriod, type Scope } from '@/lib/period';
 import { relatedPeriod, SCOPE_NAMES, SCOPES } from '@/lib/periodLabels';
 import { useCurrentPeriod, useToday } from '@/lib/useCurrentPeriod';
+import { ItemEditorProvider } from '@/context/ItemEditorContext';
 import { useSession } from '@/context/SessionContext';
 import { periodPath } from './PeriodNav';
-import QuickAdd from './QuickAdd';
+import ItemSheet, { type SheetTarget } from './ItemSheet';
 
 const SCOPE_ICONS: Record<Scope, LucideIcon> = {
     day: Sun,
@@ -69,7 +71,12 @@ export default function AppShell() {
     const { pathname } = useLocation();
     const current = useCurrentPeriod();
     const today = useToday();
-    const [adding, setAdding] = useState(false);
+    const [sheet, setSheet] = useState<SheetTarget | null>(null);
+    const closeSheet = useCallback(() => setSheet(null), []);
+    const editor = useMemo(
+        () => ({ editItem: (item: Item) => setSheet({ kind: 'edit', item }) }),
+        [],
+    );
 
     // Switching between Day, Week, Month… keeps you near what you were looking at.
     const scopeLinks = SCOPES.map((scope) => ({
@@ -102,21 +109,30 @@ export default function AppShell() {
                 ))}
             </nav>
 
-            <Outlet />
+            <ItemEditorProvider value={editor}>
+                <Outlet />
+            </ItemEditorProvider>
 
             <button
                 type="button"
                 className="fab"
                 aria-label="Quick add"
-                onClick={() => setAdding(true)}
+                onClick={() =>
+                    setSheet({
+                        kind: 'create',
+                        defaultPeriod: current ?? todayPeriod('day', user.timezone),
+                    })
+                }
             >
                 <Plus aria-hidden="true" size={26} />
             </button>
 
-            {adding && (
-                <QuickAdd
-                    defaultPeriod={current ?? todayPeriod('day', user.timezone)}
-                    onClose={() => setAdding(false)}
+            {sheet && (
+                <ItemSheet
+                    // A fresh form for each thing opened.
+                    key={sheet.kind === 'edit' ? sheet.item.id : 'create'}
+                    target={sheet}
+                    onClose={closeSheet}
                 />
             )}
 

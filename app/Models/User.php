@@ -11,7 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['household_id', 'name', 'email', 'email_verified_at', 'avatar_url', 'color', 'timezone', 'notification_preferences'])]
+#[Fillable([
+    'household_id', 'name', 'email', 'email_verified_at', 'avatar_url', 'color', 'timezone',
+    'notification_preferences', 'day_start_hour', 'day_end_hour',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -21,6 +24,8 @@ class User extends Authenticatable
     protected $attributes = [
         'color' => '#2f8f83',
         'timezone' => 'America/New_York',
+        'day_start_hour' => 6,
+        'day_end_hour' => 23,
     ];
 
     /**

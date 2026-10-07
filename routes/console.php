@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Services\RecurrenceService;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Keep recurring tasks generated 60 days ahead. Opening the app tops them up
+// too, so a missed run only delays things until the next visit.
+Schedule::call(fn (RecurrenceService $recurrence) => $recurrence->generateAll())
+    ->name('recurrence:generate')
+    ->dailyAt('03:15');

@@ -10,7 +10,13 @@ export const dustin = { id: 1, name: 'Dustin', avatar_url: null, color: '#3b7dd8
 export const elizabeth = { id: 2, name: 'Elizabeth', avatar_url: null, color: '#e8677a' };
 
 export const session: Session = {
-    user: { ...dustin, email: 'dustin@example.com', timezone: 'America/New_York' },
+    user: {
+        ...dustin,
+        email: 'dustin@example.com',
+        timezone: 'America/New_York',
+        day_start_hour: 6,
+        day_end_hour: 23,
+    },
     household: { id: 1, name: 'Our Planner', members: [dustin, elizabeth] },
 };
 
@@ -30,10 +36,12 @@ export function makeItem(overrides: Partial<Item> = {}): Item {
         period_key: '2027-01-04',
         due_date: '2027-01-04',
         due_time: null,
+        duration_minutes: null,
         starred: false,
         status: 'open',
         routine: null,
         recurrence_rule: null,
+        recurrence_parent_id: null,
         sort: 0,
         created_by: 1,
         assignee_user_id: 1,
@@ -74,11 +82,16 @@ export function mockApi(routes: Record<string, Handler>) {
     return { fetchMock, calls };
 }
 
-/** The routes every signed-in page needs. */
+/** The routes every signed-in page needs, with an empty day by default. */
 export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/me': { body: session },
     'GET /api/categories': { body: categories },
     'GET /api/items': { body: items },
+    'GET /api/items/overdue': { body: [] },
+    'GET /api/journal': { body: [] },
+    'GET /api/weight': { body: [] },
+    'GET /api/habits': { body: [] },
+    'GET /api/meals': { body: [] },
 });
 
 export function renderApp(path = '/') {

@@ -8,7 +8,13 @@ export type Member = {
 };
 
 export type Session = {
-    user: Member & { email: string; timezone: string };
+    user: Member & {
+        email: string;
+        timezone: string;
+        /** The hours the Day view's timeline covers; 24 means midnight. */
+        day_start_hour: number;
+        day_end_hour: number;
+    };
     household: { id: number; name: string; members: Member[] };
 };
 
@@ -32,6 +38,10 @@ export async function fetchSession(): Promise<Session | null> {
         throw error;
     }
 }
+
+export const updateProfile = (
+    changes: Partial<Pick<Session['user'], 'color' | 'day_start_hour' | 'day_end_hour'>>,
+) => api<Session>('/api/me', { method: 'PATCH', body: changes });
 
 export const fetchCategories = () => api<Category[]>('/api/categories');
 

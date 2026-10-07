@@ -7,7 +7,9 @@ use App\Enums\Scope;
 use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Rules\PeriodKey;
+use App\Services\RecurrenceService;
 use App\Support\Period;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class ItemController extends Controller
 {
+    public function __construct(private RecurrenceService $recurrence) {}
+
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
@@ -27,20 +31,47 @@ class ItemController extends Controller
             'person' => ['integer'],
         ]);
 
+        // Recurring tasks are generated ahead of time; top them up as far as
+        // the dates being asked for.
+        $this->recurrence->ensureGenerated($request->user(), $filters['to'] ?? (
+            isset($filters['period_key']) ? Period::parse($filters['period_key'])->end()->toDateString() : null
+        ));
+
         $items = Item::query()
             ->when($filters['scope'] ?? null, fn ($q, $scope) => $q->where('scope', $scope))
             ->when($filters['period_key'] ?? null, fn ($q, $key) => $q->where('period_key', $key))
             ->when($filters['from'] ?? null, fn ($q, $from) => $q->whereDate('due_date', '>=', $from))
             ->when($filters['to'] ?? null, fn ($q, $to) => $q->whereDate('due_date', '<=', $to))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
-            // A person sees their own items and the ones that belong to both.
-            ->when($filters['person'] ?? null, fn ($q, $person) => $q->where(
-                fn ($q) => $q->where('assignee_user_id', $person)->orWhereNull('assignee_user_id'),
-            ))
+            ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
             ->orderByDesc('starred')
             ->orderBy('sort')
             ->orderBy('id')
             ->get();
+
+        return response()->json($items);
+    }
+
+    /** Open day tasks from before the given date, newest first. */
+    public function overdue(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'before' => ['required', 'date_format:Y-m-d'],
+            'person' => ['integer'],
+        ]);
+
+        $items = Item::query()
+            ->where('scope', Scope::Day)
+            ->where('status', ItemStatus::Open)
+            ->whereDate('due_date', '<', $filters['before'])
+            ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
+            ->orderByDesc('due_date')
+            ->orderBy('id')
+            ->get()
+            // A missed daily task would otherwise show up once per day
+            // missed; only its most recent occurrence is worth showing.
+            ->unique(fn (Item $item) => $item->recurrence_parent_id ?? $item->id)
+            ->values();
 
         return response()->json($items);
     }
@@ -57,6 +88,10 @@ class ItemController extends Controller
 
         $item = Item::create([...$data, 'created_by' => $request->user()->id]);
 
+        if ($item->recurrence_rule) {
+            $this->recurrence->start($item, $request->user());
+        }
+
         return response()->json($item->refresh(), 201);
     }
 
@@ -67,16 +102,37 @@ class ItemController extends Controller
 
     public function update(Request $request, Item $item): JsonResponse
     {
-        $item->update($this->validated($request, $item));
+        $item = $this->recurrence->update(
+            $item,
+            $this->validated($request, $item),
+            $this->applyTo($request),
+            $request->user(),
+        );
 
         return response()->json($item->refresh());
     }
 
-    public function destroy(Item $item): Response
+    public function destroy(Request $request, Item $item): Response
     {
-        $item->delete();
+        $this->recurrence->delete($item, $this->applyTo($request));
 
         return response()->noContent();
+    }
+
+    /** A person sees their own items and the ones that belong to both. */
+    private function forPerson($query, ?int $person): void
+    {
+        if ($person !== null) {
+            $query->where(fn ($q) => $q->where('assignee_user_id', $person)->orWhereNull('assignee_user_id'));
+        }
+    }
+
+    /** How far a change to a recurring task reaches. */
+    private function applyTo(Request $request): string
+    {
+        return $request->validate([
+            'apply_to' => [Rule::in(['one', 'following', 'all'])],
+        ])['apply_to'] ?? 'one';
     }
 
     /** @return array<string, mixed> */
@@ -93,11 +149,18 @@ class ItemController extends Controller
             'period_key' => [$required, new PeriodKey],
             'due_date' => ['nullable', 'date_format:Y-m-d'],
             'due_time' => ['nullable', 'date_format:H:i'],
-            'duration_minutes' => ['nullable', 'integer', 'between:1,1440'],
+            'duration_minutes' => ['nullable', 'integer', 'between:5,1440'],
             'starred' => ['boolean'],
             'status' => [Rule::enum(ItemStatus::class)],
             'routine' => ['nullable', Rule::in(['morning', 'evening'])],
-            'recurrence_rule' => ['nullable', 'string', 'max:255'],
+            'recurrence_rule' => [
+                'nullable', 'string', 'max:255',
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (! RecurrenceService::isValidRule($value)) {
+                        $fail('The :attribute is not a valid recurrence rule.');
+                    }
+                },
+            ],
             'sort' => ['integer', 'min:0'],
             'assignee_user_id' => [
                 'nullable', 'integer',
@@ -117,6 +180,12 @@ class ItemController extends Controller
         if ($period->scope->value !== $scope) {
             throw ValidationException::withMessages([
                 'period_key' => "The period key must be a {$scope} period.",
+            ]);
+        }
+
+        if ($period->scope !== Scope::Day && ($data['recurrence_rule'] ?? null) !== null) {
+            throw ValidationException::withMessages([
+                'recurrence_rule' => 'Only day tasks can repeat.',
             ]);
         }
 
