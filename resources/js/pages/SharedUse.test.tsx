@@ -179,6 +179,56 @@ describe('the person filter', () => {
         );
     });
 
+    it('marks tasks and events with whose they are in the Both view only', async () => {
+        mockApi({
+            ...signedIn([makeItem({ id: 7, title: 'Morning run', assignee_user_id: 1 })]),
+            'GET /api/events': {
+                body: [
+                    {
+                        id: 3,
+                        google_event_id: 'g3',
+                        title: 'Dentist',
+                        location: null,
+                        all_day: true,
+                        starts_at: null,
+                        ends_at: null,
+                        starts_on: '2027-01-04',
+                        ends_on: '2027-01-04',
+                        owner_user_id: 2,
+                        editable: true,
+                        repeats: false,
+                        color: null,
+                        calendar_name: null,
+                        html_link: null,
+                    },
+                ],
+            },
+        });
+
+        renderApp('/day/2027-01-04');
+        const health = within(await region('Health'));
+        const events = within(await region('Events'));
+
+        // Default: no initials.
+        await health.findByRole('checkbox', { name: 'Morning run' });
+        expect(health.queryByText('Assigned to Dustin')).not.toBeInTheDocument();
+        expect(await events.findByRole('button', { name: 'Dentist, All day' })).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: 'Both' }));
+
+        expect(await health.findByText('Assigned to Dustin')).toBeInTheDocument();
+        expect(
+            await events.findByRole('button', { name: 'Dentist, All day, Elizabeth' }),
+        ).toBeInTheDocument();
+
+        // One person's view: it is all theirs, so no initials again.
+        await userEvent.click(screen.getByRole('button', { name: 'Dustin' }));
+
+        await waitFor(() =>
+            expect(health.queryByText('Assigned to Dustin')).not.toBeInTheDocument(),
+        );
+    });
+
     it('narrows the rewards to one person’s and the ones for both', async () => {
         const reward = (id: number, title: string, beneficiary: number | null): Reward => ({
             id,

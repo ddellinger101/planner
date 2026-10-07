@@ -29,6 +29,7 @@ import RadialTracker from '@/components/habits/RadialTracker';
 import PageHeader from '@/components/PageHeader';
 import { RoutineGrid } from '@/components/period/WeekExtras';
 import { useItemEditor } from '@/context/ItemEditorContext';
+import { useShowsOwners } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 import { nextPeriod, periodFromDate, previousPeriod, type Period } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
@@ -203,8 +204,10 @@ function RoutineEditor({
     const { household } = useSession();
     const colorOf = (habit: Habit) =>
         habit.color ?? categories.find((category) => category.id === habit.category_id)?.color;
+    // Habits here are always your own, so whose they are only matters in the Both view.
+    const showsOwners = useShowsOwners();
     const ownerOf = (habit: Habit) =>
-        household.members.length > 1
+        showsOwners && household.members.length > 1
             ? household.members.find((member) => member.id === habit.user_id)
             : undefined;
 

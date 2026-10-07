@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { eventTimeLabel, type CalendarEvent } from '@/api/events';
 import { useEventEditor } from '@/context/EventEditorContext';
+import { useShowsOwners } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 
 type Props = {
@@ -15,9 +16,10 @@ type Props = {
 export default function EventChip({ event, day, className = '', style }: Props) {
     const { user, household } = useSession();
     const { openEvent } = useEventEditor();
-    // With two people in the planner, each event says whose it is.
+    // In the Both view, where two people's events are mixed, each says whose it is.
+    const showsOwners = useShowsOwners();
     const owner =
-        household.members.length > 1
+        showsOwners && household.members.length > 1
             ? household.members.find((member) => member.id === event.owner_user_id)
             : undefined;
     const time = eventTimeLabel(event, day, user.timezone);

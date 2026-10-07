@@ -128,11 +128,9 @@ describe('the day’s events', () => {
         const events = within(await region('Events'));
 
         expect(
-            await events.findByRole('button', { name: 'Dentist, 2:00 PM – 3:00 PM, Dustin' }),
+            await events.findByRole('button', { name: 'Dentist, 2:00 PM – 3:00 PM' }),
         ).toBeInTheDocument();
-        expect(
-            events.getByRole('button', { name: 'Conference, All day, Dustin' }),
-        ).toBeInTheDocument();
+        expect(events.getByRole('button', { name: 'Conference, All day' })).toBeInTheDocument();
 
         const schedule = within(screen.getByRole('list', { name: 'Timed tasks and events' }));
         expect(schedule.getByRole('button', { name: /Dentist/ })).toBeInTheDocument();

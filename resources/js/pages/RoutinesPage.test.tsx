@@ -41,6 +41,8 @@ const region = (name: string | RegExp) => screen.findByRole('region', { name });
 
 describe('routine editors', () => {
     it('lists each routine’s habits with how they are going', async () => {
+        // Whose a habit is gets said only in the Both view.
+        window.localStorage.setItem('planner.person', 'both');
         mockApi({
             ...signedIn(),
             'GET /api/habits': { body: habits },
