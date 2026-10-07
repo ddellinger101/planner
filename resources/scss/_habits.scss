@@ -1,0 +1,163 @@
+// Routines & Habits: the routine editors and the habit wheel.
+
+.routine-editor {
+    padding: 0.9rem;
+}
+
+.habit-list {
+    padding: 0;
+    margin: 0 0 0.75rem;
+    list-style: none;
+
+    li {
+        display: flex;
+        gap: 0.15rem;
+        align-items: center;
+        min-height: 3rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px dashed var(--line-soft);
+
+        > .radial-swatch,
+        > svg {
+            flex: none;
+            margin-right: 0.45rem;
+        }
+    }
+}
+
+.habit-list-body {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.habit-list-title {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.habit-list-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.7rem;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+}
+
+.habit-streak {
+    display: inline-flex;
+    gap: 0.15rem;
+    align-items: center;
+    font-weight: 800;
+    color: var(--ink);
+
+    svg {
+        color: var(--star);
+    }
+}
+
+.button-ink.is-danger {
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+.tracker-heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    align-items: center;
+    justify-content: space-between;
+
+    .section-heading {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.tracker-stepper {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+// The wheel sits beside its legend on wide screens and above it on narrow ones.
+.radial-tracker {
+    display: grid;
+    gap: 1rem 2rem;
+    align-items: center;
+
+    @include media-breakpoint-up(md) {
+        grid-template-columns: minmax(0, 22rem) 1fr;
+    }
+
+    svg {
+        width: 100%;
+        max-width: 22rem;
+        height: auto;
+        margin: 0 auto;
+    }
+}
+
+.radial-segment {
+    fill: var(--line-soft);
+
+    &.is-future {
+        opacity: 0.45;
+    }
+
+    &.is-done {
+        fill: var(--cat-strong);
+    }
+}
+
+.radial-day {
+    font-size: 9px;
+    font-weight: 700;
+    fill: var(--ink-soft);
+
+    &.is-today {
+        font-weight: 800;
+        fill: var(--ink);
+    }
+}
+
+.radial-month {
+    font-family: var(--font-display);
+    font-size: 26px;
+    text-transform: uppercase;
+    fill: var(--ink);
+}
+
+.radial-legend {
+    display: grid;
+    gap: 0.4rem;
+    width: 100%;
+    max-width: 26rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.6rem;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+}
+
+.radial-legend-title {
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.radial-swatch {
+    width: 0.85rem;
+    height: 0.85rem;
+    background: var(--cat-strong);
+    border-radius: 0.25rem;
+}

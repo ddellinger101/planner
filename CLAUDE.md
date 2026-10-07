@@ -118,6 +118,10 @@ npm run build
   period, even with items left open.
 - A week goal pulled from a month goal, and a day task placed from a week goal, point at their
   source with `parent_item_id`. Finishing one offers to finish the source (`ParentPrompt`).
+- Habit streaks and 30-day completion are computed in `app/Support/HabitStats.php`: daily
+  habits streak in days, habits with a weekly target in weeks that met it, and a day or week
+  still under way never breaks a streak. The `habits` query key holds both lists of habits and
+  the stats object, so cache updaters must check `Array.isArray` before mapping.
 - An important date that repeats yearly is stored once; the API returns it with `occurs_on`
   for each year in the range asked for.
 - Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the

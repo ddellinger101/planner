@@ -12,6 +12,7 @@ import MonthCalendar, { calendarDays } from '@/components/period/MonthCalendar';
 import { BestPart, CategoryProgress, CompletionBar } from '@/components/period/Summaries';
 import { RoutineGrid, WeekMeals } from '@/components/period/WeekExtras';
 import WeekStrip from '@/components/period/WeekStrip';
+import { MonthHabits } from '@/pages/RoutinesPage';
 import { useItemEditor } from '@/context/ItemEditorContext';
 import { useReview } from '@/context/PlannerContexts';
 import { usePersonFilter } from '@/context/PersonFilterContext';
@@ -194,6 +195,9 @@ export function MonthPage({ period }: { period: Period }) {
                     />
                 </div>
             </div>
+
+            <SectionHeading>Habits</SectionHeading>
+            <MonthHabits month={period} />
         </>
     );
 }

@@ -8,13 +8,13 @@ import { SessionProvider } from './context/SessionContext';
 import { SCOPES } from './lib/periodLabels';
 import PeriodPage from './pages/PeriodPage';
 import PlanWeekPage from './pages/PlanWeekPage';
+import RoutinesPage from './pages/RoutinesPage';
 import SignIn, { WelcomeCard } from './pages/SignIn';
 import {
     BrainDumpPage,
     MorePage,
     NotFoundPage,
     RewardsPage,
-    RoutinesPage,
     SettingsPage,
     WeightPage,
 } from './pages/SimplePages';

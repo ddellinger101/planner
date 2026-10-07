@@ -82,6 +82,10 @@ export type Habit = {
     icon: string | null;
     color: string | null;
     routine: 'morning' | 'evening' | 'anytime';
+    /** 7 means every day; anything lower is that many times a week. */
+    target_per_week: number;
+    active_from: string;
+    active_to: string | null;
     checks: { date: string; done: boolean }[];
 };
 
@@ -108,8 +112,13 @@ export function useCheckHabit() {
         onMutate: async ({ id, date, done }) => {
             await queryClient.cancelQueries({ queryKey: ['habits'] });
 
-            queryClient.setQueriesData<Habit[]>({ queryKey: ['habits'] }, (habits) =>
-                habits?.map((habit) => {
+            queryClient.setQueriesData<Habit[]>({ queryKey: ['habits'] }, (habits) => {
+                // The streak figures are cached under the same key and aren't a list.
+                if (!Array.isArray(habits)) {
+                    return habits;
+                }
+
+                return habits.map((habit) => {
                     if (habit.id !== id) {
                         return habit;
                     }
@@ -117,8 +126,8 @@ export function useCheckHabit() {
                     const others = habit.checks.filter((check) => check.date !== date);
 
                     return { ...habit, checks: done ? [...others, { date, done: true }] : others };
-                }),
-            );
+                });
+            });
         },
         onSettled: () => queryClient.invalidateQueries({ queryKey: ['habits'] }),
     });

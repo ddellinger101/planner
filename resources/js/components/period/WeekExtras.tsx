@@ -73,6 +73,7 @@ type GridProps = {
     categories: Category[];
     onChange: (item: Item, changes: ItemChanges) => void;
     onCheckHabit: (habit: Habit, date: string, done: boolean) => void;
+    title?: string;
 };
 
 type Row = {
@@ -94,6 +95,7 @@ export function RoutineGrid({
     categories,
     onChange,
     onCheckHabit,
+    title = 'Routines this week',
 }: GridProps) {
     const days = childPeriods(week);
     const colorOf = (categoryId: number | null) =>
@@ -140,7 +142,7 @@ export function RoutineGrid({
         <section className="planner-card p-3 h-100" aria-labelledby="routine-grid">
             <h2 id="routine-grid" className="font-display h4 routine-heading">
                 <Sunrise aria-hidden="true" size={20} />
-                Routines this week
+                {title}
             </h2>
             {rows.length === 0 ? (
                 <p className="text-soft small mb-0">
