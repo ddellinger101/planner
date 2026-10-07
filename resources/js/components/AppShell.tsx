@@ -27,6 +27,7 @@ import { useSession } from '@/context/SessionContext';
 import { periodPath } from './PeriodNav';
 import ItemSheet, { type SheetTarget } from './ItemSheet';
 import ParentPrompt from './review/ParentPrompt';
+import RewardToast from './rewards/RewardToast';
 import ReviewSheet from './review/ReviewSheet';
 
 const PROMPTED_KEY = 'planner.review.prompted';
@@ -188,6 +189,8 @@ export default function AppShell() {
                             onClose={closeParentPrompt}
                         />
                     )}
+
+                    <RewardToast />
 
                     {sheet && (
                         <ItemSheet

@@ -1,0 +1,307 @@
+// The Weight page's chart and figures, and the Rewards page.
+
+:root {
+    // The chart's one series color, checked against the card surface.
+    --chart-line: #0d9488;
+}
+
+[data-bs-theme='dark'] {
+    --chart-line: #25a898;
+}
+
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.75rem;
+}
+
+.stat-tile {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.7rem 0.9rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+}
+
+// Body font, proportional figures: a big number in the display face or with
+// tabular digits reads as decoration.
+.stat-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.stat-note {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+}
+
+.weight-chart {
+    position: relative;
+
+    &.is-empty {
+        display: grid;
+        place-items: center;
+        min-height: 10rem;
+    }
+
+    svg {
+        display: block;
+        touch-action: pan-y;
+
+        &:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
+        }
+    }
+}
+
+.chart-grid {
+    stroke: var(--line-soft);
+    stroke-width: 1;
+}
+
+.chart-tick {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+.chart-area {
+    fill: var(--chart-line);
+    opacity: 0.1;
+}
+
+.chart-line {
+    fill: none;
+    stroke: var(--chart-line);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+// Each marker wears a ring of the surface color, so it stays clear of the line.
+.chart-dot {
+    fill: var(--chart-line);
+    stroke: var(--card);
+    stroke-width: 2;
+}
+
+.chart-end-label {
+    font-size: 12px;
+    font-weight: 800;
+    fill: var(--ink);
+}
+
+// A goal is a level, not data: neutral ink, drawn across its own period.
+.chart-goal {
+    stroke: var(--ink-soft);
+    stroke-width: 1.5;
+}
+
+// The halo keeps the words readable where they cross the line or a marker.
+.chart-goal-label {
+    font-size: 11px;
+    font-weight: 700;
+    paint-order: stroke;
+    fill: var(--ink-soft);
+    stroke: var(--card);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+}
+
+.chart-crosshair {
+    stroke: var(--ink-soft);
+    stroke-width: 1;
+}
+
+.chart-tooltip {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    pointer-events: none;
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+
+    strong {
+        font-size: 0.95rem;
+    }
+
+    span {
+        color: var(--ink-soft);
+    }
+}
+
+.history-table {
+    width: 100%;
+    max-width: 34rem;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: 0.3rem 0.5rem 0.3rem 0;
+        border-bottom: 1px dashed var(--line-soft);
+    }
+
+    thead th {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--ink-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    tbody th {
+        font-weight: 600;
+    }
+
+    .is-number {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+// Rewards ----------------------------------------------------------------------
+
+.reward-card {
+    display: grid;
+    gap: 0.6rem;
+    align-content: start;
+    height: 100%;
+    padding: 1rem;
+
+    &.is-earned {
+        background: color-mix(in srgb, var(--star) 16%, var(--card));
+        border-width: 2.5px;
+    }
+}
+
+.reward-head {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+
+    h3 {
+        flex: 1;
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+}
+
+.reward-icon {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--star) 45%, transparent);
+    border-radius: 50%;
+}
+
+.reward-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+
+    span {
+        display: inline-flex;
+        gap: 0.3rem;
+        align-items: center;
+    }
+
+    .is-urgent {
+        color: var(--danger);
+    }
+}
+
+.reward-tasks {
+    padding: 0;
+    margin: 0 -0.35rem;
+    list-style: none;
+}
+
+.reward-history {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem 0.75rem;
+        align-items: center;
+        padding: 0.4rem 0;
+        border-bottom: 1px dashed var(--line-soft);
+    }
+}
+
+.picker-list {
+    max-height: 16rem;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    list-style: none;
+    border: 1.5px solid var(--line-soft);
+    border-radius: 0.7rem;
+
+    label {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        min-height: 2.6rem;
+        padding: 0.3rem 0.7rem;
+        cursor: pointer;
+    }
+
+    li + li {
+        border-top: 1px dashed var(--line-soft);
+    }
+
+    input {
+        flex: none;
+        width: 1.15rem;
+        height: 1.15rem;
+        accent-color: var(--accent);
+    }
+}
+
+// Links styled as buttons center their label the way real buttons do.
+a.button-ink,
+a.button-plain {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.toast-prompt.is-reward {
+    flex-wrap: nowrap;
+    background: color-mix(in srgb, var(--star) 22%, var(--card));
+
+    p {
+        flex: 1 1 auto;
+    }
+
+    > .reward-icon {
+        color: var(--ink);
+    }
+}

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Check, MapPinOff, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Gift, MapPinOff, Star } from 'lucide-react';
 import { useEffect, useState, type CSSProperties, type DragEvent } from 'react';
 import { Link, useParams } from 'react-router';
 import { CHEF_URL, useMeals } from '@/api/day';
@@ -505,6 +505,13 @@ function Done({ week }: StepProps) {
             </dl>
             {big.length > 0 && (
                 <>
+                    <Link
+                        className="button-plain d-inline-flex align-items-center gap-2 mb-3"
+                        to="/rewards?new=big3"
+                    >
+                        <Gift aria-hidden="true" size={16} /> Create a reward for your Big{' '}
+                        {big.length}
+                    </Link>
                     <h3 className="font-display h4">Your Big {big.length}</h3>
                     <ul className="review-list">
                         {big.map((goal) => (
