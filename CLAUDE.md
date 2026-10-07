@@ -105,7 +105,21 @@ Bothdocs/` holds the plan, deployment notes, Google API notes and inspiration im
   signed-in user's household and new rows are stamped with it. In jobs and commands there is no
   signed-in user, so set `household_id` explicitly and filter by it yourself.
 - "Both people" is a null user id: `items.assignee_user_id` and `rewards.beneficiary_user_id`.
-- Weight and journal entries are per person; everything else is shared by the household.
+- The person filter has four views (`PersonFilterContext`): **Default** (everything shared,
+  but only your own Health: the item endpoints take `own_health=1`), **Both** (everything), and
+  one per person (theirs plus what belongs to both). Health is personal: a new Health item
+  defaults to its maker, or to the person on screen, never to both.
+- Journal entries, weight, and the routine checklists and habits are always the signed-in
+  person's own, whatever view is chosen. The Day and Week views fetch your own items a second
+  time for the routines. Everything else is shared by the household.
+- While one person's view is on screen, a new day task is assigned to that person
+  (`useCreateItem`), so it doesn't vanish from the view it was added in.
+- A task's or event's owner initial is drawn only in the Both view (`useShowsOwners`); in the
+  other views whose it is is already clear.
+- Each person can hide, for themselves only, a calendar someone else in the household shows
+  (`hidden_calendars`; `/api/events` leaves those calendars out for that viewer).
+- A new person gets the first unused color from `User::PERSON_COLORS` (mirrored in
+  `resources/js/api/session.ts`).
 - Categories are seeded by a migration, so `migrate` alone sets up production.
 - A repeating task is a series of ordinary items (`app/Services/RecurrenceService.php`). The
   first occurrence holds the RRULE and has no `recurrence_parent_id`; the rest point at it.
