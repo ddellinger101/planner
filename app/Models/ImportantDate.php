@@ -12,6 +12,10 @@ class ImportantDate extends Model
 
     protected $guarded = [];
 
+    protected $attributes = ['source' => 'app'];
+
+    protected $hidden = ['google_resource_name'];
+
     protected function casts(): array
     {
         return [

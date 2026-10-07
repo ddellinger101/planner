@@ -9,6 +9,11 @@ class GoogleTaskList extends Model
 {
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return ['last_synced_at' => 'datetime'];
+    }
+
     public function googleAccount(): BelongsTo
     {
         return $this->belongsTo(GoogleAccount::class);

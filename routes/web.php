@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', HealthController::class);
 
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
+Route::get('/auth/google/connect', [GoogleAuthController::class, 'connect'])->middleware('auth');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 Route::post('/auth/logout', [GoogleAuthController::class, 'logout']);
 

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncGoogleAccount;
 use App\Models\GoogleAccount;
 use App\Models\Household;
 use App\Models\User;
+use App\Services\Google\GoogleClient;
+use App\Services\Google\TaskSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,22 +20,44 @@ use Throwable;
 
 class GoogleAuthController extends Controller
 {
+    /** The APIs the planner syncs with, beyond knowing who signed in. */
+    private const SYNC_SCOPES = [GoogleClient::SCOPE_TASKS, GoogleClient::SCOPE_CONTACTS];
+
+    /** Sign in: who you are, and nothing more. */
     public function redirect(): SymfonyRedirect
     {
-        // Tasks and Calendar scopes are added when sync is built (Phase 9).
         return Socialite::driver('google')
             ->scopes(['openid', 'email', 'profile'])
+            // Report access granted earlier too, so signing in doesn't look like losing it.
+            ->with(['include_granted_scopes' => 'true'])
             ->redirect();
     }
 
-    public function callback(Request $request): RedirectResponse
+    /**
+     * Connect Google Tasks and Contacts. Asked for separately from sign-in,
+     * from Settings, so the planner only gets this access when it is wanted.
+     */
+    public function connect(Request $request): SymfonyRedirect
     {
+        $request->session()->put('google_connecting', true);
+
+        return Socialite::driver('google')
+            ->scopes(['openid', 'email', 'profile', ...self::SYNC_SCOPES])
+            // Offline access with a fresh consent is what makes Google issue a refresh token.
+            ->with(['access_type' => 'offline', 'prompt' => 'consent', 'include_granted_scopes' => 'true'])
+            ->redirect();
+    }
+
+    public function callback(Request $request, TaskSync $sync): RedirectResponse
+    {
+        $connecting = (bool) $request->session()->pull('google_connecting', false);
+
         try {
             $google = Socialite::driver('google')->user();
         } catch (Throwable $e) {
             report($e);
 
-            return redirect('/?auth_error=failed');
+            return redirect($connecting ? '/settings?google=failed' : '/?auth_error=failed');
         }
 
         $email = strtolower((string) $google->getEmail());
@@ -42,7 +67,7 @@ class GoogleAuthController extends Controller
             return redirect('/?auth_error=not_allowed');
         }
 
-        $user = DB::transaction(function () use ($google, $email) {
+        [$user, $account] = DB::transaction(function () use ($google, $email) {
             $household = Household::query()->first()
                 ?? Household::create(['name' => config('planner.household_name')]);
 
@@ -54,18 +79,39 @@ class GoogleAuthController extends Controller
                 'email_verified_at' => $user->email_verified_at ?? now(),
             ])->save();
 
-            GoogleAccount::updateOrCreate(
+            $account = GoogleAccount::updateOrCreate(
                 ['google_sub' => (string) $google->getId()],
                 ['user_id' => $user->id, 'email' => $email],
             );
 
-            return $user;
+            return [$user, $account];
         });
+
+        $this->storeTokens($account, $google);
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        return redirect('/');
+        if (! $connecting) {
+            return redirect('/');
+        }
+
+        if (! $account->refresh()->canSyncTasks() && ! $account->hasGranted(GoogleClient::SCOPE_CONTACTS)) {
+            // The consent screen's boxes were left unticked.
+            return redirect('/settings?google=declined');
+        }
+
+        try {
+            if ($account->canSyncTasks()) {
+                $sync->refreshLists($account);
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+
+        SyncGoogleAccount::dispatch($account->id, withBirthdays: true);
+
+        return redirect('/settings?google=connected');
     }
 
     public function logout(Request $request): Response
@@ -75,5 +121,31 @@ class GoogleAuthController extends Controller
         $request->session()->regenerateToken();
 
         return response()->noContent();
+    }
+
+    /**
+     * Keep what Google handed back. A plain sign-in returns no refresh token
+     * and may list fewer scopes, so it must never erase a working connection.
+     */
+    private function storeTokens(GoogleAccount $account, object $google): void
+    {
+        $scopes = array_values((array) ($google->approvedScopes ?? []));
+        $grantsSync = array_intersect(self::SYNC_SCOPES, $scopes) !== [];
+
+        if (! empty($google->refreshToken)) {
+            $account->refresh_token = $google->refreshToken;
+            $account->needs_reconnect = false;
+        }
+
+        if ($grantsSync || $account->refresh_token === null) {
+            $account->scopes = $scopes;
+        }
+
+        if ($grantsSync && ! empty($google->token)) {
+            $account->access_token = $google->token;
+            $account->expires_at = now()->addSeconds((int) ($google->expiresIn ?? 3600));
+        }
+
+        $account->save();
     }
 }

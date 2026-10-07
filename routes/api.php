@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\BrainDumpController;
+use App\Http\Controllers\Api\GoogleController;
 use App\Http\Controllers\Api\HabitController;
 use App\Http\Controllers\Api\ImportantDateController;
 use App\Http\Controllers\Api\ItemController;
@@ -15,6 +16,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [MeController::class, 'show']);
     Route::get('/categories', [MeController::class, 'categories']);
+
+    Route::get('/google', [GoogleController::class, 'show']);
+    Route::patch('/google', [GoogleController::class, 'update']);
+    Route::post('/google/sync', [GoogleController::class, 'sync']);
+    Route::post('/google/lists/refresh', [GoogleController::class, 'refreshLists']);
+    Route::post('/google/lists/create-missing', [GoogleController::class, 'createMissingLists']);
+    Route::patch('/google/lists/{list}', [GoogleController::class, 'updateList'])->whereNumber('list');
 
     Route::patch('/me', [MeController::class, 'update']);
 
