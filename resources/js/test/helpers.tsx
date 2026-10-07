@@ -42,6 +42,8 @@ export function makeItem(overrides: Partial<Item> = {}): Item {
         routine: null,
         recurrence_rule: null,
         recurrence_parent_id: null,
+        parent_item_id: null,
+        carried_from_item_id: null,
         sort: 0,
         created_by: 1,
         assignee_user_id: 1,
@@ -95,6 +97,8 @@ export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/important-dates': { body: [] },
     'GET /api/items/summary': { body: [] },
     'GET /api/weight/goals': { body: [] },
+    'GET /api/reviews/pending': { body: [] },
+    'GET /api/brain-dump': { body: { items: [], assigned_this_week: 0 } },
 });
 
 export function renderApp(path = '/') {

@@ -112,6 +112,12 @@ npm run build
   `recurrence_date` is the date the rule produced an occurrence for and never changes, which is
   what stops a moved or deleted occurrence from being generated again. Occurrences exist 60
   days ahead, topped up by a daily scheduled job and whenever items are listed.
+- Carrying a goal forward at a rollover copies it into the later period with
+  `carried_from_item_id` set and marks the original `dropped`, so it stops counting against
+  the period it left. A `period_reviews` row records that a household finished reviewing a
+  period, even with items left open.
+- A week goal pulled from a month goal, and a day task placed from a week goal, point at their
+  source with `parent_item_id`. Finishing one offers to finish the source (`ParentPrompt`).
 - An important date that repeats yearly is stored once; the API returns it with `occurs_on`
   for each year in the range asked for.
 - Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the

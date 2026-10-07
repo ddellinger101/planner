@@ -19,6 +19,8 @@ type Props = {
     onAdd: (date: string, title: string) => void;
     onChange: (item: Item, changes: ItemChanges) => void;
     onEdit: (item: Item) => void;
+    /** Something other than one of the week's tasks was dropped on a day. */
+    onDropOther?: (id: number, date: string) => void;
 };
 
 /**
@@ -36,6 +38,7 @@ export default function WeekStrip({
     onAdd,
     onChange,
     onEdit,
+    onDropOther,
 }: Props) {
     const [dropTarget, setDropTarget] = useState<string | null>(null);
     // Routine tasks have the routine grid; here they would swamp each day.
@@ -44,11 +47,17 @@ export default function WeekStrip({
         categories.find((category) => category.id === item.category_id)?.color ?? 'var(--accent)';
 
     const drop = (event: DragEvent, date: string) => {
-        const item = tasks.find(
-            (candidate) => candidate.id === Number(event.dataTransfer.getData(ITEM_DRAG_TYPE)),
-        );
+        const id = Number(event.dataTransfer.getData(ITEM_DRAG_TYPE));
+        const item = tasks.find((candidate) => candidate.id === id);
 
         setDropTarget(null);
+
+        if (!item && id > 0 && onDropOther) {
+            event.preventDefault();
+            onDropOther(id, date);
+
+            return;
+        }
 
         if (item && item.due_date !== date) {
             event.preventDefault();
