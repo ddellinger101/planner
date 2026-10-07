@@ -14,6 +14,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [MeController::class, 'show']);
     Route::get('/categories', [MeController::class, 'categories']);
 
+    Route::patch('/me', [MeController::class, 'update']);
+
+    Route::get('/items/overdue', [ItemController::class, 'overdue']);
     Route::apiResource('items', ItemController::class);
 
     Route::get('/journal', [JournalController::class, 'index']);
