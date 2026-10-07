@@ -6,6 +6,7 @@ import { updateProfile } from '@/api/session';
 import { MORE_PAGES } from '@/components/AppShell';
 import EmptyState from '@/components/EmptyState';
 import GoogleSettings from '@/components/GoogleSettings';
+import NotificationSettings from '@/components/NotificationSettings';
 import PageHeader from '@/components/PageHeader';
 import ProfileSettings from '@/components/ProfileSettings';
 import { useSession } from '@/context/SessionContext';
@@ -67,8 +68,9 @@ export function SettingsPage() {
                     <div className="col-12 col-lg-6">
                         <ProfileSettings />
                     </div>
-                    <div className="col-12 col-lg-6">
+                    <div className="col-12 col-lg-6 d-grid gap-3 align-content-start">
                         <TimelineHours />
+                        <NotificationSettings />
                     </div>
                     <div className="col-12">
                         <GoogleSettings />

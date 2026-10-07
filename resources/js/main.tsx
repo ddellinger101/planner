@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router';
 import App from './App';
+import { registerServiceWorker } from './lib/push';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -14,6 +15,11 @@ const queryClient = new QueryClient({
         },
     },
 });
+
+// Not while developing: a service worker would keep serving yesterday's code.
+if (import.meta.env.PROD) {
+    void registerServiceWorker();
+}
 
 createRoot(document.getElementById('app')!).render(
     <StrictMode>

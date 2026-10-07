@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import App from '@/App';
 import type { GoogleStatus } from '@/api/google';
 import type { Item } from '@/api/items';
+import type { NotificationStatus } from '@/api/notifications';
 import type { Category, Session } from '@/api/session';
 
 export const dustin = { id: 1, name: 'Dustin', avatar_url: null, color: '#3b7dd8' };
@@ -71,6 +72,25 @@ export const notConnected: GoogleStatus = {
     shared_calendars: [],
 };
 
+/** A server with no push keys yet: the state every test starts from. */
+export const notificationsOff: NotificationStatus = {
+    configured: false,
+    vapid_public_key: null,
+    devices: 0,
+    preferences: {
+        tasks: true,
+        task_lead_minutes: 10,
+        morning: true,
+        morning_time: '07:00',
+        evening: true,
+        evening_time: '20:30',
+        weekly: true,
+        weekly_time: '17:00',
+        monthly: true,
+        rewards: true,
+    },
+};
+
 type Reply = { status?: number; body?: unknown };
 type Handler = Reply | ((request: { url: URL; body: unknown }) => Reply);
 
@@ -122,6 +142,7 @@ export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/rewards': { body: [] },
     'GET /api/google': { body: notConnected },
     'GET /api/events': { body: [] },
+    'GET /api/notifications': { body: notificationsOff },
     'GET /api/brain-dump': { body: { items: [], assigned_this_week: 0 } },
 });
 

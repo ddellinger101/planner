@@ -84,6 +84,28 @@ it polls Google every five minutes and sends queued changes every minute.
 The first sync imports each mapped list's open tasks. A task that already exists both in the
 planner and in Google is not matched up, so it appears twice; delete one copy.
 
+## Push notifications
+
+Notifications are signed with a pair of keys that live only in the server's `.env`.
+
+1. Over SSH, in `public_html`, run:
+
+    ```
+    php8.3 artisan push:keys
+    ```
+
+2. Paste the three lines it prints into `.env`, changing `VAPID_SUBJECT` to
+   `mailto:` followed by your own address (the push services use it only to reach whoever
+   runs the sender).
+3. Run `php8.3 artisan optimize` so the new settings are read, or redeploy.
+
+Then each person opens Settings on each phone or computer and chooses **Turn on for this
+device**. On an iPhone or iPad the planner has to be added to the Home Screen first (Share >
+Add to Home Screen) and opened from there; this needs iOS 16.4 or later.
+
+Reminders are sent by the same cron entry as everything else, once a minute. Generating new
+keys later signs every device out of notifications, so keep the first pair.
+
 ## GitHub settings
 
 Repository > Settings > Secrets and variables > Actions.
