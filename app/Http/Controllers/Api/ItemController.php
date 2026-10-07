@@ -76,6 +76,38 @@ class ItemController extends Controller
         return response()->json($items);
     }
 
+    /**
+     * How many items each period has and how many are done, per category.
+     * Dropped items don't count either way.
+     */
+    public function summary(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'period_keys' => ['required', 'array', 'max:60'],
+            'period_keys.*' => [new PeriodKey],
+            'person' => ['integer'],
+        ]);
+
+        $rows = Item::query()
+            ->whereIn('period_key', $filters['period_keys'])
+            ->where('status', '!=', ItemStatus::Dropped)
+            ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
+            ->groupBy('period_key', 'category_id')
+            ->orderBy('period_key')
+            ->orderBy('category_id')
+            ->selectRaw('period_key, category_id, count(*) as total, sum(case when status = ? then 1 else 0 end) as done', [ItemStatus::Done->value])
+            ->toBase()
+            ->get()
+            ->map(fn ($row) => [
+                'period_key' => $row->period_key,
+                'category_id' => $row->category_id,
+                'total' => (int) $row->total,
+                'done' => (int) $row->done,
+            ]);
+
+        return response()->json($rows);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $this->validated($request);
