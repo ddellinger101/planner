@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\Routine;
 use App\Http\Controllers\Controller;
 use App\Models\Habit;
+use App\Support\HabitStats;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -43,8 +44,49 @@ class HabitController extends Controller
         $data = $this->validated($request);
         $data['user_id'] ??= $request->user()->id;
         $data['active_from'] ??= now($request->user()->timezone)->toDateString();
+        // A new habit goes to the end of its list.
+        $data['sort'] ??= (int) Habit::max('sort') + 1;
 
         return response()->json(Habit::create($data)->refresh(), 201);
+    }
+
+    /** Streaks and 30-day completion for each habit, keyed by habit id. */
+    public function stats(Request $request): JsonResponse
+    {
+        $person = $request->validate(['person' => ['integer']])['person'] ?? null;
+        $today = now($request->user()->timezone)->toDateString();
+
+        $stats = Habit::query()
+            ->when($person, fn ($q, $person) => $q->where('user_id', $person))
+            ->with(['checks' => fn ($q) => $q->where('done', true)])
+            ->get()
+            ->mapWithKeys(fn (Habit $habit) => [$habit->id => HabitStats::for(
+                $habit->target_per_week,
+                $habit->checks->map(fn ($check) => $check->date->toDateString())->all(),
+                $today,
+                $habit->active_from->toDateString(),
+            )]);
+
+        // An empty list would serialize as [] where the client expects an object.
+        return response()->json((object) $stats->all());
+    }
+
+    /** Set the order of habits: the ids given are numbered in the order sent. */
+    public function reorder(Request $request): Response
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer', 'distinct'],
+        ])['ids'];
+
+        // Only this household's habits are found, so foreign ids are ignored.
+        $habits = Habit::whereIn('id', $ids)->get()->keyBy('id');
+
+        foreach ($ids as $position => $id) {
+            $habits->get($id)?->update(['sort' => $position]);
+        }
+
+        return response()->noContent();
     }
 
     public function update(Request $request, Habit $habit): JsonResponse

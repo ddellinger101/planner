@@ -40,6 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/weight/goals', [WeightController::class, 'goals']);
     Route::put('/weight/goals/{periodKey}', [WeightController::class, 'updateGoal']);
 
+    Route::get('/habits/stats', [HabitController::class, 'stats']);
+    Route::post('/habits/reorder', [HabitController::class, 'reorder']);
     Route::apiResource('habits', HabitController::class)->except('show');
     Route::put('/habits/{habit}/checks/{date}', [HabitController::class, 'check']);
 

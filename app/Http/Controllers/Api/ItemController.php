@@ -29,6 +29,8 @@ class ItemController extends Controller
             'to' => ['date_format:Y-m-d', 'after_or_equal:from'],
             'status' => [Rule::enum(ItemStatus::class)],
             'person' => ['integer'],
+            'routine' => [Rule::in(['morning', 'evening'])],
+            'series' => ['boolean'],
         ]);
 
         // Recurring tasks are generated ahead of time; top them up as far as
@@ -43,6 +45,9 @@ class ItemController extends Controller
             ->when($filters['from'] ?? null, fn ($q, $from) => $q->whereDate('due_date', '>=', $from))
             ->when($filters['to'] ?? null, fn ($q, $to) => $q->whereDate('due_date', '<=', $to))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['routine'] ?? null, fn ($q, $routine) => $q->where('routine', $routine))
+            // One row per repeating task: the occurrence that holds its rule.
+            ->when($filters['series'] ?? false, fn ($q) => $q->whereNotNull('recurrence_rule')->whereNull('recurrence_parent_id'))
             ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
             ->orderByDesc('starred')
             ->orderBy('sort')
