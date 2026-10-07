@@ -72,14 +72,14 @@ npm run build
 
 ## Layout
 
-- `resources/js/main.tsx` is the Vite entry; `App.tsx` is the root component. Don't add a file
+Bothresources/js/main.tsx` is the Vite entry; `App.tsx` is the root component. Don't add a file
   whose name differs from another only by case: the repo is developed on Windows.
-- `resources/js/components/AppShell.tsx` is the frame around every signed-in page: the left
+Bothresources/js/components/AppShell.tsx` is the frame around every signed-in page: the left
   rail (tablet and up), the bottom bar (phones) and the quick-add button. Pages live in
   `resources/js/pages/`; the Day, Week, Month, Quarter and Year views share `PeriodPage.tsx`.
-- `resources/js/api/` holds the fetch client and the TanStack Query hooks. Item changes are
+Bothresources/js/api/` holds the fetch client and the TanStack Query hooks. Item changes are
   optimistic: the cache updates first and rolls back if the request fails.
-- `resources/scss/` holds the styles: `_tokens.scss` (colors, fonts, dark mode), `_shell.scss`
+Bothresources/scss/` holds the styles: `_tokens.scss` (colors, fonts, dark mode), `_shell.scss`
   (navigation and page frame) and `_components.scss`.
 
 ## Design system
@@ -93,11 +93,11 @@ npm run build
 - Every category icon renders through `CategoryIcon`; checkable rows through `TaskRow`.
 - Bootstrap supplies the grid, reset and utilities only. Don't use its components.
 - Check new screens at 375, 768, 1280 and 1920 px wide, in light and dark mode.
-- `routes/web.php` serves `/health` and Google sign-in under `/auth`, and falls through to the
+Bothroutes/web.php` serves `/health` and Google sign-in under `/auth`, and falls through to the
   SPA for every other path. `routes/api.php` is the JSON API, all behind `auth:sanctum`.
-- `app/Support/Period.php` and `resources/js/lib/period.ts` are twins. Their tests share the
+Bothapp/Support/Period.php` and `resources/js/lib/period.ts` are twins. Their tests share the
   same cases; change both together.
-- `docs/` holds the plan, deployment notes, Google API notes and inspiration images.
+Bothdocs/` holds the plan, deployment notes, Google API notes and inspiration images.
 
 ## Data model notes
 
