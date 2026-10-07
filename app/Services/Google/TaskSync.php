@@ -286,10 +286,20 @@ class TaskSync
     /** Send every item of this account's that is waiting to go to Google. */
     public function pushPending(GoogleAccount $account): void
     {
+        $this->pending($account)
+            ->orderBy('due_date')
+            ->limit(500)
+            ->get()
+            ->each(fn (Item $item) => $this->pushItem($item, $account));
+    }
+
+    /** The items of this account's that are waiting to go to Google. */
+    public function pending(GoogleAccount $account): Builder
+    {
         $today = CarbonImmutable::now($account->user->timezone)->toDateString();
         $horizon = CarbonImmutable::parse($today)->addDays(self::REPEAT_WINDOW_DAYS)->toDateString();
 
-        Item::withTrashed()->withoutGlobalScope('household')
+        return Item::withTrashed()->withoutGlobalScope('household')
             ->where('household_id', $account->user->household_id)
             ->where('scope', Scope::Day)
             ->where(fn (Builder $q) => $q
@@ -308,11 +318,7 @@ class TaskSync
             ->where(fn (Builder $q) => $q
                 ->whereNotNull('google_task_id')
                 ->orWhereNull('recurrence_rule')
-                ->orWhereDate('due_date', '<=', $horizon))
-            ->orderBy('due_date')
-            ->limit(500)
-            ->get()
-            ->each(fn (Item $item) => $this->pushItem($item, $account));
+                ->orWhereDate('due_date', '<=', $horizon));
     }
 
     /** Create, update or delete the Google task for one item. */

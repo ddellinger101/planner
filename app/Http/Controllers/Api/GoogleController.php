@@ -44,7 +44,7 @@ class GoogleController extends Controller
             'birthdays_synced_at' => $account?->birthdays_synced_at,
             'birthday_count' => ImportantDate::where('source', BirthdaySync::SOURCE)
                 ->where('owner_user_id', $request->user()->id)->count(),
-            'pending' => $account?->canSyncTasks() ? $mine()->where('sync_state', SyncState::Dirty)->count() : 0,
+            'pending' => $account?->canSyncTasks() ? $this->tasks->pending($account)->count() : 0,
             'errors' => $account ? $mine()->where('sync_state', SyncState::Error)->count() : 0,
             'lists' => $account?->taskLists()->orderBy('title')->get(['id', 'title', 'category_id']) ?? [],
         ]);

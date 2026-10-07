@@ -371,6 +371,18 @@ describe('keeping the two in step', function () {
         expect($this->google->titles('Health'))->toHaveCount(10);
     });
 
+    it('counts as waiting only what a sync would send', function () {
+        task(['title' => 'Take vitamins', 'recurrence_rule' => 'FREQ=DAILY']);
+
+        // The 53 later occurrences aren't waiting; they simply aren't due to go yet.
+        $this->getJson('/api/google')->assertOk()->assertJsonPath('pending', 0);
+
+        $this->travel(2)->days();
+        app(RecurrenceService::class)->generateAll();
+
+        $this->getJson('/api/google')->assertJsonPath('pending', 2);
+    });
+
     it('stops and asks to reconnect when Google revokes access, then catches up', function () {
         $this->google->revoked = true;
         $item = task();
