@@ -128,6 +128,11 @@ export default function BrainDumpBoard() {
                                         >
                                             {item.title}
                                         </button>
+                                        {item.from_google && (
+                                            <span className="task-badge" title="From Google Tasks">
+                                                Google
+                                            </span>
+                                        )}
                                         <button
                                             type="button"
                                             className="button-plain is-small"

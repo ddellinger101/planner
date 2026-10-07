@@ -87,8 +87,11 @@ export function PlanSheet({ item, onClose }: { item: BrainDumpItem; onClose: () 
     const [rule, setRule] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // A task from Google keeps the category of the list it came from.
     const selectedCategory =
-        categoryId ?? categories.data?.find((category) => category.slug === defaultSlug)?.id;
+        categoryId ??
+        item.suggested_category_id ??
+        categories.data?.find((category) => category.slug === defaultSlug)?.id;
 
     const tomorrow = nextPeriod(periodFromDate('day', today)).key;
     const thisWeek = periodFromDate('week', today);

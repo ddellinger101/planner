@@ -260,6 +260,7 @@ describe('month', () => {
             date: '2019-01-12',
             repeats_yearly: true,
             category_id: null,
+            source: 'app',
             occurs_on: '2027-01-12',
         },
         {
@@ -268,6 +269,7 @@ describe('month', () => {
             date: '2027-02-03',
             repeats_yearly: false,
             category_id: null,
+            source: 'app',
             occurs_on: '2027-02-03',
         },
     ];
@@ -481,6 +483,7 @@ describe('day', () => {
                         date: '2019-01-04',
                         repeats_yearly: true,
                         category_id: null,
+                        source: 'app',
                         occurs_on: '2027-01-04',
                     },
                 ],

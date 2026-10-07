@@ -3,6 +3,7 @@ import {
     CalendarCheck,
     CalendarDays,
     CalendarRange,
+    CircleAlert,
     Columns3,
     Ellipsis,
     Gift,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
+import { useGoogle } from '@/api/google';
 import type { Item } from '@/api/items';
 import { usePendingReviews } from '@/api/review';
 import { todayPeriod, type Scope } from '@/lib/period';
@@ -95,6 +97,7 @@ export default function AppShell() {
 
     // The rollover review opens by itself the first time a set of periods
     // needs it on this device; after that it waits behind each view's banner.
+    const google = useGoogle();
     const pending = usePendingReviews();
     const pendingKey = (pending.data ?? []).map((entry) => entry.period_key).join(',');
     const [review, setReview] = useState<{ startAt?: string } | null>(null);
@@ -153,6 +156,14 @@ export default function AppShell() {
                             />
                         ))}
                     </nav>
+
+                    {google.data?.needs_reconnect && pathname !== '/settings' && (
+                        <div className="reconnect-banner" role="alert">
+                            <CircleAlert aria-hidden="true" size={16} />
+                            Google needs reconnecting before tasks can sync.
+                            <Link to="/settings">Open Settings</Link>
+                        </div>
+                    )}
 
                     <ItemEditorProvider value={editor}>
                         <Outlet />

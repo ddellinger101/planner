@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { vi } from 'vitest';
 import App from '@/App';
+import type { GoogleStatus } from '@/api/google';
 import type { Item } from '@/api/items';
 import type { Category, Session } from '@/api/session';
 
@@ -50,6 +51,21 @@ export function makeItem(overrides: Partial<Item> = {}): Item {
         ...overrides,
     };
 }
+
+/** Someone who has signed in but not connected Google Tasks or Contacts. */
+export const notConnected: GoogleStatus = {
+    email: 'dustin@example.com',
+    tasks_connected: false,
+    contacts_connected: false,
+    needs_reconnect: false,
+    sync_birthdays: true,
+    tasks_last_synced_at: null,
+    birthdays_synced_at: null,
+    birthday_count: 0,
+    pending: 0,
+    errors: 0,
+    lists: [],
+};
 
 type Reply = { status?: number; body?: unknown };
 type Handler = Reply | ((request: { url: URL; body: unknown }) => Reply);
@@ -100,6 +116,7 @@ export const signedIn = (items: Item[] = []): Record<string, Handler> => ({
     'GET /api/reviews/pending': { body: [] },
     'GET /api/habits/stats': { body: {} },
     'GET /api/rewards': { body: [] },
+    'GET /api/google': { body: notConnected },
     'GET /api/brain-dump': { body: { items: [], assigned_this_week: 0 } },
 });
 

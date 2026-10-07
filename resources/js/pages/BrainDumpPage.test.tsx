@@ -18,6 +18,8 @@ const entry = (overrides: Partial<BrainDumpItem> = {}): BrainDumpItem => ({
     bucket: 'call',
     title: 'Call the vet',
     notes: null,
+    from_google: false,
+    suggested_category_id: null,
     ...overrides,
 });
 
