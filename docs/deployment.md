@@ -62,17 +62,22 @@ application's web pool runs 8.3.
 
 In the Google Cloud project that holds the OAuth client:
 
-1. **APIs & Services > Library**: enable **Google Tasks API** and **People API** (the one
-   behind Contacts).
-2. **Google Auth Platform > Data Access**: add the scopes `.../auth/tasks` and
-   `.../auth/contacts.readonly`.
+1. **APIs & Services > Library**: enable **Google Tasks API**, **Google Calendar API** and
+   **People API** (the one behind Contacts).
+2. **Google Auth Platform > Data Access**: add the scopes `.../auth/tasks`,
+   `.../auth/calendar.events`, `.../auth/calendar.readonly` and `.../auth/contacts.readonly`.
 3. **Audience**: while the app is in "Testing", add both people as test users. In that mode
    Google expires the saved access after seven days, and the planner then asks to reconnect;
    publishing the app ("In production") stops that. With these scopes Google shows an
    "unverified app" warning that each person clicks through once.
 
-Then each person opens Settings in the planner and chooses **Connect Google**, ticking both
-boxes on Google's screen. Nothing needs adding to `.env`. Sync runs from the cron entry above:
+Then each person opens Settings in the planner and chooses **Connect Google**, ticking every
+box on Google's screen. Someone who connected before a scope was added uses **Connect again**
+in Settings to grant it.
+
+Under Calendars in Settings, each person chooses which of their calendars to show. Whoever
+has the calendar Chef writes to sets it to **Meals from Chef**; see
+[chef-calendar-format.md](chef-calendar-format.md). Nothing needs adding to `.env`. Sync runs from the cron entry above:
 it polls Google every five minutes and sends queued changes every minute.
 
 The first sync imports each mapped list's open tasks. A task that already exists both in the

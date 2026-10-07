@@ -1,10 +1,13 @@
 import { useState, type DragEvent, type FormEvent } from 'react';
 import { Link } from 'react-router';
+import { eventsOn, type CalendarEvent } from '@/api/events';
 import type { Item, ItemChanges } from '@/api/items';
 import type { ImportantDate } from '@/api/planning';
 import type { Category, Member } from '@/api/session';
 import { assigneeOf } from '@/components/CategoryBox';
+import EventChip from '@/components/EventChip';
 import TaskRow, { ITEM_DRAG_TYPE } from '@/components/TaskRow';
+import { useSession } from '@/context/SessionContext';
 import { childPeriods, type Period } from '@/lib/period';
 import { periodLabel } from '@/lib/periodLabels';
 
@@ -13,6 +16,8 @@ type Props = {
     /** The week's day tasks. */
     items: Item[];
     dates: ImportantDate[];
+    /** Calendar events that touch the week, already narrowed to the person filter. */
+    events?: CalendarEvent[];
     categories: Category[];
     members: Member[];
     today: string;
@@ -32,6 +37,7 @@ export default function WeekStrip({
     week,
     items,
     dates,
+    events = [],
     categories,
     members,
     today,
@@ -40,6 +46,7 @@ export default function WeekStrip({
     onEdit,
     onDropOther,
 }: Props) {
+    const { user } = useSession();
     const [dropTarget, setDropTarget] = useState<string | null>(null);
     // Routine tasks have the routine grid; here they would swamp each day.
     const tasks = items.filter((item) => item.status !== 'dropped' && item.routine === null);
@@ -108,6 +115,10 @@ export default function WeekStrip({
                                     {date.title}
                                 </span>
                             ))}
+
+                        {eventsOn(events, day.key, user.timezone).map((event) => (
+                            <EventChip key={event.id} event={event} day={day.key} />
+                        ))}
 
                         <ul className="task-list">
                             {dayTasks.map((item) => (

@@ -367,3 +367,95 @@ a.button-plain {
     grid-column: 2 / -1;
     justify-self: end;
 }
+
+.calendar-swatch {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    margin-right: 0.45rem;
+    border-radius: 50%;
+}
+
+// Calendar events ------------------------------------------------------------------
+// An event wears its Google calendar's color on its edge only: those colors
+// are the person's own choice and aren't checked for contrast against text.
+
+.event-chip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.4rem;
+    align-items: baseline;
+    width: 100%;
+    min-height: 1.9rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    color: var(--ink);
+    text-align: left;
+    background: color-mix(in srgb, var(--event, var(--accent)) 14%, var(--card));
+    border: 0;
+    border-left: 4px solid var(--event, var(--accent));
+    border-radius: 0.45rem;
+
+    &:hover,
+    &:focus-visible {
+        background: color-mix(in srgb, var(--event, var(--accent)) 26%, var(--card));
+    }
+}
+
+.event-chip-time {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+.event-chip-title {
+    min-width: 0;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.event-list {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0 0.55rem;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+    }
+}
+
+.week-day > .event-chip {
+    width: auto;
+    margin: 0 0.35rem 0.25rem;
+}
+
+.timeline-event {
+    position: absolute;
+    padding: 0 1px 1px;
+    pointer-events: auto;
+
+    .event-chip {
+        height: 100%;
+        align-content: flex-start;
+        overflow: hidden;
+    }
+}
+
+.month-day-chip.is-event {
+    background: color-mix(in srgb, var(--event, var(--accent)) 18%, transparent);
+    border-left: 3px solid var(--event, var(--accent));
+}
+
+.meal-line {
+    display: block;
+
+    small {
+        display: block;
+    }
+}

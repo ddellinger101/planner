@@ -17,16 +17,19 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
+import type { CalendarEvent } from '@/api/events';
 import { useGoogle } from '@/api/google';
 import type { Item } from '@/api/items';
 import { usePendingReviews } from '@/api/review';
 import { todayPeriod, type Scope } from '@/lib/period';
 import { relatedPeriod, SCOPE_NAMES, SCOPES } from '@/lib/periodLabels';
 import { useCurrentPeriod, useToday } from '@/lib/useCurrentPeriod';
+import { EventEditorProvider, type EventDraft } from '@/context/EventEditorContext';
 import { ItemEditorProvider } from '@/context/ItemEditorContext';
 import { ParentPromptProvider, ReviewProvider } from '@/context/PlannerContexts';
 import { useSession } from '@/context/SessionContext';
 import { periodPath } from './PeriodNav';
+import EventSheet, { type EventTarget } from './EventSheet';
 import ItemSheet, { type SheetTarget } from './ItemSheet';
 import ParentPrompt from './review/ParentPrompt';
 import RewardToast from './rewards/RewardToast';
@@ -90,6 +93,15 @@ export default function AppShell() {
     const today = useToday();
     const [sheet, setSheet] = useState<SheetTarget | null>(null);
     const closeSheet = useCallback(() => setSheet(null), []);
+    const [eventSheet, setEventSheet] = useState<EventTarget | null>(null);
+    const closeEventSheet = useCallback(() => setEventSheet(null), []);
+    const eventEditor = useMemo(
+        () => ({
+            openEvent: (event: CalendarEvent) => setEventSheet({ kind: 'edit', event }),
+            newEvent: (draft: EventDraft) => setEventSheet({ kind: 'create', draft }),
+        }),
+        [],
+    );
     const editor = useMemo(
         () => ({ editItem: (item: Item) => setSheet({ kind: 'edit', item }) }),
         [],
@@ -160,14 +172,16 @@ export default function AppShell() {
                     {google.data?.needs_reconnect && pathname !== '/settings' && (
                         <div className="reconnect-banner" role="alert">
                             <CircleAlert aria-hidden="true" size={16} />
-                            Google needs reconnecting before tasks can sync.
+                            Google needs reconnecting before the planner can sync.
                             <Link to="/settings">Open Settings</Link>
                         </div>
                     )}
 
-                    <ItemEditorProvider value={editor}>
-                        <Outlet />
-                    </ItemEditorProvider>
+                    <EventEditorProvider value={eventEditor}>
+                        <ItemEditorProvider value={editor}>
+                            <Outlet />
+                        </ItemEditorProvider>
+                    </EventEditorProvider>
 
                     <button
                         type="button"
@@ -209,6 +223,18 @@ export default function AppShell() {
                             key={sheet.kind === 'edit' ? sheet.item.id : 'create'}
                             target={sheet}
                             onClose={closeSheet}
+                            onMakeEvent={(draft) => {
+                                closeSheet();
+                                setEventSheet({ kind: 'create', draft });
+                            }}
+                        />
+                    )}
+
+                    {eventSheet && (
+                        <EventSheet
+                            key={eventSheet.kind === 'edit' ? eventSheet.event.id : 'create'}
+                            target={eventSheet}
+                            onClose={closeEventSheet}
                         />
                     )}
 

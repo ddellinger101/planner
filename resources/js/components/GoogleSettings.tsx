@@ -1,14 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { Cake, CircleAlert, CircleCheck, ListChecks, RefreshCw } from 'lucide-react';
+import { Cake, CalendarDays, CircleAlert, CircleCheck, ListChecks, RefreshCw } from 'lucide-react';
 import { useSearchParams } from 'react-router';
-import { GOOGLE_CONNECT_URL, useGoogle, useGoogleAction, type GoogleStatus } from '@/api/google';
+import {
+    GOOGLE_CONNECT_URL,
+    useGoogle,
+    useGoogleAction,
+    type CalendarMode,
+    type GoogleStatus,
+} from '@/api/google';
 import { fetchCategories } from '@/api/session';
 import { useSession } from '@/context/SessionContext';
 
 const RESULT_MESSAGES: Record<string, { text: string; good: boolean }> = {
     connected: { text: 'Google is connected. Your first sync is under way.', good: true },
     declined: {
-        text: 'Google didn’t grant access to Tasks or Contacts. Try again and tick both boxes.',
+        text: 'Google didn’t grant access to Tasks, Calendar or Contacts. Try again and tick the boxes.',
         good: false,
     },
     failed: { text: 'Connecting to Google didn’t finish. Please try again.', good: false },
@@ -59,7 +65,10 @@ export default function GoogleSettings() {
                 </p>
             )}
 
-            {status && !status.tasks_connected && !status.contacts_connected ? (
+            {status &&
+            !status.tasks_connected &&
+            !status.contacts_connected &&
+            !status.calendar_connected ? (
                 <NotConnected status={status} />
             ) : (
                 status && <Connected status={status} />
@@ -83,8 +92,9 @@ function NotConnected({ status }: { status: GoogleStatus }) {
                 </p>
             ) : (
                 <p className="text-soft small">
-                    Connect to keep your day tasks in step with Google Tasks and to show your
-                    contacts’ birthdays. You’ll be asked by Google to allow both.
+                    Connect to keep your day tasks in step with Google Tasks, see your Google
+                    Calendar and Chef’s meals, and show your contacts’ birthdays. Google will ask
+                    you to allow each one.
                 </p>
             )}
             <a className="button-ink" href={GOOGLE_CONNECT_URL}>
@@ -206,6 +216,75 @@ function Connected({ status }: { status: GoogleStatus }) {
                     Google Tasks access wasn’t granted.{' '}
                     <a href={GOOGLE_CONNECT_URL}>Connect again</a> and tick the Tasks box to sync
                     tasks.
+                </p>
+            )}
+
+            <h3 className="field-label d-flex align-items-center gap-2 mt-4">
+                <CalendarDays aria-hidden="true" size={15} /> Calendars
+            </h3>
+            {status.calendar_connected ? (
+                <>
+                    <p className="text-soft small">
+                        Choose which calendars show in the planner. Meals are read from the calendar
+                        Chef writes to; events you add here go to your own calendar.
+                    </p>
+                    <ul className="list-map">
+                        {status.calendars.map((calendar) => (
+                            <li key={calendar.id}>
+                                <label htmlFor={`google-calendar-${calendar.id}`}>
+                                    <span
+                                        className="calendar-swatch"
+                                        style={{ background: calendar.color ?? 'var(--accent)' }}
+                                        aria-hidden="true"
+                                    />
+                                    {calendar.summary}
+                                    {calendar.is_primary && (
+                                        <span className="text-soft fw-normal"> (yours)</span>
+                                    )}
+                                </label>
+                                <select
+                                    id={`google-calendar-${calendar.id}`}
+                                    className="field-input"
+                                    value={calendar.mode}
+                                    disabled={busy}
+                                    onChange={(event) =>
+                                        action.mutate({
+                                            kind: 'calendar-mode',
+                                            calendarId: calendar.id,
+                                            mode: event.target.value as CalendarMode,
+                                        })
+                                    }
+                                >
+                                    <option value="hidden">Hidden</option>
+                                    <option value="events">Show events</option>
+                                    {!calendar.is_primary && (
+                                        <option value="menu">Meals from Chef</option>
+                                    )}
+                                </select>
+                            </li>
+                        ))}
+                    </ul>
+                    {!status.calendars.some((calendar) => calendar.mode === 'menu') && (
+                        <p className="small">
+                            No calendar is set to “Meals from Chef” yet, so the meal plan stays
+                            empty. If Chef’s calendar is on the other person’s account, they choose
+                            it in their Settings.
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        className="button-plain is-small"
+                        disabled={busy}
+                        onClick={() => action.mutate({ kind: 'refresh-calendars' })}
+                    >
+                        Check Google for calendars
+                    </button>
+                </>
+            ) : (
+                <p className="small">
+                    Google Calendar access hasn’t been granted.{' '}
+                    <a href={GOOGLE_CONNECT_URL}>Connect again</a> and tick the Calendar boxes to
+                    see events and meals.
                 </p>
             )}
 

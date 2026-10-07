@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { CircleAlert } from 'lucide-react';
 import { useCheckHabit, useHabitsOn } from '@/api/day';
+import { eventMinutes, eventsFor, eventsOn, useEvents } from '@/api/events';
 import {
     useCreateItem,
     useDeleteItem,
@@ -13,12 +14,7 @@ import {
 import { useImportantDates } from '@/api/planning';
 import { fetchCategories } from '@/api/session';
 import CategoryBox from '@/components/CategoryBox';
-import {
-    EventsPlaceholder,
-    MealPlan,
-    OverdueStrip,
-    ProgressRing,
-} from '@/components/day/DaySidebar';
+import { DayEvents, MealPlan, OverdueStrip, ProgressRing } from '@/components/day/DaySidebar';
 import JournalCard from '@/components/day/JournalCard';
 import Routines from '@/components/day/Routines';
 import Timeline, { useNowMinutes } from '@/components/day/Timeline';
@@ -55,6 +51,8 @@ export default function DayPage({ period }: { period: Period }) {
     const deleteItem = useDeleteItem();
     const checkHabit = useCheckHabit();
     const importantDates = useImportantDates(date, date);
+    const events = useEvents(date, date);
+    const dayEvents = eventsOn(eventsFor(events.data ?? [], person), date, user.timezone);
 
     const change = (item: Item, changes: ItemChanges) =>
         updateItem.mutate({ id: item.id, changes });
@@ -138,6 +136,12 @@ export default function DayPage({ period }: { period: Period }) {
                         <div className="day-timeline">
                             <Timeline
                                 items={all}
+                                date={date}
+                                events={dayEvents.flatMap((event) => {
+                                    const minutes = eventMinutes(event, date, user.timezone);
+
+                                    return minutes ? [{ event, ...minutes }] : [];
+                                })}
                                 categories={categories.data ?? []}
                                 members={household.members}
                                 startHour={user.day_start_hour}
@@ -171,7 +175,7 @@ export default function DayPage({ period }: { period: Period }) {
                                 }
                             />
                             <MealPlan date={date} />
-                            <EventsPlaceholder />
+                            <DayEvents date={date} isToday={isToday} events={dayEvents} />
                         </div>
                     </div>
                 )}

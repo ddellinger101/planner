@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CalendarCheck, History } from 'lucide-react';
 import { Link } from 'react-router';
 import { useCheckHabit, useHabitsBetween, useMeals } from '@/api/day';
+import { eventsFor, useEvents } from '@/api/events';
 import { useCreateItem, useItems, useUpdateItem, type Item, type ItemChanges } from '@/api/items';
 import { useGoalSummary, useImportantDates, useItemsBetween } from '@/api/planning';
 import { usePendingReviews } from '@/api/review';
@@ -70,6 +71,7 @@ export function WeekPage({ period }: { period: Period }) {
     const tasks = useItemsBetween(period.start, period.end, person);
     const dates = useImportantDates(period.start, period.end);
     const meals = useMeals(period.start, period.end);
+    const events = useEvents(period.start, period.end);
     const habits = useHabitsBetween(period.start, period.end, person);
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
@@ -105,6 +107,7 @@ export function WeekPage({ period }: { period: Period }) {
                 week={period}
                 items={tasks.data ?? []}
                 dates={dates.data ?? []}
+                events={eventsFor(events.data ?? [], person)}
                 categories={categories}
                 members={household.members}
                 today={today}
@@ -151,6 +154,7 @@ export function MonthPage({ period }: { period: Period }) {
     const to = days.at(-1)!.key;
     const tasks = useItemsBetween(from, to, person);
     const gridDates = useImportantDates(from, to);
+    const events = useEvents(from, to);
 
     return (
         <>
@@ -179,6 +183,7 @@ export function MonthPage({ period }: { period: Period }) {
                             month={period}
                             items={tasks.data ?? []}
                             dates={gridDates.data ?? []}
+                            events={eventsFor(events.data ?? [], person)}
                             categories={categories}
                             today={today}
                         />

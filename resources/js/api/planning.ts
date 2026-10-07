@@ -59,11 +59,14 @@ export type ImportantDate = {
     category_id: number | null;
     /** "app" for dates typed in; "google_contacts" for a synced birthday. */
     source: 'app' | 'google_contacts';
+    /** Whether it is also kept as an event in Google Calendar. */
+    add_to_calendar: boolean;
     /** When it falls within the range that was asked for. */
     occurs_on: string;
 };
 
-export type ImportantDateInput = Pick<ImportantDate, 'title' | 'date' | 'repeats_yearly'>;
+export type ImportantDateInput = Pick<ImportantDate, 'title' | 'date' | 'repeats_yearly'> &
+    Partial<Pick<ImportantDate, 'add_to_calendar'>>;
 
 export function useImportantDates(from: string, to: string) {
     return useQuery({

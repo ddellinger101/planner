@@ -1,7 +1,9 @@
 import { useEffect, useState, type DragEvent } from 'react';
+import type { CalendarEvent } from '@/api/events';
 import type { Item, ItemChanges } from '@/api/items';
 import type { Category, Member } from '@/api/session';
 import { assigneeOf } from '@/components/CategoryBox';
+import EventChip from '@/components/EventChip';
 import TaskRow, { ITEM_DRAG_TYPE } from '@/components/TaskRow';
 import { formatTime } from '@/lib/periodLabels';
 
@@ -10,8 +12,15 @@ const HOUR_HEIGHT = 52;
 const DEFAULT_MINUTES = 30;
 const SNAP_MINUTES = 15;
 
+/** A calendar event and the minutes of this day it covers. */
+export type TimedEvent = { event: CalendarEvent; start: number; end: number };
+
 type Props = {
     items: Item[];
+    /** The day's events that have times. */
+    events?: TimedEvent[];
+    /** The day shown, as YYYY-MM-DD. */
+    date: string;
     categories: Category[];
     members: Member[];
     /** The hours the user wants shown; widened to fit any task outside them. */
@@ -34,12 +43,27 @@ const toTime = (minutes: number) =>
 
 const hourLabel = (hour: number) => formatTime(`${hour % 24}:00`).replace(':00', '');
 
-type Block = { item: Item; start: number; end: number; lane: number; lanes: number };
+type Block = {
+    item?: Item;
+    event?: CalendarEvent;
+    start: number;
+    end: number;
+    lane: number;
+    lanes: number;
+};
 
-/** Place timed tasks side by side where they overlap. */
-function layOut(items: Item[]): Block[] {
-    const blocks = items
-        .map((item) => {
+/** Place timed tasks and events side by side where they overlap. */
+function layOut(items: Item[], events: TimedEvent[]): Block[] {
+    const blocks: Block[] = [
+        // Events first, so they keep the left-hand lane next to a task at the same time.
+        ...events.map(({ event, start, end }) => ({
+            event,
+            start,
+            end: Math.max(end, start + DEFAULT_MINUTES),
+            lane: 0,
+            lanes: 1,
+        })),
+        ...items.map((item) => {
             const start = toMinutes(item.due_time!);
 
             return {
@@ -49,8 +73,8 @@ function layOut(items: Item[]): Block[] {
                 lane: 0,
                 lanes: 1,
             };
-        })
-        .sort((a, b) => a.start - b.start || a.item.id - b.item.id);
+        }),
+    ].sort((a, b) => a.start - b.start);
 
     let group: Block[] = [];
     let groupEnd = -1;
@@ -86,6 +110,8 @@ function layOut(items: Item[]): Block[] {
  */
 export default function Timeline({
     items,
+    events = [],
+    date,
     categories,
     members,
     startHour,
@@ -101,7 +127,10 @@ export default function Timeline({
     const untimed = active.filter(
         (item) => !item.due_time && item.status === 'open' && item.routine === null,
     );
-    const blocks = layOut(active.filter((item) => item.due_time));
+    const blocks = layOut(
+        active.filter((item) => item.due_time),
+        events,
+    );
     const colorOf = (item: Item) =>
         categories.find((category) => category.id === item.category_id)?.color;
 
@@ -170,7 +199,9 @@ export default function Timeline({
                 <h3 className="field-label mb-1">Anytime</h3>
                 {untimed.length === 0 ? (
                     <p className="text-soft small mb-0">
-                        {blocks.length === 0 ? 'Nothing planned yet.' : 'Everything has a time.'}
+                        {blocks.some((block) => block.item)
+                            ? 'Everything has a time.'
+                            : 'Nothing planned yet.'}
                     </p>
                 ) : (
                     <ul className="task-list">
@@ -219,26 +250,34 @@ export default function Timeline({
                         />
                     )}
 
-                <ul className="timeline-blocks" aria-label="Timed tasks">
-                    {blocks.map(({ item, start, end, lane, lanes }) => (
-                        <TaskRow
-                            key={item.id}
-                            item={item}
-                            // Fall back to the accent color for a task whose category is unknown.
-                            color={colorOf(item) ?? 'var(--accent)'}
-                            className="timeline-block"
-                            style={{
-                                top: offset(start),
-                                height: Math.max(((end - start) / 60) * HOUR_HEIGHT, 32),
-                                left: `${(lane / lanes) * 100}%`,
-                                width: `${100 / lanes}%`,
-                            }}
-                            assignee={assigneeOf(item, members)}
-                            compact
-                            onChange={(changes) => onChange(item, changes)}
-                            onEdit={() => onEdit(item)}
-                        />
-                    ))}
+                <ul className="timeline-blocks" aria-label="Timed tasks and events">
+                    {blocks.map(({ item, event, start, end, lane, lanes }) => {
+                        const place = {
+                            top: offset(start),
+                            height: Math.max(((end - start) / 60) * HOUR_HEIGHT, 32),
+                            left: `${(lane / lanes) * 100}%`,
+                            width: `${100 / lanes}%`,
+                        };
+
+                        return item ? (
+                            <TaskRow
+                                key={`item-${item.id}`}
+                                item={item}
+                                // Fall back to the accent color for a task whose category is unknown.
+                                color={colorOf(item) ?? 'var(--accent)'}
+                                className="timeline-block"
+                                style={place}
+                                assignee={assigneeOf(item, members)}
+                                compact
+                                onChange={(changes) => onChange(item, changes)}
+                                onEdit={() => onEdit(item)}
+                            />
+                        ) : (
+                            <li key={`event-${event!.id}`} className="timeline-event" style={place}>
+                                <EventChip event={event!} day={date} />
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
         </section>

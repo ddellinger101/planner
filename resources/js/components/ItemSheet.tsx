@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Star, Trash2, X } from 'lucide-react';
+import { CalendarClock, Star, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import { ApiError } from '@/api/client';
 import {
@@ -13,8 +13,9 @@ import {
     type Routine,
 } from '@/api/items';
 import { fetchCategories } from '@/api/session';
+import type { EventDraft } from '@/context/EventEditorContext';
 import { useSession } from '@/context/SessionContext';
-import { parsePeriod, periodFromDate, type Period } from '@/lib/period';
+import { parsePeriod, periodFromDate, todayPeriod, type Period } from '@/lib/period';
 import { periodName } from '@/lib/periodLabels';
 import CategoryIcon from './CategoryIcon';
 import RepeatField from './RepeatField';
@@ -26,6 +27,8 @@ export type SheetTarget =
 type Props = {
     target: SheetTarget;
     onClose: () => void;
+    /** Offered while adding: turn what has been typed into a calendar event instead. */
+    onMakeEvent?: (draft: EventDraft) => void;
 };
 
 // Changing any of these on a repeating task raises the question of which
@@ -48,7 +51,7 @@ const DEFAULT_DURATION = 30;
 type Pending = { action: 'save'; changes: ItemChanges } | { action: 'delete' };
 
 /** The sheet for adding a task or goal, and for editing or deleting one. */
-export default function ItemSheet({ target, onClose }: Props) {
+export default function ItemSheet({ target, onClose, onMakeEvent }: Props) {
     const { user, household } = useSession();
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
     const createItem = useCreateItem();
@@ -245,6 +248,22 @@ export default function ItemSheet({ target, onClose }: Props) {
                             maxLength={255}
                             autoComplete="off"
                         />
+                        {!item && onMakeEvent && (
+                            <button
+                                type="button"
+                                className="button-plain is-small mb-3 d-inline-flex align-items-center gap-2"
+                                onClick={() =>
+                                    onMakeEvent({
+                                        title: title.trim(),
+                                        date: date || todayPeriod('day', user.timezone).key,
+                                        time: time || null,
+                                    })
+                                }
+                            >
+                                <CalendarClock aria-hidden="true" size={15} />
+                                Make it a calendar event
+                            </button>
+                        )}
 
                         <span className="field-label" id="item-sheet-category">
                             Category

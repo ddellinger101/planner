@@ -29,6 +29,7 @@ class GoogleAccount extends Model
             'sync_birthdays' => 'boolean',
             'tasks_last_synced_at' => 'datetime',
             'birthdays_synced_at' => 'datetime',
+            'calendar_last_synced_at' => 'datetime',
         ];
     }
 
@@ -58,6 +59,11 @@ class GoogleAccount extends Model
     public function canSyncTasks(): bool
     {
         return $this->hasGranted(GoogleClient::SCOPE_TASKS);
+    }
+
+    public function canSyncCalendar(): bool
+    {
+        return $this->hasGranted(GoogleClient::SCOPE_CALENDAR_EVENTS) && $this->hasGranted(GoogleClient::SCOPE_CALENDAR_LIST);
     }
 
     public function canSyncContacts(): bool

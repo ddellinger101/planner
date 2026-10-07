@@ -4,12 +4,13 @@ namespace App\Jobs;
 
 use App\Models\GoogleAccount;
 use App\Services\Google\BirthdaySync;
+use App\Services\Google\CalendarSync;
 use App\Services\Google\TaskSync;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** One account's full sync: tasks both ways, and optionally contacts' birthdays. */
+/** One account's full sync: tasks and calendar both ways, and optionally contacts' birthdays. */
 class SyncGoogleAccount implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
@@ -24,7 +25,7 @@ class SyncGoogleAccount implements ShouldBeUnique, ShouldQueue
         return $this->accountId.($this->withBirthdays ? ':birthdays' : '');
     }
 
-    public function handle(TaskSync $tasks, BirthdaySync $birthdays): void
+    public function handle(TaskSync $tasks, BirthdaySync $birthdays, CalendarSync $calendar): void
     {
         $account = GoogleAccount::find($this->accountId);
 
@@ -33,6 +34,7 @@ class SyncGoogleAccount implements ShouldBeUnique, ShouldQueue
         }
 
         $tasks->syncAccount($account);
+        $calendar->syncAccount($account->refresh());
 
         if ($this->withBirthdays) {
             $birthdays->syncAccount($account->refresh());
