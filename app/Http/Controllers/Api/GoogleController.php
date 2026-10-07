@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\CalendarRole;
 use App\Enums\Scope;
 use App\Enums\SyncState;
 use App\Http\Controllers\Controller;
@@ -61,6 +62,7 @@ class GoogleController extends Controller
                     'writable' => $calendar->isWritable(),
                     'mode' => $calendar->mode(),
                 ]) ?? [],
+            'shared_calendars' => $this->sharedCalendars($request),
         ]);
     }
 
@@ -117,6 +119,50 @@ class GoogleController extends Controller
         SyncGoogleAccount::dispatch($account->id);
 
         return $this->show($request);
+    }
+
+    /** Show or hide, for the signed-in person only, a calendar someone else in the household shows. */
+    public function updateSharedCalendar(Request $request, int $calendar): JsonResponse
+    {
+        $user = $request->user();
+        $row = GoogleCalendar::whereHas('googleAccount.user', fn ($q) => $q
+            ->where('household_id', $user->household_id)->whereKeyNot($user->id))
+            ->findOrFail($calendar);
+
+        $visible = $request->validate(['visible' => ['required', 'boolean']])['visible'];
+
+        $visible ? $user->hiddenCalendars()->detach($row->id) : $user->hiddenCalendars()->syncWithoutDetaching([$row->id]);
+
+        return $this->show($request);
+    }
+
+    /**
+     * The calendars other people in the household show in the planner,
+     * and whether the signed-in person sees each one.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sharedCalendars(Request $request): array
+    {
+        $user = $request->user();
+        $hidden = $user->hiddenCalendars()->pluck('google_calendars.id')->all();
+
+        return GoogleCalendar::with('googleAccount.user')
+            ->where('sync_enabled', true)
+            ->where('role', '!=', CalendarRole::Menu)
+            ->whereHas('googleAccount.user', fn ($q) => $q
+                ->where('household_id', $user->household_id)->whereKeyNot($user->id))
+            ->orderByDesc('is_primary')
+            ->orderBy('summary')
+            ->get()
+            ->map(fn (GoogleCalendar $calendar) => [
+                'id' => $calendar->id,
+                'summary' => $calendar->summary,
+                'color' => $calendar->color,
+                'owner_user_id' => $calendar->googleAccount->user_id,
+                'visible' => ! in_array($calendar->id, $hidden, true),
+            ])
+            ->all();
     }
 
     public function update(Request $request): JsonResponse

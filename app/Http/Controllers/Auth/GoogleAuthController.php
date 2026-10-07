@@ -78,6 +78,12 @@ class GoogleAuthController extends Controller
                 ?? Household::create(['name' => config('planner.household_name')]);
 
             $user = User::firstOrNew(['email' => $email]);
+
+            if (! $user->exists) {
+                // Each person gets their own color, so their things can be told apart.
+                $user->color = User::nextColorFor($household->id);
+            }
+
             $user->fill([
                 'household_id' => $user->household_id ?? $household->id,
                 'name' => $user->name ?? $google->getName() ?? $email,

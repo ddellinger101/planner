@@ -229,6 +229,51 @@ describe('events from Google', function () {
         $this->getJson('/api/events?from=2027-01-01&to=2027-01-31')->assertOk()->assertJsonCount(0);
     });
 
+    it('lets each person hide a calendar the other one shows', function () {
+        $this->google->addEvent($this->mine, ['title' => 'Client call', 'start' => '2027-01-05T14:00:00-05:00']);
+        pollCalendar();
+        $calendar = calendarRow($this->mine);
+
+        // Something Dustin made in the planner, not on any calendar yet.
+        Queue::fake();
+        $this->postJson('/api/events', ['title' => 'Pick up cake', 'all_day' => true, 'date' => '2027-01-05'])->assertCreated();
+
+        // It isn't the owner's to hide this way: they have their own Calendars list.
+        $this->patchJson("/api/google/shared-calendars/{$calendar->id}", ['visible' => false])->assertNotFound();
+        $this->getJson('/api/google')->assertJsonPath('shared_calendars', []);
+
+        $partner = signIn($this->user->household);
+
+        $this->getJson('/api/google')->assertOk()
+            ->assertJsonCount(1, 'shared_calendars')
+            ->assertJsonPath('shared_calendars.0.summary', 'Dustin')
+            ->assertJsonPath('shared_calendars.0.owner_user_id', $this->user->id)
+            ->assertJsonPath('shared_calendars.0.visible', true);
+        $this->getJson('/api/events?from=2027-01-05&to=2027-01-05')->assertJsonCount(2);
+
+        $this->patchJson("/api/google/shared-calendars/{$calendar->id}", ['visible' => false])
+            ->assertOk()->assertJsonPath('shared_calendars.0.visible', false);
+
+        // The calendar's events go; what Dustin made by hand stays.
+        $this->getJson('/api/events?from=2027-01-05&to=2027-01-05')->assertJsonCount(1)->assertJsonPath('0.title', 'Pick up cake');
+
+        // Dustin still sees his own calendar.
+        $this->actingAs($this->user);
+        $this->getJson('/api/events?from=2027-01-05&to=2027-01-05')->assertJsonCount(2);
+
+        $this->actingAs($partner);
+        $this->patchJson("/api/google/shared-calendars/{$calendar->id}", ['visible' => true])->assertOk();
+        $this->getJson('/api/events?from=2027-01-05&to=2027-01-05')->assertJsonCount(2);
+    });
+
+    it('won\'t hide a calendar from another household', function () {
+        $id = calendarRow($this->mine)->id;
+
+        signIn();
+
+        $this->patchJson("/api/google/shared-calendars/{$id}", ['visible' => false])->assertNotFound();
+    });
+
     it('flags the account when access is revoked, but not when Google merely refuses', function () {
         $this->google->revoked = true;
         pollCalendar();

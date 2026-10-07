@@ -43,7 +43,9 @@ export default function DayPage({ period }: { period: Period }) {
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
     const items = useItems({ periodKey: date, person });
     const overdue = useOverdueItems(isToday ? today : null, person);
-    const habits = useHabitsOn(date, person);
+    // Routines and habits are personal: always your own, whatever view is chosen.
+    const ownItems = useItems({ periodKey: date, person: user.id });
+    const habits = useHabitsOn(date, user.id);
     const nowMinutes = useNowMinutes(user.timezone, isToday);
 
     const createItem = useCreateItem();
@@ -57,10 +59,12 @@ export default function DayPage({ period }: { period: Period }) {
     const change = (item: Item, changes: ItemChanges) =>
         updateItem.mutate({ id: item.id, changes });
 
-    const all = (items.data ?? []).filter((item) => item.status !== 'dropped');
+    const live = (list: Item[] | undefined) =>
+        (list ?? []).filter((item) => item.status !== 'dropped');
     // Routine tasks live in the routine checklists, not in the category boxes.
-    const routineItems = all.filter((item) => item.routine !== null);
-    const boxItems = all.filter((item) => item.routine === null);
+    const routineItems = live(ownItems.data).filter((item) => item.routine !== null);
+    const boxItems = live(items.data).filter((item) => item.routine === null);
+    const all = [...boxItems, ...routineItems];
     const health = categories.data?.find((category) => category.slug === 'health');
 
     return (
@@ -166,6 +170,7 @@ export default function DayPage({ period }: { period: Period }) {
                                         scope: 'day',
                                         period_key: date,
                                         routine,
+                                        assignee_user_id: user.id,
                                     })
                                 }
                                 onChange={change}

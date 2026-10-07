@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/google/lists/{list}', [GoogleController::class, 'updateList'])->whereNumber('list');
     Route::post('/google/calendars/refresh', [GoogleController::class, 'refreshCalendars']);
     Route::patch('/google/calendars/{calendar}', [GoogleController::class, 'updateCalendar'])->whereNumber('calendar');
+    Route::patch('/google/shared-calendars/{calendar}', [GoogleController::class, 'updateSharedCalendar'])->whereNumber('calendar');
     Route::apiResource('events', EventController::class)->except('show');
 
     Route::patch('/me', [MeController::class, 'update']);

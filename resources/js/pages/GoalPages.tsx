@@ -63,7 +63,7 @@ function SectionHeading({ children }: { children: string }) {
 }
 
 export function WeekPage({ period }: { period: Period }) {
-    const { household } = useSession();
+    const { household, user } = useSession();
     const { person } = usePersonFilter();
     const { editItem } = useItemEditor();
     const today = useToday();
@@ -72,7 +72,9 @@ export function WeekPage({ period }: { period: Period }) {
     const dates = useImportantDates(period.start, period.end);
     const meals = useMeals(period.start, period.end);
     const events = useEvents(period.start, period.end);
-    const habits = useHabitsBetween(period.start, period.end, person);
+    // Routines and habits are personal: always your own, whatever view is chosen.
+    const ownTasks = useItemsBetween(period.start, period.end, user.id);
+    const habits = useHabitsBetween(period.start, period.end, user.id);
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
     const checkHabit = useCheckHabit();
@@ -130,7 +132,7 @@ export function WeekPage({ period }: { period: Period }) {
                 <div className="col-12 col-lg-7">
                     <RoutineGrid
                         week={period}
-                        items={tasks.data ?? []}
+                        items={ownTasks.data ?? []}
                         habits={habits.data ?? []}
                         categories={categories}
                         onChange={change}

@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LogOut, MapPinOff, type LucideIcon } from 'lucide-react';
+import { MapPinOff, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { signOut, updateProfile } from '@/api/session';
+import { updateProfile } from '@/api/session';
 import { MORE_PAGES } from '@/components/AppShell';
 import EmptyState from '@/components/EmptyState';
 import GoogleSettings from '@/components/GoogleSettings';
 import PageHeader from '@/components/PageHeader';
+import ProfileSettings from '@/components/ProfileSettings';
 import { useSession } from '@/context/SessionContext';
 
 type ComingSoonProps = {
@@ -58,55 +59,13 @@ export function MorePage() {
 }
 
 export function SettingsPage() {
-    const { user, household } = useSession();
-    const queryClient = useQueryClient();
-    const logout = useMutation({
-        mutationFn: signOut,
-        onSuccess: () => queryClient.setQueryData(['session'], null),
-    });
-
     return (
         <>
             <PageHeader showPersonFilter={false}>Settings</PageHeader>
             <main className="container-fluid page-body">
                 <div className="row g-3">
                     <div className="col-12 col-lg-6">
-                        <section className="planner-card p-3" aria-labelledby="settings-profile">
-                            <h2 id="settings-profile" className="font-display h3">
-                                Profile
-                            </h2>
-                            <div className="d-flex align-items-center gap-3 mb-3">
-                                {user.avatar_url && (
-                                    <img
-                                        className="avatar"
-                                        src={user.avatar_url}
-                                        alt=""
-                                        referrerPolicy="no-referrer"
-                                    />
-                                )}
-                                <div>
-                                    <div className="fw-bold">{user.name}</div>
-                                    <div className="text-soft small">{user.email}</div>
-                                </div>
-                            </div>
-                            <dl className="row small mb-3">
-                                <dt className="col-4 text-soft">Planner</dt>
-                                <dd className="col-8">
-                                    {household.name}, shared by{' '}
-                                    {household.members.map((member) => member.name).join(' and ')}
-                                </dd>
-                                <dt className="col-4 text-soft">Time zone</dt>
-                                <dd className="col-8 mb-0">{user.timezone}</dd>
-                            </dl>
-                            <button
-                                type="button"
-                                className="button-plain d-inline-flex align-items-center gap-2"
-                                onClick={() => logout.mutate()}
-                                disabled={logout.isPending}
-                            >
-                                <LogOut aria-hidden="true" size={18} /> Sign out
-                            </button>
-                        </section>
+                        <ProfileSettings />
                     </div>
                     <div className="col-12 col-lg-6">
                         <TimelineHours />

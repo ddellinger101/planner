@@ -73,7 +73,67 @@ export default function GoogleSettings() {
             ) : (
                 status && <Connected status={status} />
             )}
+
+            {status && status.shared_calendars.length > 0 && <SharedCalendars status={status} />}
         </section>
+    );
+}
+
+/**
+ * The calendars someone else in the household shows. Each person chooses
+ * which of them appear in their own planner; it changes nothing for the owner.
+ */
+function SharedCalendars({ status }: { status: GoogleStatus }) {
+    const { household } = useSession();
+    const action = useGoogleAction();
+    const owners = household.members.filter((member) =>
+        status.shared_calendars.some((calendar) => calendar.owner_user_id === member.id),
+    );
+
+    return (
+        <>
+            {owners.map((owner) => (
+                <fieldset key={owner.id} className="shared-calendars">
+                    <legend className="field-label d-flex align-items-center gap-2">
+                        <CalendarDays aria-hidden="true" size={15} /> {owner.name.split(' ')[0]}’s
+                        calendars
+                    </legend>
+                    <p className="text-soft small">
+                        Untick a calendar to keep it out of your planner. {owner.name.split(' ')[0]}{' '}
+                        still sees it.
+                    </p>
+                    {status.shared_calendars
+                        .filter((calendar) => calendar.owner_user_id === owner.id)
+                        .map((calendar) => (
+                            <label key={calendar.id} className="date-form-yearly">
+                                <input
+                                    type="checkbox"
+                                    checked={calendar.visible}
+                                    disabled={action.isPending}
+                                    onChange={(event) =>
+                                        action.mutate({
+                                            kind: 'shared-calendar',
+                                            calendarId: calendar.id,
+                                            visible: event.target.checked,
+                                        })
+                                    }
+                                />
+                                <span
+                                    className="calendar-swatch me-0"
+                                    style={{ background: calendar.color ?? 'var(--accent)' }}
+                                    aria-hidden="true"
+                                />
+                                {calendar.summary}
+                            </label>
+                        ))}
+                </fieldset>
+            ))}
+            {action.isError && (
+                <p className="small" role="alert" style={{ color: 'var(--danger)' }}>
+                    That didn’t save. Please try again.
+                </p>
+            )}
+        </>
     );
 }
 

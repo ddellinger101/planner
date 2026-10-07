@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useParentPrompt } from '@/context/PlannerContexts';
 import type { Scope } from '@/lib/period';
 import { api } from './client';
+import type { Category } from './session';
+import { usePersonFilter } from '@/context/PersonFilterContext';
 
 export type ItemStatus = 'open' | 'done' | 'dropped';
 export type Routine = 'morning' | 'evening';
@@ -68,31 +70,43 @@ export const byListOrder = (a: Item, b: Item) =>
 export const isRepeating = (item: Item) =>
     item.recurrence_rule !== null || item.recurrence_parent_id !== null;
 
-const withPerson = (query: URLSearchParams, person: number | null) => {
+/**
+ * Add whose items to ask for. In the default view the server also leaves
+ * out Health items that belong to the other person.
+ */
+export const withPerson = (query: URLSearchParams, person: number | null, ownHealth: boolean) => {
     if (person !== null) {
         query.set('person', String(person));
+    }
+
+    if (ownHealth) {
+        query.set('own_health', '1');
     }
 
     return query;
 };
 
 export function useItems({ periodKey, person }: Filters) {
+    const { ownHealth } = usePersonFilter();
+
     return useQuery({
-        queryKey: ['items', 'period', periodKey, person],
+        queryKey: ['items', 'period', periodKey, person, ownHealth],
         queryFn: () =>
             api<Item[]>(
-                `/api/items?${withPerson(new URLSearchParams({ period_key: periodKey }), person)}`,
+                `/api/items?${withPerson(new URLSearchParams({ period_key: periodKey }), person, ownHealth)}`,
             ),
     });
 }
 
 /** Open tasks from days before `before`. Pass null to skip the request. */
 export function useOverdueItems(before: string | null, person: number | null) {
+    const { ownHealth } = usePersonFilter();
+
     return useQuery({
-        queryKey: ['items', 'overdue', before, person],
+        queryKey: ['items', 'overdue', before, person, ownHealth],
         queryFn: () =>
             api<Item[]>(
-                `/api/items/overdue?${withPerson(new URLSearchParams({ before: before! }), person)}`,
+                `/api/items/overdue?${withPerson(new URLSearchParams({ before: before! }), person, ownHealth)}`,
             ),
         enabled: before !== null,
     });
@@ -187,11 +201,29 @@ export function useDeleteItem() {
     );
 }
 
+const healthCategoryId = (queryClient: QueryClient) =>
+    queryClient
+        .getQueryData<Category[]>(['categories'])
+        ?.find((category) => category.slug === 'health')?.id;
+
 export function useCreateItem() {
     const queryClient = useQueryClient();
+    const { person } = usePersonFilter();
 
     return useMutation({
-        mutationFn: (item: NewItem) => api<Item>('/api/items', { method: 'POST', body: item }),
+        mutationFn: (item: NewItem) =>
+            api<Item>('/api/items', {
+                method: 'POST',
+                // While looking at one person's planner, a new day task or
+                // anything in Health (which is personal) is theirs: otherwise
+                // it would be added and vanish from view at once.
+                body:
+                    person !== null &&
+                    item.assignee_user_id === undefined &&
+                    (item.scope === 'day' || item.category_id === healthCategoryId(queryClient))
+                        ? { ...item, assignee_user_id: person }
+                        : item,
+            }),
         onSettled: () => refreshItems(queryClient),
     });
 }

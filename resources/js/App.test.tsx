@@ -246,7 +246,53 @@ describe('the app shell', () => {
         expect(window.localStorage.getItem('planner.person')).toBe('2');
 
         await userEvent.click(screen.getByRole('button', { name: 'Both' }));
+        expect(window.localStorage.getItem('planner.person')).toBe('both');
+
+        // Default is what a device starts with, so nothing needs remembering.
+        await userEvent.click(screen.getByRole('button', { name: 'Default' }));
         expect(window.localStorage.getItem('planner.person')).toBeNull();
+    });
+
+    it('starts on Default: everything shared, but only your own Health', async () => {
+        const { calls } = mockApi(signedIn());
+
+        renderApp('/day/2027-01-04');
+        await screen.findByRole('heading', { level: 2, name: 'Health' });
+
+        expect(screen.getByRole('button', { name: 'Default' })).toHaveAttribute(
+            'aria-pressed',
+            'true',
+        );
+
+        const listed = () =>
+            calls.filter((call) => call.path === '/api/items' && !call.query.has('person'));
+
+        expect(listed().at(-1)?.query.get('own_health')).toBe('1');
+
+        // Both shows the other person's Health too.
+        await userEvent.click(screen.getByRole('button', { name: 'Both' }));
+        await waitFor(() => expect(listed().at(-1)?.query.has('own_health')).toBe(false));
+    });
+
+    it('keeps routines and habits your own, whoever’s planner is on screen', async () => {
+        window.localStorage.setItem('planner.person', '2');
+        const { calls } = mockApi(signedIn());
+
+        renderApp('/day/2027-01-04');
+        await screen.findByRole('heading', { level: 2, name: 'Health' });
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.path === '/api/habits')?.query.get('person')).toBe(
+                '1',
+            ),
+        );
+        // The day's tasks are asked for twice: Elizabeth's for the boxes, your own for the routines.
+        expect(
+            calls
+                .filter((call) => call.path === '/api/items')
+                .map((call) => call.query.get('person'))
+                .sort(),
+        ).toEqual(['1', '2']);
     });
 
     it('starts with the remembered person', async () => {

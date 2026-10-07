@@ -11,6 +11,7 @@ import PageHeader from '@/components/PageHeader';
 import { CompletionBar } from '@/components/period/Summaries';
 import RewardSheet, { type RewardTarget } from '@/components/rewards/RewardSheet';
 import TaskRow from '@/components/TaskRow';
+import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 
 const HOUR = 3_600_000;
@@ -50,7 +51,14 @@ export default function RewardsPage() {
     const [sheet, setSheet] = useState<RewardTarget | null>(
         params.get('new') === 'big3' ? { kind: 'create', starredThisWeek: true } : null,
     );
-    const all = rewards.data ?? [];
+    const { person } = usePersonFilter();
+    // A reward for both people shows under either of them.
+    const all = (rewards.data ?? []).filter(
+        (reward) =>
+            person === null ||
+            reward.beneficiary_user_id === null ||
+            reward.beneficiary_user_id === person,
+    );
     const earned = all.filter((reward) => reward.status === 'earned');
     const active = all.filter((reward) => reward.status === 'active');
     const past = all.filter((reward) => reward.status === 'claimed' || reward.status === 'expired');
@@ -65,7 +73,7 @@ export default function RewardsPage() {
 
     return (
         <>
-            <PageHeader showPersonFilter={false}>Rewards</PageHeader>
+            <PageHeader>Rewards</PageHeader>
             <main className="container-fluid page-body">
                 <button
                     type="button"

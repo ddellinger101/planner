@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\ItemStatus;
 use App\Enums\Scope;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Item;
 use App\Rules\PeriodKey;
 use App\Services\RecurrenceService;
@@ -29,6 +30,7 @@ class ItemController extends Controller
             'to' => ['date_format:Y-m-d', 'after_or_equal:from'],
             'status' => [Rule::enum(ItemStatus::class)],
             'person' => ['integer'],
+            'own_health' => ['boolean'],
             'routine' => [Rule::in(['morning', 'evening'])],
             'series' => ['boolean'],
         ]);
@@ -48,7 +50,7 @@ class ItemController extends Controller
             ->when($filters['routine'] ?? null, fn ($q, $routine) => $q->where('routine', $routine))
             // One row per repeating task: the occurrence that holds its rule.
             ->when($filters['series'] ?? false, fn ($q) => $q->whereNotNull('recurrence_rule')->whereNull('recurrence_parent_id'))
-            ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
+            ->tap(fn ($q) => $this->forPerson($q, $request, $filters))
             ->orderByDesc('starred')
             ->orderBy('sort')
             ->orderBy('id')
@@ -63,13 +65,14 @@ class ItemController extends Controller
         $filters = $request->validate([
             'before' => ['required', 'date_format:Y-m-d'],
             'person' => ['integer'],
+            'own_health' => ['boolean'],
         ]);
 
         $items = Item::query()
             ->where('scope', Scope::Day)
             ->where('status', ItemStatus::Open)
             ->whereDate('due_date', '<', $filters['before'])
-            ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
+            ->tap(fn ($q) => $this->forPerson($q, $request, $filters))
             ->orderByDesc('due_date')
             ->orderBy('id')
             ->get()
@@ -91,12 +94,13 @@ class ItemController extends Controller
             'period_keys' => ['required', 'array', 'max:60'],
             'period_keys.*' => [new PeriodKey],
             'person' => ['integer'],
+            'own_health' => ['boolean'],
         ]);
 
         $rows = Item::query()
             ->whereIn('period_key', $filters['period_keys'])
             ->where('status', '!=', ItemStatus::Dropped)
-            ->tap(fn ($q) => $this->forPerson($q, $filters['person'] ?? null))
+            ->tap(fn ($q) => $this->forPerson($q, $request, $filters))
             ->groupBy('period_key', 'category_id')
             ->orderBy('period_key')
             ->orderBy('category_id')
@@ -118,9 +122,13 @@ class ItemController extends Controller
         $data = $this->validated($request);
         $period = Period::parse($data['period_key']);
 
-        // Goals default to both people; day tasks default to whoever added them.
+        // Goals default to both people. Day tasks, and anything in Health,
+        // which is personal, default to whoever added them.
         if (! array_key_exists('assignee_user_id', $data)) {
-            $data['assignee_user_id'] = $period->scope === Scope::Day ? $request->user()->id : null;
+            $personal = $period->scope === Scope::Day
+                || ($data['category_id'] ?? null) === Category::where('slug', 'health')->value('id');
+
+            $data['assignee_user_id'] = $personal ? $request->user()->id : null;
         }
 
         $item = Item::create([...$data, 'created_by' => $request->user()->id]);
@@ -156,11 +164,27 @@ class ItemController extends Controller
         return response()->noContent();
     }
 
-    /** A person sees their own items and the ones that belong to both. */
-    private function forPerson($query, ?int $person): void
+    /**
+     * A person sees their own items and the ones that belong to both. With
+     * `own_health`, Health items that belong to someone else are left out:
+     * health is personal even when everything else is shared.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    private function forPerson($query, Request $request, array $filters): void
     {
-        if ($person !== null) {
+        if (($person = $filters['person'] ?? null) !== null) {
             $query->where(fn ($q) => $q->where('assignee_user_id', $person)->orWhereNull('assignee_user_id'));
+        }
+
+        if ($filters['own_health'] ?? false) {
+            $health = Category::where('slug', 'health')->value('id');
+
+            $query->where(fn ($q) => $q
+                ->where('category_id', '!=', $health)
+                ->orWhereNull('category_id')
+                ->orWhereNull('assignee_user_id')
+                ->orWhere('assignee_user_id', $request->user()->id));
         }
     }
 

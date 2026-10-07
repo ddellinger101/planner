@@ -13,6 +13,7 @@ import {
     Sun,
     Sunrise,
     Target,
+    X,
     type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -36,6 +37,15 @@ import RewardToast from './rewards/RewardToast';
 import ReviewSheet from './review/ReviewSheet';
 
 const PROMPTED_KEY = 'planner.review.prompted';
+const WELCOMED_KEY = 'planner.welcomed';
+
+function readFlag(key: string): boolean {
+    try {
+        return window.localStorage.getItem(key) !== null;
+    } catch {
+        return false;
+    }
+}
 
 const readPrompted = () => {
     try {
@@ -130,6 +140,26 @@ export default function AppShell() {
         }
     }, [pendingKey]);
 
+    // Someone who has signed in but never connected Google is pointed to Settings, once per device.
+    const [welcomed, setWelcomed] = useState(() => readFlag(WELCOMED_KEY));
+    const showWelcome =
+        !welcomed &&
+        pathname !== '/settings' &&
+        google.data !== undefined &&
+        !google.data.needs_reconnect &&
+        !google.data.tasks_connected &&
+        !google.data.calendar_connected &&
+        !google.data.contacts_connected;
+    const dismissWelcome = () => {
+        setWelcomed(true);
+
+        try {
+            window.localStorage.setItem(WELCOMED_KEY, '1');
+        } catch {
+            // Private browsing: it may simply greet them again next visit.
+        }
+    };
+
     const [finished, setFinished] = useState<Item | null>(null);
     const parentPrompt = useMemo(() => ({ offerParent: setFinished }), []);
     const closeParentPrompt = useCallback(() => setFinished(null), []);
@@ -175,6 +205,26 @@ export default function AppShell() {
                             Google needs reconnecting before the planner can sync.
                             <Link to="/settings">Open Settings</Link>
                         </div>
+                    )}
+
+                    {showWelcome && (
+                        <aside className="welcome-banner" aria-label="Welcome">
+                            <span>
+                                <strong>Welcome, {user.name.split(' ')[0]}.</strong> Connect your
+                                Google account to bring in your tasks, calendar and birthdays.
+                            </span>
+                            <Link className="button-ink is-small" to="/settings">
+                                Set it up
+                            </Link>
+                            <button
+                                type="button"
+                                className="icon-button is-small"
+                                aria-label="Not now"
+                                onClick={dismissWelcome}
+                            >
+                                <X aria-hidden="true" size={16} />
+                            </button>
+                        </aside>
                     )}
 
                     <EventEditorProvider value={eventEditor}>
