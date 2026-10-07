@@ -16,4 +16,12 @@ return [
     // Shown on the public privacy and terms pages. Leave empty to show no address.
     'contact_email' => env('PLANNER_CONTACT_EMAIL'),
 
+    // Keys that sign push notifications. Make a pair with `php artisan push:keys`.
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        // Who the push services can contact about this sender: a mailto: or https: address.
+        'subject' => env('VAPID_SUBJECT', env('APP_URL')),
+    ],
+
 ];

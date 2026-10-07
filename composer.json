@@ -11,6 +11,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0",
+        "minishlink/web-push": "^11.0",
         "rlanvin/php-rrule": "^3.0"
     },
     "require-dev": {

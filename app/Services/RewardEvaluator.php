@@ -6,6 +6,7 @@ use App\Enums\ItemStatus;
 use App\Enums\RewardStatus;
 use App\Models\Item;
 use App\Models\Reward;
+use App\Services\Push\PushNotifier;
 
 /**
  * Decides when a reward has been earned or has expired.
@@ -36,6 +37,7 @@ class RewardEvaluator
 
         if ($earned) {
             $reward->update(['status' => RewardStatus::Earned, 'earned_at' => now()]);
+            app(PushNotifier::class)->rewardEarned($reward);
         } elseif (now()->gt($reward->deadline)) {
             $reward->update(['status' => RewardStatus::Expired]);
         }

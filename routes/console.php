@@ -2,9 +2,12 @@
 
 use App\Jobs\SyncGoogleAccount;
 use App\Models\GoogleAccount;
+use App\Services\Push\ReminderPlanner;
 use App\Services\RecurrenceService;
 use App\Services\RewardEvaluator;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Minishlink\WebPush\VAPID;
 
 // Keep recurring tasks generated 60 days ahead. Opening the app tops them up
 // too, so a missed run only delays things until the next visit.
@@ -28,6 +31,22 @@ Schedule::call(fn () => GoogleAccount::whereNotNull('refresh_token')->where('nee
     ->pluck('id')->each(fn (int $id) => SyncGoogleAccount::dispatch($id, withBirthdays: true)))
     ->name('google:birthdays')
     ->dailyAt('04:30');
+
+// Reminders: each minute, send whatever has just come due.
+Schedule::call(fn (ReminderPlanner $reminders) => $reminders->run())
+    ->name('push:reminders')
+    ->everyMinute();
+
+// Prints a new pair of keys for signing push notifications, to paste into .env.
+Artisan::command('push:keys', function () {
+    $keys = VAPID::createVapidKeys();
+
+    $this->line('VAPID_PUBLIC_KEY='.$keys['publicKey']);
+    $this->line('VAPID_PRIVATE_KEY='.$keys['privateKey']);
+    $this->line('VAPID_SUBJECT=mailto:you@example.com');
+    $this->comment('Add these to .env (with your own address), then redeploy or run `php artisan optimize`.');
+    $this->comment('Changing the keys later signs every device out of notifications.');
+})->purpose('Generate VAPID keys for push notifications');
 
 // There is no long-running queue worker on the server, so the scheduler
 // drains the queue every minute: a change made here reaches Google within

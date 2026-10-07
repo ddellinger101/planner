@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\JournalController;
 use App\Http\Controllers\Api\MealController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RewardController;
 use App\Http\Controllers\Api\WeightController;
@@ -45,6 +46,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/journal', [JournalController::class, 'index']);
     Route::put('/journal/{periodKey}/{type}', [JournalController::class, 'update']);
 
+    Route::get('/notifications', [NotificationController::class, 'show']);
+    Route::patch('/notifications', [NotificationController::class, 'update']);
+    Route::post('/notifications/subscriptions', [NotificationController::class, 'subscribe']);
+    Route::delete('/notifications/subscriptions', [NotificationController::class, 'unsubscribe']);
+    Route::post('/notifications/test', [NotificationController::class, 'test']);
     Route::get('/meals', [MealController::class, 'index']);
     Route::put('/meals', [MealController::class, 'update']);
 
