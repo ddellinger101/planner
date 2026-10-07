@@ -56,7 +56,8 @@ cache, then a health check against https://plan.dustindellinger.com/health.
     ```
 
 Use `php8.3` explicitly on the server's command line: the default `php` there is 8.2, while the
-application's web pool runs 8.3.
+application's web pool runs 8.3. The same goes for Chef's queue cron on this server: run with
+`/usr/bin/php` it fails on every tick, and meals stop reaching the Menu calendar.
 
 ## Google Cloud setup
 

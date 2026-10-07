@@ -293,6 +293,7 @@ describe('meals and events', () => {
                         title: 'Tacos',
                         description: null,
                         chef_url: 'https://chef.dustindellinger.com/recipes/9',
+                        source: 'chef',
                     },
                     {
                         id: 2,
@@ -301,6 +302,7 @@ describe('meals and events', () => {
                         title: 'Salad',
                         description: null,
                         chef_url: null,
+                        source: 'chef',
                     },
                     {
                         id: 3,
@@ -309,6 +311,7 @@ describe('meals and events', () => {
                         title: 'Oatmeal',
                         description: null,
                         chef_url: null,
+                        source: 'chef',
                     },
                 ],
             },
@@ -330,14 +333,82 @@ describe('meals and events', () => {
         );
     });
 
-    it('says so when nothing is planned, and points to Settings for the calendar', async () => {
+    it('takes a note for a meal Chef hasn’t planned, but not for one it has', async () => {
+        let meals = [
+            {
+                id: 1,
+                date: '2027-01-04',
+                slot: 'dinner',
+                title: 'Tacos',
+                description: null,
+                chef_url: null,
+                source: 'chef',
+            },
+            {
+                id: 2,
+                date: '2027-01-04',
+                slot: 'lunch',
+                title: 'Leftovers',
+                description: null,
+                chef_url: null,
+                source: 'note',
+            },
+        ];
+        const { calls } = mockApi({
+            ...signedIn(),
+            'GET /api/meals': () => ({ body: meals }),
+            'PUT /api/meals': ({ body }) => {
+                const note = body as { date: string; slot: string; title: string };
+                meals = meals.filter((meal) => meal.slot !== note.slot);
+
+                if (note.title === '') {
+                    return { status: 204 };
+                }
+
+                const saved = { id: 9, description: null, chef_url: null, source: 'note', ...note };
+                meals = [...meals, saved];
+
+                return { body: saved };
+            },
+        });
+
+        renderApp('/day/2027-01-04');
+        const card = within(await region('Meal plan'));
+
+        // Chef's dinner is text; the note and the empty slots are lines to write on.
+        expect(await card.findByText('Tacos')).toBeInTheDocument();
+        expect(card.queryByRole('textbox', { name: 'Dinner' })).not.toBeInTheDocument();
+        expect(card.getByRole('textbox', { name: 'Lunch' })).toHaveValue('Leftovers');
+
+        await userEvent.type(card.getByRole('textbox', { name: 'Breakfast' }), 'Pancakes{Enter}');
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+                date: '2027-01-04',
+                slot: 'breakfast',
+                title: 'Pancakes',
+            }),
+        );
+        await waitFor(() =>
+            expect(card.getByRole('textbox', { name: 'Breakfast' })).toHaveValue('Pancakes'),
+        );
+
+        // Emptying a note clears it.
+        await userEvent.clear(card.getByRole('textbox', { name: 'Lunch' }));
+        await userEvent.tab();
+        await waitFor(() =>
+            expect(calls.filter((call) => call.method === 'PUT').at(-1)?.body).toEqual({
+                date: '2027-01-04',
+                slot: 'lunch',
+                title: '',
+            }),
+        );
+    });
+
+    it('points to Settings for the calendar when it isn’t connected', async () => {
         mockApi(signedIn());
 
         renderApp('/day/2027-01-04');
 
-        expect(
-            await within(await region('Meal plan')).findByText('Nothing planned for this day yet.'),
-        ).toBeInTheDocument();
         expect(
             await within(await region('Events')).findByText(/Connect Google Calendar/),
         ).toBeInTheDocument();

@@ -414,6 +414,31 @@ describe('meals from Chef', function () {
         $this->getJson('/api/meals?from=2027-01-05&to=2027-01-05')->assertJsonCount(1);
     });
 
+    it('replaces a note typed here once Chef plans that meal', function () {
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'dinner', 'title' => 'chicken soup'])->assertOk();
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'lunch', 'title' => 'Leftovers'])->assertOk();
+        $this->putJson('/api/meals', ['date' => '2027-01-09', 'slot' => 'dinner', 'title' => 'Pizza?'])->assertOk();
+
+        $this->google->addEvent($this->menu, chefEvent('Chicken Soup', '2027-01-08T18:00:00-05:00', ['Chicken Soup', 'Bread'], '2027-01-08'));
+        pollCalendar();
+
+        // Only the note for that day's dinner gives way.
+        expect(MealEntry::orderBy('date')->orderBy('id')->get()->map(fn ($meal) => "{$meal->date->toDateString()} {$meal->slot->value} {$meal->title} ({$meal->source})")->all())
+            ->toBe(['2027-01-08 lunch Leftovers (note)', '2027-01-08 dinner Chicken Soup (chef)', '2027-01-09 dinner Pizza? (note)']);
+
+        // And a slot Chef has planned can't be written over here.
+        $this->putJson('/api/meals', ['date' => '2027-01-08', 'slot' => 'dinner', 'title' => 'Something else'])->assertStatus(409);
+    });
+
+    it('keeps notes when the Menu calendar is read in full', function () {
+        $this->putJson('/api/meals', ['date' => '2027-01-09', 'slot' => 'dinner', 'title' => 'Pizza?'])->assertOk();
+
+        pollCalendar();
+        pollCalendar(60 * 24);
+
+        expect(MealEntry::pluck('title')->all())->toBe(['Pizza?']);
+    });
+
     it('never writes to the Menu calendar', function () {
         $this->google->addEvent($this->menu, chefEvent('Tacos', '2027-01-05T18:00:00-05:00', ['Tacos'], '2027-01-05'));
         pollCalendar();

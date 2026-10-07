@@ -45,5 +45,8 @@ https://chef.dustindellinger.com/tonight?date=2027-01-05
 - **Sides**: the `•` lines other than the main dish, shown as "with Naan, Cucumber salad".
 - **Link**: the first URL in the description, which opens that day in Chef.
 
+A day and slot with no Chef meal can hold a note typed into the planner. The note is deleted
+when Chef's event for that day and slot is read, so Chef's plan always wins.
+
 The planner never writes to this calendar. Meals are household-wide: they come through
 whichever person's Google account has the calendar set to "Meals from Chef" in Settings.

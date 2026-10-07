@@ -164,7 +164,7 @@ describe('week', () => {
         );
     });
 
-    it('lists the week’s meals and points empty days at Chef', async () => {
+    it('lists the week’s meals, with a line for dinner on the days Chef has none', async () => {
         mockApi({
             ...weekApi(),
             'GET /api/meals': {
@@ -176,6 +176,7 @@ describe('week', () => {
                         title: 'Tacos',
                         description: null,
                         chef_url: null,
+                        source: 'chef',
                     },
                 ],
             },
@@ -185,7 +186,49 @@ describe('week', () => {
         const meals = within(await region('Meal plan'));
 
         expect((await meals.findByText('Tacos')).closest('div')).toHaveTextContent('Tue');
-        expect(meals.getAllByRole('link', { name: 'Plan in Chef' })).toHaveLength(6);
+        expect(meals.getAllByRole('textbox')).toHaveLength(6);
+        expect(meals.queryByRole('textbox', { name: 'Dinner on Tuesday' })).not.toBeInTheDocument();
+    });
+
+    it('writes a dinner note on a day of the week, and shows one already there', async () => {
+        const { calls } = mockApi({
+            ...weekApi(),
+            'GET /api/meals': {
+                body: [
+                    {
+                        id: 4,
+                        date: '2027-01-07',
+                        slot: 'dinner',
+                        title: 'Pizza?',
+                        description: null,
+                        chef_url: null,
+                        source: 'note',
+                    },
+                ],
+            },
+            'PUT /api/meals': ({ body }) => ({ body: { id: 5, ...(body as object) } }),
+        });
+
+        renderApp('/week/2027-W01');
+        const meals = within(await region('Meal plan'));
+
+        expect(await meals.findByRole('textbox', { name: 'Dinner on Thursday' })).toHaveValue(
+            'Pizza?',
+        );
+
+        await userEvent.type(
+            meals.getByRole('textbox', { name: 'Dinner on Friday' }),
+            'chicken soup',
+        );
+        await userEvent.tab();
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+                date: '2027-01-08',
+                slot: 'dinner',
+                title: 'chicken soup',
+            }),
+        );
     });
 
     it('lines routines up in a grid and checks them off by day', async () => {

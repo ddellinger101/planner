@@ -144,12 +144,26 @@ export type Meal = {
     title: string;
     description: string | null;
     chef_url: string | null;
+    /** "chef" for a meal planned in Chef; "note" for one typed into the planner. */
+    source: 'chef' | 'note';
 };
 
 export function useMeals(from: string, to: string) {
     return useQuery({
         queryKey: ['meals', from, to],
         queryFn: () => api<Meal[]>(`/api/meals?from=${from}&to=${to}`),
+    });
+}
+
+/** Write, change or (with an empty title) clear the note for a meal Chef hasn't planned. */
+export function useSaveMealNote() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (note: { date: string; slot: MealSlot; title: string }) =>
+            api<Meal | null>('/api/meals', { method: 'PUT', body: note }),
+        // Also after a failure: Chef may have planned that meal in the meantime.
+        onSettled: () => queryClient.invalidateQueries({ queryKey: ['meals'] }),
     });
 }
 
