@@ -5,10 +5,11 @@ import type { Item } from '@/api/items';
 import type { Completion } from '@/api/planning';
 import type { Category } from '@/api/session';
 import type { Period } from '@/lib/period';
+import { periodName } from '@/lib/periodLabels';
 import { useDraft } from '@/lib/useDraft';
 
 /** "Best part about this week / month": one line, saved when you leave it. */
-export function BestPart({ period }: { period: Period }) {
+export function BestPart({ period, past = false }: { period: Period; past?: boolean }) {
     const journal = useJournal(period.key);
     const save = useSaveJournal(period.key);
     const saved = journal.data?.find((entry) => entry.type === 'best_part')?.body ?? '';
@@ -28,7 +29,8 @@ export function BestPart({ period }: { period: Period }) {
             <div className="journal-line">
                 <label htmlFor={id}>
                     <Smile aria-hidden="true" size={18} />
-                    Best part about this {period.scope}
+                    {/* In a review, the period being looked back on is over. */}
+                    Best part about {past ? periodName(period) : `this ${period.scope}`}
                 </label>
                 <div className="journal-field">
                     <input

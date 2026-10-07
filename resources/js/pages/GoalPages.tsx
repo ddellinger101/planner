@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { CalendarCheck, History } from 'lucide-react';
 import { Link } from 'react-router';
 import { useCheckHabit, useHabitsBetween, useMeals } from '@/api/day';
 import { useCreateItem, useItems, useUpdateItem, type Item, type ItemChanges } from '@/api/items';
 import { useGoalSummary, useImportantDates, useItemsBetween } from '@/api/planning';
+import { usePendingReviews } from '@/api/review';
 import { fetchCategories } from '@/api/session';
 import GoalBoxes from '@/components/period/GoalBoxes';
 import ImportantDates from '@/components/period/ImportantDates';
@@ -11,14 +13,47 @@ import { BestPart, CategoryProgress, CompletionBar } from '@/components/period/S
 import { RoutineGrid, WeekMeals } from '@/components/period/WeekExtras';
 import WeekStrip from '@/components/period/WeekStrip';
 import { useItemEditor } from '@/context/ItemEditorContext';
+import { useReview } from '@/context/PlannerContexts';
 import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
-import { childPeriods, type Period } from '@/lib/period';
-import { periodLabel } from '@/lib/periodLabels';
+import { childPeriods, parsePeriod, type Period } from '@/lib/period';
+import { periodLabel, periodShortName } from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
 const useCategories = () =>
     useQuery({ queryKey: ['categories'], queryFn: fetchCategories }).data ?? [];
+
+/** Shown on a period view while the period before it still needs its review. */
+function ReviewBanner({ period }: { period: Period }) {
+    const pending = usePendingReviews();
+    const { openReview } = useReview();
+    const due = (pending.data ?? []).find(
+        (entry) => entry.scope === period.scope && entry.next_period_key === period.key,
+    );
+
+    if (!due) {
+        return null;
+    }
+
+    const name = periodShortName(parsePeriod(due.period_key)!);
+
+    return (
+        <div className="planner-card review-banner" role="status">
+            <p>
+                <History aria-hidden="true" size={18} />
+                {due.open_count === 1 ? '1 item is' : `${due.open_count} items are`} still open from{' '}
+                {name}.
+            </p>
+            <button
+                type="button"
+                className="button-ink is-small"
+                onClick={() => openReview(due.period_key)}
+            >
+                Review {name}
+            </button>
+        </div>
+    );
+}
 
 function SectionHeading({ children }: { children: string }) {
     return <h2 className="font-display section-heading">{children}</h2>;
@@ -45,9 +80,18 @@ export function WeekPage({ period }: { period: Period }) {
 
     return (
         <>
-            <div className="row g-3">
+            <ReviewBanner period={period} />
+            <div className="row g-3 align-items-center">
                 <div className="col-12 col-lg-6">
                     <BestPart key={period.key} period={period} />
+                </div>
+                <div className="col-12 col-lg-6">
+                    <Link
+                        className="button-ink d-inline-flex align-items-center gap-2"
+                        to={`/plan/${period.key}`}
+                    >
+                        <CalendarCheck aria-hidden="true" size={18} /> Plan this week
+                    </Link>
                 </div>
             </div>
 
@@ -108,6 +152,7 @@ export function MonthPage({ period }: { period: Period }) {
 
     return (
         <>
+            <ReviewBanner period={period} />
             <div className="row g-3">
                 <div className="col-12 col-lg-6">
                     <BestPart key={period.key} period={period} />
@@ -167,6 +212,7 @@ export function QuarterPage({ period }: { period: Period }) {
 
     return (
         <>
+            <ReviewBanner period={period} />
             <SectionHeading>Quarter goals</SectionHeading>
             <GoalBoxes period={period} />
 
@@ -212,6 +258,7 @@ export function YearPage({ period }: { period: Period }) {
 
     return (
         <>
+            <ReviewBanner period={period} />
             <SectionHeading>One-year goals</SectionHeading>
             <GoalBoxes period={period} />
 

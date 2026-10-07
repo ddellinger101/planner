@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useParentPrompt } from '@/context/PlannerContexts';
 import type { Scope } from '@/lib/period';
 import { api } from './client';
 
@@ -26,6 +27,10 @@ export type Item = {
     recurrence_rule: string | null;
     /** The first occurrence of the series; null on that first occurrence itself. */
     recurrence_parent_id: number | null;
+    /** The larger goal this was pulled from, if any. */
+    parent_item_id: number | null;
+    /** The item this one was carried forward from at a period rollover. */
+    carried_from_item_id: number | null;
     sort: number;
     created_by: number;
     /** null means the item belongs to both people. */
@@ -49,7 +54,8 @@ type Editable = Pick<
 >;
 
 export type NewItem = Pick<Item, 'title' | 'category_id' | 'scope' | 'period_key'> &
-    Partial<Omit<Editable, 'status' | 'sort'>>;
+    Partial<Omit<Editable, 'status' | 'sort'>> &
+    Partial<Pick<Item, 'parent_item_id'>>;
 
 export type ItemChanges = Partial<Editable>;
 
@@ -103,9 +109,10 @@ function updateCachedLists(queryClient: QueryClient, change: (items: Item[]) => 
  * Mutations update the cache first and talk to the server second, so a
  * checkbox never waits on the network. A failed request rolls the cache back.
  */
-function useOptimisticItems<TVariables>(
-    mutationFn: (variables: TVariables) => Promise<unknown>,
+function useOptimisticItems<TVariables, TResult = unknown>(
+    mutationFn: (variables: TVariables) => Promise<TResult>,
     change: (items: Item[], variables: TVariables) => Item[],
+    onSuccess?: (result: TResult, variables: TVariables) => void,
 ) {
     const queryClient = useQueryClient();
 
@@ -122,6 +129,7 @@ function useOptimisticItems<TVariables>(
         onError: (_error, _variables, context) => {
             context?.previous.forEach(([key, items]) => queryClient.setQueryData(key, items));
         },
+        onSuccess,
         onSettled: () => refreshItems(queryClient),
     });
 }
@@ -137,6 +145,8 @@ const applyToQuery = (applyTo?: ApplyTo) =>
     applyTo && applyTo !== 'one' ? `?apply_to=${applyTo}` : '';
 
 export function useUpdateItem() {
+    const { offerParent } = useParentPrompt();
+
     return useOptimisticItems(
         ({ id, changes, applyTo }: { id: number; changes: ItemChanges; applyTo?: ApplyTo }) =>
             api<Item>(`/api/items/${id}${applyToQuery(applyTo)}`, {
@@ -158,6 +168,12 @@ export function useUpdateItem() {
                     return next.scope === 'day' ? { ...next, due_date: next.period_key } : next;
                 })
                 .sort(byListOrder),
+        // Finishing something pulled from a larger goal may finish that goal too.
+        (item, { changes }) => {
+            if (changes.status === 'done' && item.parent_item_id !== null) {
+                offerParent(item);
+            }
+        },
     );
 }
 

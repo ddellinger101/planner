@@ -1,0 +1,245 @@
+// Period reviews and the weekly planning flow.
+
+.sheet.is-wide {
+    @include media-breakpoint-up(md) {
+        width: min(42rem, calc(100vw - 2rem));
+    }
+}
+
+.review-period {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.review-clear {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.review-category {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0 0 0.2rem;
+    font-size: 1rem;
+
+    > svg {
+        color: var(--cat-strong);
+    }
+
+    .highlight-heading {
+        font-size: 1.2rem;
+    }
+}
+
+.review-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 2.75rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px dashed var(--line-soft);
+    }
+}
+
+.review-title {
+    display: inline-flex;
+    flex: 1 1 12rem;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.5rem;
+    align-items: center;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.button-plain[aria-pressed='true'] {
+    color: var(--ink);
+    background: var(--cat-highlight, color-mix(in srgb, var(--accent) 22%, transparent));
+}
+
+.button-plain.is-small {
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+// The banner on a period view while the one before it is unreviewed.
+.review-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+    background: color-mix(in srgb, var(--star) 22%, var(--card));
+
+    p {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0;
+        font-weight: 700;
+    }
+}
+
+// "Mark the goal done too?" floats above the navigation.
+.toast-prompt {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 5.5rem);
+    left: 1rem;
+    z-index: $zindex-toast;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+    padding: 0.7rem 0.9rem;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+    animation: sheet-up 0.22s ease;
+
+    > svg {
+        flex: none;
+        color: var(--accent);
+    }
+
+    p {
+        flex: 1 1 14rem;
+    }
+
+    @include media-breakpoint-up(md) {
+        right: 6rem;
+        bottom: 1.75rem;
+        left: auto;
+        max-width: 30rem;
+    }
+}
+
+// Planning steps --------------------------------------------------------------------
+
+.plan-steps {
+    display: flex;
+    gap: 0.35rem;
+    padding: 0 0 0.25rem;
+    margin: 0 0 1rem;
+    overflow-x: auto;
+    list-style: none;
+
+    button {
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: center;
+        min-height: 2.5rem;
+        padding: 0 0.75rem 0 0.35rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        white-space: nowrap;
+        background: var(--card);
+        border: 1.5px solid var(--line-soft);
+        border-radius: 2rem;
+
+        &[aria-current='step'] {
+            color: var(--ink);
+            border-color: var(--line);
+        }
+
+        &.is-done .plan-step-number {
+            color: var(--paper);
+            background: var(--accent);
+        }
+    }
+}
+
+.plan-step-number {
+    display: grid;
+    place-items: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 0.8rem;
+    color: var(--ink);
+    background: var(--line-soft);
+    border-radius: 50%;
+
+    [aria-current='step'] & {
+        color: var(--paper);
+        background: var(--ink);
+    }
+}
+
+.plan-step {
+    min-height: 12rem;
+}
+
+.plan-nav {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+}
+
+a.button-ink,
+a.button-plain {
+    text-decoration: none;
+}
+
+a.button-ink:hover {
+    color: var(--paper);
+}
+
+.capture-form {
+    display: grid;
+    gap: 0.5rem;
+
+    @include media-breakpoint-up(md) {
+        grid-template-columns: 1fr 12rem auto;
+    }
+}
+
+.place-row {
+    cursor: grab;
+}
+
+.place-select {
+    flex: 0 1 12rem;
+    min-height: 2.25rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.plan-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+
+    dt {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--ink-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    dd {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 2.4rem;
+        line-height: 1;
+    }
+}
+
+.plan-star {
+    color: var(--star);
+    fill: currentColor;
+}

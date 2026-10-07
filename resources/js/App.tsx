@@ -7,6 +7,7 @@ import { PersonFilterProvider } from './context/PersonFilterContext';
 import { SessionProvider } from './context/SessionContext';
 import { SCOPES } from './lib/periodLabels';
 import PeriodPage from './pages/PeriodPage';
+import PlanWeekPage from './pages/PlanWeekPage';
 import SignIn, { WelcomeCard } from './pages/SignIn';
 import {
     BrainDumpPage,
@@ -59,6 +60,7 @@ export default function App() {
                         {SCOPES.map((scope) => (
                             <Route key={scope} path={`/${scope}/:key?`} element={<PeriodPage />} />
                         ))}
+                        <Route path="/plan/:key" element={<PlanWeekPage />} />
                         <Route path="/brain-dump" element={<BrainDumpPage />} />
                         <Route path="/routines" element={<RoutinesPage />} />
                         <Route path="/weight" element={<WeightPage />} />

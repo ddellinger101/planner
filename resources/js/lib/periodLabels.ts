@@ -65,6 +65,13 @@ export function periodName(period: Period): string {
     return subtitle ? `${title} (${subtitle})` : title;
 }
 
+/** The shortest name that still identifies a period: "Week 40", "Quarter 3", "March 2027". */
+export function periodShortName(period: Period): string {
+    return period.scope === 'week' || period.scope === 'quarter'
+        ? periodLabel(period).title
+        : periodName(period);
+}
+
 /** "15:30" → "3:30 PM". */
 export function formatTime(time: string): string {
     const [hours, minutes] = time.split(':').map(Number);
