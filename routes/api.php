@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BrainDumpController;
 use App\Http\Controllers\Api\HabitController;
+use App\Http\Controllers\Api\ImportantDateController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\JournalController;
 use App\Http\Controllers\Api\MealController;
@@ -17,7 +18,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/me', [MeController::class, 'update']);
 
     Route::get('/items/overdue', [ItemController::class, 'overdue']);
+    Route::get('/items/summary', [ItemController::class, 'summary']);
     Route::apiResource('items', ItemController::class);
+
+    Route::apiResource('important-dates', ImportantDateController::class)->except('show');
 
     Route::get('/journal', [JournalController::class, 'index']);
     Route::put('/journal/{periodKey}/{type}', [JournalController::class, 'update']);

@@ -4,6 +4,7 @@
     padding: 0;
     color: inherit;
     text-align: left;
+    background: none;
     border: 0;
 
     &:hover {
@@ -380,7 +381,8 @@
         padding: 0.3rem 0;
     }
 
-    .task-title {
+    .task-title-button {
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

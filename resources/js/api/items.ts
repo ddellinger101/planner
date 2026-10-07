@@ -122,8 +122,15 @@ function useOptimisticItems<TVariables>(
         onError: (_error, _variables, context) => {
             context?.previous.forEach(([key, items]) => queryClient.setQueryData(key, items));
         },
-        onSettled: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
+        onSettled: () => refreshItems(queryClient),
     });
+}
+
+/** Refetch every list of items, and the goal counts worked out from them. */
+function refreshItems(queryClient: QueryClient) {
+    queryClient.invalidateQueries({ queryKey: ['item-summary'] });
+
+    return queryClient.invalidateQueries({ queryKey: ['items'] });
 }
 
 const applyToQuery = (applyTo?: ApplyTo) =>
@@ -140,7 +147,16 @@ export function useUpdateItem() {
         // another list, the refetch that follows sorts that out.
         (items, { id, changes }) =>
             items
-                .map((item) => (item.id === id ? { ...item, ...changes } : item))
+                .map((item) => {
+                    if (item.id !== id) {
+                        return item;
+                    }
+
+                    const next = { ...item, ...changes };
+
+                    // A day task is always due on its own day.
+                    return next.scope === 'day' ? { ...next, due_date: next.period_key } : next;
+                })
                 .sort(byListOrder),
     );
 }
@@ -158,6 +174,6 @@ export function useCreateItem() {
 
     return useMutation({
         mutationFn: (item: NewItem) => api<Item>('/api/items', { method: 'POST', body: item }),
-        onSettled: () => queryClient.invalidateQueries({ queryKey: ['items'] }),
+        onSettled: () => refreshItems(queryClient),
     });
 }

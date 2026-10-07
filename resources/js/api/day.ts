@@ -85,31 +85,39 @@ export type Habit = {
     checks: { date: string; done: boolean }[];
 };
 
-export function useHabitsOn(date: string, person: number | null) {
+/** Habits active between two dates, each with its checks in that range. */
+export function useHabitsBetween(from: string, to: string, person: number | null) {
     return useQuery({
-        queryKey: ['habits', date, person],
+        queryKey: ['habits', from, to, person],
         queryFn: () =>
             api<Habit[]>(
-                `/api/habits?from=${date}&to=${date}${person === null ? '' : `&person=${person}`}`,
+                `/api/habits?from=${from}&to=${to}${person === null ? '' : `&person=${person}`}`,
             ),
     });
 }
 
-export function useCheckHabit(date: string) {
+export const useHabitsOn = (date: string, person: number | null) =>
+    useHabitsBetween(date, date, person);
+
+export function useCheckHabit() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, done }: { id: number; done: boolean }) =>
+        mutationFn: ({ id, date, done }: { id: number; date: string; done: boolean }) =>
             api(`/api/habits/${id}/checks/${date}`, { method: 'PUT', body: { done } }),
-        onMutate: async ({ id, done }) => {
-            await queryClient.cancelQueries({ queryKey: ['habits', date] });
+        onMutate: async ({ id, date, done }) => {
+            await queryClient.cancelQueries({ queryKey: ['habits'] });
 
-            queryClient.setQueriesData<Habit[]>({ queryKey: ['habits', date] }, (habits) =>
-                habits?.map((habit) =>
-                    habit.id === id
-                        ? { ...habit, checks: done ? [{ date, done: true }] : [] }
-                        : habit,
-                ),
+            queryClient.setQueriesData<Habit[]>({ queryKey: ['habits'] }, (habits) =>
+                habits?.map((habit) => {
+                    if (habit.id !== id) {
+                        return habit;
+                    }
+
+                    const others = habit.checks.filter((check) => check.date !== date);
+
+                    return { ...habit, checks: done ? [...others, { date, done: true }] : others };
+                }),
             );
         },
         onSettled: () => queryClient.invalidateQueries({ queryKey: ['habits'] }),

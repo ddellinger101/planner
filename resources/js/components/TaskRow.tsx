@@ -127,11 +127,12 @@ export default function TaskRow({
                 {onEdit ? (
                     <button
                         type="button"
-                        className="task-title task-title-button"
+                        className="task-title-button"
                         aria-label={`Edit ${item.title}`}
                         onClick={onEdit}
                     >
-                        {item.title}
+                        {/* An inline span, so the strike-through follows each wrapped line. */}
+                        <span className="task-title">{item.title}</span>
                     </button>
                 ) : (
                     <span className="task-title">{item.title}</span>

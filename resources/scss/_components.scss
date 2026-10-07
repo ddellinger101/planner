@@ -146,6 +146,9 @@
     overflow-wrap: anywhere;
     // The strike-through is a background line so it can be drawn across.
     background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0 1.5px;
+    // Give each line of a wrapped title its own line through it.
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
     transition:
         background-size 0.3s ease,
         color 0.3s ease;
