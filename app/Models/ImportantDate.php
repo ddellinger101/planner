@@ -12,15 +12,16 @@ class ImportantDate extends Model
 
     protected $guarded = [];
 
-    protected $attributes = ['source' => 'app'];
+    protected $attributes = ['source' => 'app', 'add_to_calendar' => false];
 
-    protected $hidden = ['google_resource_name'];
+    protected $hidden = ['google_resource_name', 'google_event_id', 'google_calendar_id'];
 
     protected function casts(): array
     {
         return [
             'date' => 'date:Y-m-d',
             'repeats_yearly' => 'boolean',
+            'add_to_calendar' => 'boolean',
         ];
     }
 

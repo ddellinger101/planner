@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Enums\Scope;
 use App\Enums\SyncState;
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncGoogleAccount;
 use App\Models\GoogleAccount;
+use App\Models\GoogleCalendar;
 use App\Models\GoogleTaskList;
 use App\Models\ImportantDate;
 use App\Models\Item;
 use App\Services\Google\BirthdaySync;
+use App\Services\Google\CalendarSync;
 use App\Services\Google\GoogleAuthException;
 use App\Services\Google\GoogleClient;
 use App\Services\Google\TaskSync;
@@ -23,7 +26,7 @@ use Illuminate\Validation\Rule;
  */
 class GoogleController extends Controller
 {
-    public function __construct(private TaskSync $tasks, private BirthdaySync $birthdays) {}
+    public function __construct(private TaskSync $tasks, private BirthdaySync $birthdays, private CalendarSync $calendar) {}
 
     public function show(Request $request): JsonResponse
     {
@@ -47,6 +50,17 @@ class GoogleController extends Controller
             'pending' => $account?->canSyncTasks() ? $this->tasks->pending($account)->count() : 0,
             'errors' => $account ? $mine()->where('sync_state', SyncState::Error)->count() : 0,
             'lists' => $account?->taskLists()->orderBy('title')->get(['id', 'title', 'category_id']) ?? [],
+            'calendar_connected' => (bool) $account?->canSyncCalendar(),
+            'calendar_last_synced_at' => $account?->calendar_last_synced_at,
+            'calendars' => $account?->calendars()->orderByDesc('is_primary')->orderBy('summary')->get()
+                ->map(fn (GoogleCalendar $calendar) => [
+                    'id' => $calendar->id,
+                    'summary' => $calendar->summary,
+                    'color' => $calendar->color,
+                    'is_primary' => $calendar->is_primary,
+                    'writable' => $calendar->isWritable(),
+                    'mode' => $calendar->mode(),
+                ]) ?? [],
         ]);
     }
 
@@ -83,6 +97,28 @@ class GoogleController extends Controller
         return $this->show($request);
     }
 
+    /** Re-read the account's calendars from Google. */
+    public function refreshCalendars(Request $request): JsonResponse
+    {
+        return $this->withAccount($request, fn (GoogleAccount $account) => $this->calendar->refreshCalendars($account));
+    }
+
+    /** Show a calendar's events, read it as Chef's Menu calendar, or hide it. */
+    public function updateCalendar(Request $request, int $calendar): JsonResponse
+    {
+        $account = $request->user()->googleAccount;
+        $row = GoogleCalendar::where('google_account_id', $account?->id)->findOrFail($calendar);
+
+        $mode = $request->validate(['mode' => ['required', Rule::in(['hidden', 'events', 'menu'])]])['mode'];
+
+        $this->calendar->setMode($row, $mode);
+
+        // Its events arrive with the next run of the queue, within a minute.
+        SyncGoogleAccount::dispatch($account->id);
+
+        return $this->show($request);
+    }
+
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate(['sync_birthdays' => ['required', 'boolean']]);
@@ -102,6 +138,7 @@ class GoogleController extends Controller
     {
         return $this->withAccount($request, function (GoogleAccount $account) {
             $this->tasks->syncAccount($account);
+            $this->calendar->syncAccount($account->refresh());
             $this->birthdays->syncAccount($account->refresh());
         });
     }

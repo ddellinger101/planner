@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\PushImportantDateToGoogle;
 use App\Models\ImportantDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -53,7 +54,11 @@ class ImportantDateController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        return response()->json(ImportantDate::create($this->validated($request))->refresh(), 201);
+        $date = ImportantDate::create($this->validated($request));
+
+        $this->mirror($request, $date);
+
+        return response()->json($date->refresh(), 201);
     }
 
     public function update(Request $request, ImportantDate $importantDate): JsonResponse
@@ -61,6 +66,8 @@ class ImportantDateController extends Controller
         abort_if($importantDate->source !== 'app', 403, 'Birthdays from Google Contacts are edited in Google Contacts.');
 
         $importantDate->update($this->validated($request, $importantDate));
+
+        $this->mirror($request, $importantDate);
 
         return response()->json($importantDate->refresh());
     }
@@ -70,6 +77,11 @@ class ImportantDateController extends Controller
         abort_if($importantDate->source !== 'app', 403, 'Birthdays from Google Contacts are removed in Google Contacts.');
 
         $importantDate->delete();
+
+        if ($importantDate->google_event_id !== null) {
+            // Its event in Google Calendar goes with it.
+            PushImportantDateToGoogle::dispatch($importantDate->id, $importantDate->google_calendar_id, $importantDate->google_event_id);
+        }
 
         return response()->noContent();
     }
@@ -84,6 +96,24 @@ class ImportantDateController extends Controller
             'date' => [$required, 'date_format:Y-m-d'],
             'repeats_yearly' => ['boolean'],
             'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
+            'add_to_calendar' => ['boolean'],
         ]);
+    }
+
+    /**
+     * Keep the date's Google Calendar event in step with it. The event goes
+     * on the calendar of whoever first asked for it.
+     */
+    private function mirror(Request $request, ImportantDate $date): void
+    {
+        if (! $date->add_to_calendar && $date->google_event_id === null) {
+            return;
+        }
+
+        if ($date->owner_user_id === null) {
+            $date->update(['owner_user_id' => $request->user()->id]);
+        }
+
+        PushImportantDateToGoogle::dispatch($date->id);
     }
 }

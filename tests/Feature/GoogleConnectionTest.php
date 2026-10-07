@@ -58,7 +58,7 @@ describe('connecting', function () {
         $this->getJson('/auth/google/connect')->assertUnauthorized();
     });
 
-    it('builds a consent URL for Tasks and Contacts with offline access', function () {
+    it('builds a consent URL for Tasks, Calendar and Contacts with offline access', function () {
         signIn();
 
         $location = urldecode($this->get('/auth/google/connect')->assertRedirect()->headers->get('Location'));
@@ -67,8 +67,9 @@ describe('connecting', function () {
             ->toContain('auth/contacts.readonly')
             ->toContain('access_type=offline')
             ->toContain('prompt=consent')
-            ->toContain('include_granted_scopes=true')
-            ->not->toContain('calendar');
+            ->toContain('auth/calendar.events')
+            ->toContain('auth/calendar.readonly')
+            ->toContain('include_granted_scopes=true');
     });
 
     it('stores the tokens, reads the lists and starts a first sync', function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\BrainDumpController;
+use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\GoogleController;
 use App\Http\Controllers\Api\HabitController;
 use App\Http\Controllers\Api\ImportantDateController;
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/google/lists/refresh', [GoogleController::class, 'refreshLists']);
     Route::post('/google/lists/create-missing', [GoogleController::class, 'createMissingLists']);
     Route::patch('/google/lists/{list}', [GoogleController::class, 'updateList'])->whereNumber('list');
+    Route::post('/google/calendars/refresh', [GoogleController::class, 'refreshCalendars']);
+    Route::patch('/google/calendars/{calendar}', [GoogleController::class, 'updateCalendar'])->whereNumber('calendar');
+    Route::apiResource('events', EventController::class)->except('show');
 
     Route::patch('/me', [MeController::class, 'update']);
 

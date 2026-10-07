@@ -7,6 +7,7 @@ use App\Jobs\SyncGoogleAccount;
 use App\Models\GoogleAccount;
 use App\Models\Household;
 use App\Models\User;
+use App\Services\Google\CalendarSync;
 use App\Services\Google\GoogleClient;
 use App\Services\Google\TaskSync;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,12 @@ use Throwable;
 class GoogleAuthController extends Controller
 {
     /** The APIs the planner syncs with, beyond knowing who signed in. */
-    private const SYNC_SCOPES = [GoogleClient::SCOPE_TASKS, GoogleClient::SCOPE_CONTACTS];
+    private const SYNC_SCOPES = [
+        GoogleClient::SCOPE_TASKS,
+        GoogleClient::SCOPE_CONTACTS,
+        GoogleClient::SCOPE_CALENDAR_EVENTS,
+        GoogleClient::SCOPE_CALENDAR_LIST,
+    ];
 
     /** Sign in: who you are, and nothing more. */
     public function redirect(): SymfonyRedirect
@@ -34,7 +40,7 @@ class GoogleAuthController extends Controller
     }
 
     /**
-     * Connect Google Tasks and Contacts. Asked for separately from sign-in,
+     * Connect Google Tasks, Calendar and Contacts. Asked for separately from sign-in,
      * from Settings, so the planner only gets this access when it is wanted.
      */
     public function connect(Request $request): SymfonyRedirect
@@ -48,7 +54,7 @@ class GoogleAuthController extends Controller
             ->redirect();
     }
 
-    public function callback(Request $request, TaskSync $sync): RedirectResponse
+    public function callback(Request $request, TaskSync $sync, CalendarSync $calendars): RedirectResponse
     {
         $connecting = (bool) $request->session()->pull('google_connecting', false);
 
@@ -96,7 +102,7 @@ class GoogleAuthController extends Controller
             return redirect('/');
         }
 
-        if (! $account->refresh()->canSyncTasks() && ! $account->hasGranted(GoogleClient::SCOPE_CONTACTS)) {
+        if (! $account->refresh()->canSyncTasks() && ! $account->hasGranted(GoogleClient::SCOPE_CONTACTS) && ! $account->canSyncCalendar()) {
             // The consent screen's boxes were left unticked.
             return redirect('/settings?google=declined');
         }
@@ -104,6 +110,10 @@ class GoogleAuthController extends Controller
         try {
             if ($account->canSyncTasks()) {
                 $sync->refreshLists($account);
+            }
+
+            if ($account->canSyncCalendar()) {
+                $calendars->refreshCalendars($account);
             }
         } catch (Throwable $e) {
             report($e);

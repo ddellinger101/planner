@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\Google\GoogleCalendarService;
 use App\Services\Google\GoogleContactsService;
 use App\Services\Google\GoogleTasksService;
+use App\Services\Google\HttpGoogleCalendarService;
 use App\Services\Google\HttpGoogleContactsService;
 use App\Services\Google\HttpGoogleTasksService;
 use Illuminate\Support\ServiceProvider;
@@ -18,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
         // Google is reached through interfaces so tests can swap in fakes.
         $this->app->bind(GoogleTasksService::class, HttpGoogleTasksService::class);
         $this->app->bind(GoogleContactsService::class, HttpGoogleContactsService::class);
+        $this->app->bind(GoogleCalendarService::class, HttpGoogleCalendarService::class);
     }
 
     /**

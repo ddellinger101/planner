@@ -19,6 +19,11 @@ class GoogleClient
 
     public const SCOPE_CONTACTS = 'https://www.googleapis.com/auth/contacts.readonly';
 
+    public const SCOPE_CALENDAR_EVENTS = 'https://www.googleapis.com/auth/calendar.events';
+
+    /** Needed to list the account's calendars. */
+    public const SCOPE_CALENDAR_LIST = 'https://www.googleapis.com/auth/calendar.readonly';
+
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
     /**
@@ -37,8 +42,13 @@ class GoogleClient
             $response = $this->send($account, $method, $url, $data);
         }
 
-        if ($response->status() === 401 || $response->status() === 403) {
-            throw new GoogleAuthException("Google refused the request ({$response->status()}).");
+        if ($response->status() === 401) {
+            throw new GoogleAuthException('Google refused the request (401).');
+        }
+
+        // Forbidden: the scope wasn't granted, the API is off, or this one thing isn't allowed.
+        if ($response->status() === 403) {
+            throw new GoogleAuthException('Google refused the request (403): '.$response->json('error.message', 'no reason given'), revoked: false);
         }
 
         if ($response->status() === 404 || $response->status() === 410) {
