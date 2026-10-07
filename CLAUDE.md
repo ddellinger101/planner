@@ -112,6 +112,12 @@ npm run build
   `recurrence_date` is the date the rule produced an occurrence for and never changes, which is
   what stops a moved or deleted occurrence from being generated again. Occurrences exist 60
   days ahead, topped up by a daily scheduled job and whenever items are listed.
+- An important date that repeats yearly is stored once; the API returns it with `occurs_on`
+  for each year in the range asked for.
+- Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the
+  `item-summary` query key (not `items`, whose caches are lists that optimistic updates edit).
+- Scrolling containers that hold task rows need `position: relative`: Bootstrap's
+  `visually-hidden` text is absolutely positioned and otherwise widens the whole page.
 - On the Day view, tasks with a `routine` appear in the routine checklists and not in the
   category boxes. Every item editor goes through `ItemSheet`, opened with `useItemEditor()`.
 - Controllers return models directly. Dates serialize as `YYYY-MM-DD`, item times as `HH:MM`.
