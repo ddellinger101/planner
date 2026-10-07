@@ -122,6 +122,10 @@ npm run build
   habits streak in days, habits with a weekly target in weeks that met it, and a day or week
   still under way never breaks a streak. The `habits` query key holds both lists of habits and
   the stats object, so cache updaters must check `Array.isArray` before mapping.
+- Brain Dump buckets are an enum, not categories. Each maps to a default category for
+  "Add to Plan" (`BrainDumpBucket::defaultCategorySlug` on the server, `BUCKETS` in
+  `resources/js/api/brainDump.ts`); keep the two in step. An item leaves the board when its
+  `assigned_item_id` is set.
 - An important date that repeats yearly is stored once; the API returns it with `occurs_on`
   for each year in the range asked for.
 - Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the
