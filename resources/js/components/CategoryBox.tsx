@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
+import {
+    useEffect,
+    useRef,
+    useState,
+    type CSSProperties,
+    type FormEvent,
+    type ReactNode,
+} from 'react';
 import type { Item, ItemChanges } from '@/api/items';
 import type { Category, Member } from '@/api/session';
 import Burst from './Burst';
@@ -12,10 +19,20 @@ type Props = {
     members: Member[];
     /** What one entry is called on this page: "task" or "goal". */
     noun: string;
+    /** Extra content under the heading, such as the Health box's weight entry. */
+    children?: ReactNode;
     onAdd: (title: string) => void;
     onChange: (item: Item, changes: ItemChanges) => void;
+    onEdit: (item: Item) => void;
     onDelete: (item: Item) => void;
 };
+
+/** The member an item is assigned to, when it's worth showing. */
+export function assigneeOf(item: Item, members: Member[]): Member | undefined {
+    return members.length > 1
+        ? members.find((member) => member.id === item.assignee_user_id)
+        : undefined;
+}
 
 /** A category's box on a period page: its heading, its items and a quick add. */
 export default function CategoryBox({
@@ -23,8 +40,10 @@ export default function CategoryBox({
     items,
     members,
     noun,
+    children,
     onAdd,
     onChange,
+    onEdit,
     onDelete,
 }: Props) {
     const [title, setTitle] = useState('');
@@ -68,6 +87,8 @@ export default function CategoryBox({
                 )}
             </header>
 
+            {children}
+
             {active.length === 0 ? (
                 <p className="category-box-empty">Nothing here yet.</p>
             ) : (
@@ -76,12 +97,9 @@ export default function CategoryBox({
                         <TaskRow
                             key={item.id}
                             item={item}
-                            assignee={
-                                members.length > 1
-                                    ? members.find((member) => member.id === item.assignee_user_id)
-                                    : undefined
-                            }
+                            assignee={assigneeOf(item, members)}
                             onChange={(changes) => onChange(item, changes)}
+                            onEdit={() => onEdit(item)}
                             onDelete={() => onDelete(item)}
                         />
                     ))}

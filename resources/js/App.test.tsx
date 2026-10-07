@@ -52,6 +52,12 @@ describe('signed out', () => {
     });
 });
 
+// On the Day view a task shows in its category box and again on the schedule,
+// so these look inside the Health box.
+const healthBox = () => within(screen.getByRole('region', { name: 'Health' }));
+const inHealth = async (name: string) =>
+    within(await screen.findByRole('region', { name: 'Health' })).findByRole('checkbox', { name });
+
 describe('the app shell', () => {
     it('opens on today and asks the API for today’s items', async () => {
         const { calls } = mockApi(signedIn());
@@ -114,10 +120,10 @@ describe('the app shell', () => {
         });
 
         renderApp('/day/2027-01-04');
-        await userEvent.click(await screen.findByRole('checkbox', { name: 'Morning run' }));
+        await userEvent.click(await inHealth('Morning run'));
 
         await waitFor(() =>
-            expect(screen.getByRole('checkbox', { name: 'Morning run' })).toHaveAttribute(
+            expect(healthBox().getByRole('checkbox', { name: 'Morning run' })).toHaveAttribute(
                 'aria-checked',
                 'true',
             ),
@@ -135,10 +141,10 @@ describe('the app shell', () => {
         });
 
         renderApp('/day/2027-01-04');
-        await userEvent.click(await screen.findByRole('checkbox', { name: 'Morning run' }));
+        await userEvent.click(await inHealth('Morning run'));
 
         await waitFor(() =>
-            expect(screen.getByRole('checkbox', { name: 'Morning run' })).toHaveAttribute(
+            expect(healthBox().getByRole('checkbox', { name: 'Morning run' })).toHaveAttribute(
                 'aria-checked',
                 'false',
             ),
@@ -332,7 +338,12 @@ describe('quick add', () => {
                 scope: 'day',
                 period_key: '2027-01-04',
                 due_time: '15:30',
+                duration_minutes: null,
                 starred: true,
+                routine: null,
+                recurrence_rule: null,
+                notes: null,
+                assignee_user_id: 1,
             }),
         );
         await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

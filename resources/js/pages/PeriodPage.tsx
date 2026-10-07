@@ -6,20 +6,21 @@ import CategoryBox from '@/components/CategoryBox';
 import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/PageHeader';
 import PeriodNav from '@/components/PeriodNav';
+import { useItemEditor } from '@/context/ItemEditorContext';
 import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 import type { Period, Scope } from '@/lib/period';
 import { useCurrentPeriod } from '@/lib/useCurrentPeriod';
+import DayPage from './DayPage';
 
-const SECTION_TITLES: Record<Scope, string> = {
-    day: 'Today’s tasks',
+const SECTION_TITLES: Record<Exclude<Scope, 'day'>, string> = {
     week: 'Weekly goals',
     month: 'Monthly goals',
     quarter: 'Quarter goals',
     year: 'One-year goals',
 };
 
-/** The Day, Week, Month, Quarter and Year views share this page. */
+/** The route for every period: the Day view, or the goals of a longer period. */
 export default function PeriodPage() {
     const period = useCurrentPeriod();
 
@@ -36,21 +37,27 @@ export default function PeriodPage() {
         );
     }
 
+    if (period.scope === 'day') {
+        // Keyed by date so each day starts with fresh form fields.
+        return <DayPage key={period.key} period={period} />;
+    }
+
     return (
         <>
             <PageHeader>
                 <PeriodNav period={period} />
             </PageHeader>
             <main className="container-fluid page-body">
-                <PeriodItems period={period} />
+                <PeriodGoals period={period} />
             </main>
         </>
     );
 }
 
-function PeriodItems({ period }: { period: Period }) {
+function PeriodGoals({ period }: { period: Period }) {
     const { household } = useSession();
     const { person } = usePersonFilter();
+    const { editItem } = useItemEditor();
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
     const items = useItems({ periodKey: period.key, person });
     const createItem = useCreateItem();
@@ -67,7 +74,9 @@ function PeriodItems({ period }: { period: Period }) {
 
     return (
         <>
-            <h2 className="visually-hidden">{SECTION_TITLES[period.scope]}</h2>
+            <h2 className="visually-hidden">
+                {SECTION_TITLES[period.scope as Exclude<Scope, 'day'>]}
+            </h2>
             <div className="row g-3" aria-busy={items.isPending}>
                 {categories.data?.map((category) => (
                     <div key={category.id} className="col-12 col-md-6 col-xl-4">
@@ -77,7 +86,7 @@ function PeriodItems({ period }: { period: Period }) {
                                 (item) => item.category_id === category.id,
                             )}
                             members={household.members}
-                            noun={period.scope === 'day' ? 'task' : 'goal'}
+                            noun="goal"
                             onAdd={(title) =>
                                 createItem.mutate({
                                     title,
@@ -89,7 +98,8 @@ function PeriodItems({ period }: { period: Period }) {
                             onChange={(item, changes) =>
                                 updateItem.mutate({ id: item.id, changes })
                             }
-                            onDelete={(item) => deleteItem.mutate(item.id)}
+                            onEdit={editItem}
+                            onDelete={(item) => deleteItem.mutate({ id: item.id })}
                         />
                     </div>
                 ))}
