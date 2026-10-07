@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { signOut, updateProfile } from '@/api/session';
 import { MORE_PAGES } from '@/components/AppShell';
 import EmptyState from '@/components/EmptyState';
+import GoogleSettings from '@/components/GoogleSettings';
 import PageHeader from '@/components/PageHeader';
 import { useSession } from '@/context/SessionContext';
 
@@ -109,6 +110,9 @@ export function SettingsPage() {
                     </div>
                     <div className="col-12 col-lg-6">
                         <TimelineHours />
+                    </div>
+                    <div className="col-12">
+                        <GoogleSettings />
                     </div>
                 </div>
             </main>

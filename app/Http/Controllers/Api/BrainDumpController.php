@@ -8,8 +8,10 @@ use App\Enums\Scope;
 use App\Http\Controllers\Controller;
 use App\Models\BrainDumpItem;
 use App\Models\Category;
+use App\Models\GoogleTaskList;
 use App\Models\Item;
 use App\Rules\PeriodKey;
+use App\Services\Google\GoogleTasksService;
 use App\Services\RecurrenceService;
 use App\Support\Period;
 use Closure;
@@ -18,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class BrainDumpController extends Controller
 {
@@ -30,6 +33,7 @@ class BrainDumpController extends Controller
         return response()->json([
             // Items stay on the board until they are added to the plan.
             'items' => BrainDumpItem::whereNull('assigned_item_id')
+                ->with('googleTaskList')
                 ->orderBy('sort')
                 ->orderBy('id')
                 ->get(),
@@ -65,8 +69,20 @@ class BrainDumpController extends Controller
         return response()->json($brainDumpItem->refresh());
     }
 
-    public function destroy(BrainDumpItem $brainDumpItem): Response
+    public function destroy(Request $request, BrainDumpItem $brainDumpItem, GoogleTasksService $google): Response
     {
+        // Deleting something that came from Google Tasks deletes it there too,
+        // or the next poll would bring it straight back.
+        $list = $brainDumpItem->google_task_id ? GoogleTaskList::find($brainDumpItem->google_task_list_id) : null;
+
+        if ($list !== null && $list->googleAccount->canSyncTasks()) {
+            try {
+                $google->deleteTask($list->googleAccount, $list->google_list_id, $brainDumpItem->google_task_id);
+            } catch (Throwable $e) {
+                // Already gone, or Google is unreachable: the poll will settle it.
+            }
+        }
+
         $brainDumpItem->delete();
 
         return response()->noContent();
@@ -100,6 +116,7 @@ class BrainDumpController extends Controller
                 'title' => $brainDumpItem->title,
                 'notes' => $brainDumpItem->notes,
                 'category_id' => $data['category_id']
+                    ?? $brainDumpItem->suggested_category_id
                     ?? Category::where('slug', $brainDumpItem->bucket->defaultCategorySlug())->value('id'),
                 'scope' => $period->scope,
                 'period_key' => $period->key(),
@@ -108,7 +125,12 @@ class BrainDumpController extends Controller
                 'starred' => $data['starred'] ?? false,
                 // Only day tasks repeat.
                 'recurrence_rule' => $isDay ? ($data['recurrence_rule'] ?? null) : null,
-                'source' => ItemSource::BrainDump,
+                // A task that came from Google keeps its link, so planning it
+                // here gives the Google task its date instead of making a second one.
+                'source' => $brainDumpItem->google_task_id ? ItemSource::GoogleTasks : ItemSource::BrainDump,
+                'google_task_id' => $brainDumpItem->google_task_id,
+                'google_task_list_id' => $brainDumpItem->google_task_list_id,
+                'google_etag' => $brainDumpItem->google_etag,
                 'created_by' => $request->user()->id,
                 'assignee_user_id' => $isDay ? $request->user()->id : null,
             ]);

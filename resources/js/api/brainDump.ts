@@ -19,6 +19,10 @@ export type BrainDumpItem = {
     bucket: BrainDumpBucket;
     title: string;
     notes: string | null;
+    /** True for an undated task that arrived from Google Tasks. */
+    from_google: boolean;
+    /** The category of the Google list it came from, if any. */
+    suggested_category_id: number | null;
 };
 
 type Board = { items: BrainDumpItem[]; assigned_this_week: number };

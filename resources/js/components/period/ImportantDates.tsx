@@ -68,28 +68,35 @@ export default function ImportantDates({ month, dates }: Props) {
                                     </>
                                 )}
                             </span>
-                            <button
-                                type="button"
-                                className="icon-button is-small"
-                                aria-label={`Edit ${entry.title}`}
-                                onClick={() => startEditing(entry)}
-                            >
-                                <Pencil aria-hidden="true" size={15} />
-                            </button>
-                            <button
-                                type="button"
-                                className="icon-button is-small task-delete-always"
-                                aria-label={`Delete ${entry.title}`}
-                                onClick={() => {
-                                    remove.mutate(entry.id);
+                            {entry.source === 'app' ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="icon-button is-small"
+                                        aria-label={`Edit ${entry.title}`}
+                                        onClick={() => startEditing(entry)}
+                                    >
+                                        <Pencil aria-hidden="true" size={15} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="icon-button is-small task-delete-always"
+                                        aria-label={`Delete ${entry.title}`}
+                                        onClick={() => {
+                                            remove.mutate(entry.id);
 
-                                    if (editing?.id === entry.id) {
-                                        reset();
-                                    }
-                                }}
-                            >
-                                <Trash2 aria-hidden="true" size={15} />
-                            </button>
+                                            if (editing?.id === entry.id) {
+                                                reset();
+                                            }
+                                        }}
+                                    >
+                                        <Trash2 aria-hidden="true" size={15} />
+                                    </button>
+                                </>
+                            ) : (
+                                // A contact's birthday is changed in Google Contacts.
+                                <span className="task-badge date-list-source">Contacts</span>
+                            )}
                         </li>
                     ))}
                 </ul>

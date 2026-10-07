@@ -58,6 +58,8 @@ class ImportantDateController extends Controller
 
     public function update(Request $request, ImportantDate $importantDate): JsonResponse
     {
+        abort_if($importantDate->source !== 'app', 403, 'Birthdays from Google Contacts are edited in Google Contacts.');
+
         $importantDate->update($this->validated($request, $importantDate));
 
         return response()->json($importantDate->refresh());
@@ -65,6 +67,8 @@ class ImportantDateController extends Controller
 
     public function destroy(ImportantDate $importantDate): Response
     {
+        abort_if($importantDate->source !== 'app', 403, 'Birthdays from Google Contacts are removed in Google Contacts.');
+
         $importantDate->delete();
 
         return response()->noContent();

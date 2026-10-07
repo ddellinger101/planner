@@ -57,6 +57,8 @@ export type ImportantDate = {
     date: string;
     repeats_yearly: boolean;
     category_id: number | null;
+    /** "app" for dates typed in; "google_contacts" for a synced birthday. */
+    source: 'app' | 'google_contacts';
     /** When it falls within the range that was asked for. */
     occurs_on: string;
 };
