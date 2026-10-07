@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\RewardStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Reward;
+use App\Services\RewardEvaluator;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,14 +13,15 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
-/**
- * Creating and editing rewards. Working out when a reward is earned or
- * expired is Phase 8.
- */
 class RewardController extends Controller
 {
-    public function index(): JsonResponse
+    public function __construct(private RewardEvaluator $evaluator) {}
+
+    public function index(Request $request): JsonResponse
     {
+        // Catch any deadline that has passed since the last look.
+        $this->evaluator->evaluateAll($request->user()->household_id);
+
         return response()->json(Reward::with('items')->orderBy('deadline')->get());
     }
 
@@ -37,6 +39,9 @@ class RewardController extends Controller
             return $reward;
         });
 
+        // The tasks chosen may all be done already.
+        $this->evaluator->evaluate($reward->refresh());
+
         return response()->json($reward->refresh()->load('items'), 201);
     }
 
@@ -50,7 +55,14 @@ class RewardController extends Controller
             if (array_key_exists('item_ids', $data)) {
                 $reward->items()->sync($data['item_ids']);
             }
+
+            // A later deadline gives an expired reward another chance.
+            if ($reward->status === RewardStatus::Expired && $reward->deadline->isFuture()) {
+                $reward->update(['status' => RewardStatus::Active]);
+            }
         });
+
+        $this->evaluator->evaluate($reward->refresh());
 
         return response()->json($reward->refresh()->load('items'));
     }

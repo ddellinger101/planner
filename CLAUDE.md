@@ -126,6 +126,14 @@ npm run build
   "Add to Plan" (`BrainDumpBucket::defaultCategorySlug` on the server, `BUCKETS` in
   `resources/js/api/brainDump.ts`); keep the two in step. An item leaves the board when its
   `assigned_item_id` is set.
+- A reward is earned when every linked task that still counts is done by the deadline, and
+  expires if the deadline passes first (`app/Services/RewardEvaluator.php`). Dropped and deleted
+  tasks stop counting. It is re-checked when a linked task changes, when rewards are listed or
+  edited, and nightly. Earned, expired and claimed are final, except that giving an expired
+  reward a later deadline reopens it.
+- The weight chart is hand-drawn SVG (`WeightChart.tsx`), sized to its container. Its line
+  color is the `--chart-line` token, which was checked with the dataviz palette validator on
+  both themes; re-run it if the color changes. Goals are drawn as neutral levels, not series.
 - An important date that repeats yearly is stored once; the API returns it with `occurs_on`
   for each year in the range asked for.
 - Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the

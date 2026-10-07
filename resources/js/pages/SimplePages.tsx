@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Gift, LogOut, MapPinOff, Scale, type LucideIcon } from 'lucide-react';
+import { LogOut, MapPinOff, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { signOut, updateProfile } from '@/api/session';
@@ -15,7 +15,7 @@ type ComingSoonProps = {
     children: ReactNode;
 };
 
-// Stand-ins for the pages that later phases build out.
+// A page that is only a message.
 function ComingSoon({ title, icon, heading, children }: ComingSoonProps) {
     return (
         <>
@@ -28,18 +28,6 @@ function ComingSoon({ title, icon, heading, children }: ComingSoonProps) {
         </>
     );
 }
-
-export const WeightPage = () => (
-    <ComingSoon title="Weight" icon={Scale} heading="Track the trend">
-        Log your weight and watch the line move toward your goals. Coming soon.
-    </ComingSoon>
-);
-
-export const RewardsPage = () => (
-    <ComingSoon title="Rewards" icon={Gift} heading="Something to look forward to">
-        Pick a few tasks, name a reward and set a deadline. Coming soon.
-    </ComingSoon>
-);
 
 export const NotFoundPage = () => (
     <ComingSoon title="Not found" icon={MapPinOff} heading="There’s no page here">

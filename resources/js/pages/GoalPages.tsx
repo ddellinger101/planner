@@ -13,6 +13,7 @@ import { BestPart, CategoryProgress, CompletionBar } from '@/components/period/S
 import { RoutineGrid, WeekMeals } from '@/components/period/WeekExtras';
 import WeekStrip from '@/components/period/WeekStrip';
 import { MonthHabits } from '@/pages/RoutinesPage';
+import { YearWeight } from '@/pages/WeightPage';
 import { useItemEditor } from '@/context/ItemEditorContext';
 import { useReview } from '@/context/PlannerContexts';
 import { usePersonFilter } from '@/context/PersonFilterContext';
@@ -296,6 +297,9 @@ export function YearPage({ period }: { period: Period }) {
                     );
                 })}
             </div>
+
+            <SectionHeading>Weight this year</SectionHeading>
+            <YearWeight year={period} />
         </>
     );
 }

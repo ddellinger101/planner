@@ -137,6 +137,8 @@ function useOptimisticItems<TVariables, TResult = unknown>(
 /** Refetch every list of items, and the goal counts worked out from them. */
 function refreshItems(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: ['item-summary'] });
+    // Finishing a task can earn a reward.
+    queryClient.invalidateQueries({ queryKey: ['rewards'] });
 
     return queryClient.invalidateQueries({ queryKey: ['items'] });
 }

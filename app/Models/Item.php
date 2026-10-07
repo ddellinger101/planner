@@ -8,6 +8,7 @@ use App\Enums\Routine;
 use App\Enums\Scope;
 use App\Enums\SyncState;
 use App\Models\Concerns\BelongsToHousehold;
+use App\Services\RewardEvaluator;
 use Database\Factories\ItemFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -57,6 +58,15 @@ class Item extends Model
                     : null;
             }
         });
+
+        // A task finishing, reopening or going away can earn a reward.
+        static::saved(function (Item $item) {
+            if ($item->wasChanged('status')) {
+                app(RewardEvaluator::class)->evaluateForItem($item);
+            }
+        });
+
+        static::deleted(fn (Item $item) => app(RewardEvaluator::class)->evaluateForItem($item));
     }
 
     /** Always HH:MM; MySQL returns TIME columns with seconds. */

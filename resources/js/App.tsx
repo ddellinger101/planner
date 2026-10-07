@@ -9,9 +9,11 @@ import { SCOPES } from './lib/periodLabels';
 import BrainDumpPage from './pages/BrainDumpPage';
 import PeriodPage from './pages/PeriodPage';
 import PlanWeekPage from './pages/PlanWeekPage';
+import RewardsPage from './pages/RewardsPage';
 import RoutinesPage from './pages/RoutinesPage';
 import SignIn, { WelcomeCard } from './pages/SignIn';
-import { MorePage, NotFoundPage, RewardsPage, SettingsPage, WeightPage } from './pages/SimplePages';
+import WeightPage from './pages/WeightPage';
+import { MorePage, NotFoundPage, SettingsPage } from './pages/SimplePages';
 
 export default function App() {
     const session = useQuery({ queryKey: ['session'], queryFn: fetchSession, retry: false });
