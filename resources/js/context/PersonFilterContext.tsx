@@ -72,6 +72,17 @@ export function PersonFilterProvider({ children }: { children: ReactNode }) {
     return <PersonFilterContext.Provider value={value}>{children}</PersonFilterContext.Provider>;
 }
 
+/**
+ * Whether to mark tasks and events with whose they are. Only the Both view
+ * mixes two people's things; in the others it is already clear. (True
+ * outside the provider, so a row drawn on its own shows what it is given.)
+ */
+export function useShowsOwners(): boolean {
+    const filter = useContext(PersonFilterContext);
+
+    return filter === null || filter.view === 'both';
+}
+
 export function usePersonFilter(): PersonFilter {
     const filter = useContext(PersonFilterContext);
 

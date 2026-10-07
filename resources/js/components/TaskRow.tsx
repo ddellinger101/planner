@@ -2,6 +2,7 @@ import { Clock, Repeat, Star, Trash2 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties, type DragEvent } from 'react';
 import type { Item, ItemChanges } from '@/api/items';
 import type { Member } from '@/api/session';
+import { useShowsOwners } from '@/context/PersonFilterContext';
 import { formatTime } from '@/lib/periodLabels';
 import Burst from './Burst';
 
@@ -10,7 +11,7 @@ export const ITEM_DRAG_TYPE = 'application/x-planner-item';
 
 type Props = {
     item: Item;
-    /** Who the item is assigned to, shown when the household has two people. */
+    /** Who the item is assigned to. Shown only in the Both view, where it isn't obvious. */
     assignee?: Member;
     onChange: (changes: ItemChanges) => void;
     /** Open the full editor. Without it, the title is plain text. */
@@ -61,6 +62,8 @@ export default function TaskRow({
     style,
 }: Props) {
     const done = item.status === 'done';
+    // Whose it is only needs saying when both people's things are mixed together.
+    const shownAssignee = useShowsOwners() ? assignee : undefined;
     const [justChecked, flashCheck] = useFlash(700);
     const [justStarred, flashStar] = useFlash(450);
 
@@ -149,14 +152,14 @@ export default function TaskRow({
                         <span className="visually-hidden">Repeats</span>
                     </span>
                 )}
-                {assignee && (
+                {shownAssignee && (
                     <span
                         className="person-dot"
-                        style={{ '--person': assignee.color } as CSSProperties}
-                        title={assignee.name}
+                        style={{ '--person': shownAssignee.color } as CSSProperties}
+                        title={shownAssignee.name}
                     >
-                        <span aria-hidden="true">{assignee.name.charAt(0)}</span>
-                        <span className="visually-hidden">Assigned to {assignee.name}</span>
+                        <span aria-hidden="true">{shownAssignee.name.charAt(0)}</span>
+                        <span className="visually-hidden">Assigned to {shownAssignee.name}</span>
                     </span>
                 )}
             </div>
