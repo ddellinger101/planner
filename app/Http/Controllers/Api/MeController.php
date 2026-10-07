@@ -32,7 +32,9 @@ class MeController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
+            'name' => ['string', 'min:1', 'max:60'],
             'color' => ['hex_color'],
+            'timezone' => ['timezone:all'],
             'day_start_hour' => ['integer', 'between:0,22'],
             // 24 means the timeline runs to midnight.
             'day_end_hour' => ['integer', 'between:1,24'],

@@ -31,6 +31,9 @@ class EventController extends Controller
 
         return response()->json(
             Event::with('calendar')
+                // Someone else's calendar that this person chose not to see.
+                ->where(fn ($q) => $q->whereNull('google_calendar_id')
+                    ->orWhereNotIn('google_calendar_id', $request->user()->hiddenCalendars()->select('google_calendars.id')))
                 ->where(fn ($q) => $q
                     ->where(fn ($q) => $q->where('all_day', false)->where('starts_at', '<', $end)->where('ends_at', '>', $start))
                     // An event with no length still belongs to the moment it starts.

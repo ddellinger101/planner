@@ -96,6 +96,30 @@ describe('connecting', function () {
         Queue::assertPushed(SyncGoogleAccount::class, fn ($job) => $job->accountId === $account->id && $job->withBirthdays);
     });
 
+    it('gives the second person to sign in a color of their own', function () {
+        config(['planner.allowed_emails' => ['dustin@example.com', 'elizabeth@example.com']]);
+        $dustin = User::factory()->create(['email' => 'dustin@example.com', 'color' => User::PERSON_COLORS[0]]);
+
+        $google = (new SocialiteUser)
+            ->setRaw(['email_verified' => true])
+            ->map(['id' => 'sub-2', 'name' => 'Elizabeth', 'email' => 'elizabeth@example.com', 'avatar' => null])
+            ->setToken('token')->setApprovedScopes(['openid', 'email']);
+        Socialite::shouldReceive('driver->user')->andReturn($google);
+
+        $this->get('/auth/google/callback')->assertRedirect('/');
+
+        $elizabeth = User::where('email', 'elizabeth@example.com')->firstOrFail();
+
+        expect($elizabeth->household_id)->toBe($dustin->household_id)
+            ->and($elizabeth->color)->toBe(User::PERSON_COLORS[1]);
+
+        // Signing in again doesn't change a color she has since picked.
+        $elizabeth->update(['color' => '#8257d6']);
+        $this->get('/auth/google/callback');
+
+        expect($elizabeth->refresh()->color)->toBe('#8257d6');
+    });
+
     it('says so when the consent boxes were left unticked', function () {
         Queue::fake();
         googleGrants([]);

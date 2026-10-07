@@ -39,13 +39,56 @@ it('creates a goal that belongs to both people by default', function () {
     signIn();
 
     $this->postJson('/api/items', [
-        'title' => 'Run a 10k',
-        'category_id' => categoryId(),
+        'title' => 'Paint the hallway',
+        'category_id' => categoryId('home'),
         'scope' => 'month',
         'period_key' => '2027-03',
     ])
         ->assertCreated()
         ->assertJson(['assignee_user_id' => null, 'due_date' => null]);
+});
+
+it('gives a Health goal to whoever added it, since health is personal', function () {
+    $user = signIn();
+
+    $this->postJson('/api/items', ['title' => 'Run a 10k', 'category_id' => categoryId(), 'scope' => 'month', 'period_key' => '2027-03'])
+        ->assertCreated()
+        ->assertJson(['assignee_user_id' => $user->id]);
+
+    // It can still be given to both, or to the other person, on purpose.
+    $this->postJson('/api/items', ['title' => 'Walk together', 'category_id' => categoryId(), 'scope' => 'month', 'period_key' => '2027-03', 'assignee_user_id' => null])
+        ->assertCreated()
+        ->assertJson(['assignee_user_id' => null]);
+});
+
+it('leaves out the other person\'s Health items when asked for own health only', function () {
+    $user = signIn();
+    $partner = User::factory()->create(['household_id' => $user->household_id]);
+
+    $add = fn (string $title, string $slug, ?int $assignee) => Item::create([
+        'title' => $title, 'category_id' => categoryId($slug), 'scope' => 'day', 'period_key' => '2027-01-04',
+        'due_date' => '2027-01-04', 'created_by' => $user->id, 'assignee_user_id' => $assignee,
+    ]);
+
+    $add('My run', 'health', $user->id);
+    $add('Their yoga', 'health', $partner->id);
+    $add('Walk together', 'health', null);
+    $add('Their errand', 'home', $partner->id);
+
+    $titles = fn (string $query) => collect($this->getJson("/api/items?{$query}")->assertOk()->json())->pluck('title')->sort()->values()->all();
+
+    expect($titles('period_key=2027-01-04&own_health=1'))->toBe(['My run', 'Their errand', 'Walk together'])
+        ->and($titles('period_key=2027-01-04'))->toBe(['My run', 'Their errand', 'Their yoga', 'Walk together'])
+        ->and($titles('from=2027-01-04&to=2027-01-04&own_health=1'))->toBe(['My run', 'Their errand', 'Walk together']);
+
+    // The same goes for what is overdue and for the goal counts.
+    expect(collect($this->getJson('/api/items/overdue?before=2027-01-05&own_health=1')->json())->pluck('title')->sort()->values()->all())
+        ->toBe(['My run', 'Their errand', 'Walk together']);
+
+    $health = collect($this->getJson('/api/items/summary?period_keys[]=2027-01-04&own_health=1')->json())
+        ->firstWhere('category_id', categoryId());
+
+    expect($health['total'])->toBe(2);
 });
 
 it('rejects a period key that does not match the scope', function (array $payload, string $field) {
