@@ -138,6 +138,25 @@ npm run build
   for each year in the range asked for.
 - Goal counts for the Quarter and Year views come from `/api/items/summary`, cached under the
   `item-summary` query key (not `items`, whose caches are lists that optimistic updates edit).
+- Google sync lives in `app/Services/Google/`. It calls Google's REST APIs with Laravel's HTTP
+  client (no `google/apiclient`), behind `GoogleTasksService` and `GoogleContactsService` so
+  tests swap in `tests/Fakes/`. Tests forbid stray HTTP requests.
+- Signing in grants no API access. Each person connects from Settings (`/auth/google/connect`),
+  which asks for Tasks and read-only Contacts; `GoogleAccount::hasGranted()` is the check.
+  A revoked grant sets `needs_reconnect` and sync stops until they reconnect.
+- Only day-scope tasks sync, each to the Google list mapped to its category
+  (`google_task_lists.category_id`), in the account of its assignee (its creator for "Both").
+  A star is a `⭐ ` title prefix and a time is a first `⏰ 3:30 PM` notes line
+  (`TaskFormat`). Saving an item marks it `dirty` and queues `PushItemToGoogle`; `google:sync`
+  polls every five minutes; the newer side wins a conflict. Occurrences of a repeating task
+  are sent seven days ahead. `TaskSync::pending()` is the one definition of "waiting to send".
+- A Google task with no due date becomes a Brain Dump "Other" item that keeps its Google ids;
+  adding it to the plan carries them onto the item, in the category of the list it came from.
+- Contacts' birthdays are `important_dates` rows with `source = google_contacts`, owned by the
+  person whose contacts they are, shown to the household, read-only in the planner, and stored
+  in year 1904 when the contact has no birth year.
+- The queue is the database driver, drained every minute by the scheduler (`routes/console.php`),
+  so the server needs no worker process beyond the cron entry.
 - Scrolling containers that hold task rows need `position: relative`: Bootstrap's
   `visually-hidden` text is absolutely positioned and otherwise widens the whole page.
 - On the Day view, tasks with a `routine` appear in the routine checklists and not in the
@@ -151,8 +170,8 @@ npm run build
   TIME in the user's local zone.
 - Weeks start Monday (ISO weeks).
 - Every user-facing list respects the person filter (Dustin / Elizabeth / Both).
-- All Google calls go through service classes (`GoogleTasksService`, `GoogleCalendarService`)
-  behind interfaces so they can be mocked in tests.
+- All Google calls go through service classes (`GoogleTasksService`, `GoogleContactsService`,
+  later `GoogleCalendarService`) behind interfaces so they can be mocked in tests.
 - Never block the UI on Google; all pushes to Google are queued.
 - Secrets live only in the server's `.env` and in GitHub Actions secrets. Never commit
   credentials or tokens.

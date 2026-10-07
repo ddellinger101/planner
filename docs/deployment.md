@@ -58,6 +58,26 @@ cache, then a health check against https://plan.dustindellinger.com/health.
 Use `php8.3` explicitly on the server's command line: the default `php` there is 8.2, while the
 application's web pool runs 8.3.
 
+## Google Cloud setup
+
+In the Google Cloud project that holds the OAuth client:
+
+1. **APIs & Services > Library**: enable **Google Tasks API** and **People API** (the one
+   behind Contacts).
+2. **Google Auth Platform > Data Access**: add the scopes `.../auth/tasks` and
+   `.../auth/contacts.readonly`.
+3. **Audience**: while the app is in "Testing", add both people as test users. In that mode
+   Google expires the saved access after seven days, and the planner then asks to reconnect;
+   publishing the app ("In production") stops that. With these scopes Google shows an
+   "unverified app" warning that each person clicks through once.
+
+Then each person opens Settings in the planner and chooses **Connect Google**, ticking both
+boxes on Google's screen. Nothing needs adding to `.env`. Sync runs from the cron entry above:
+it polls Google every five minutes and sends queued changes every minute.
+
+The first sync imports each mapped list's open tasks. A task that already exists both in the
+planner and in Google is not matched up, so it appears twice; delete one copy.
+
 ## GitHub settings
 
 Repository > Settings > Secrets and variables > Actions.
