@@ -215,9 +215,10 @@ describe('what arrives from Google', () => {
         );
     });
 
-    it('lists a contact’s birthday without edit or delete', async () => {
-        mockApi({
+    it('lists a contact’s birthday without edit or delete, but lets it be hidden', async () => {
+        const { calls } = mockApi({
             ...signedIn(),
+            'DELETE /api/important-dates/5': { status: 204 },
             'GET /api/important-dates': {
                 body: [
                     {
@@ -240,5 +241,8 @@ describe('what arrives from Google', () => {
         expect(dates.getByText('Contacts')).toBeInTheDocument();
         expect(dates.queryByRole('button', { name: /Edit Sam/ })).not.toBeInTheDocument();
         expect(dates.queryByRole('button', { name: /Delete Sam/ })).not.toBeInTheDocument();
+
+        await userEvent.click(dates.getByRole('button', { name: 'Hide Sam’s birthday' }));
+        await waitFor(() => expect(calls.some((call) => call.method === 'DELETE')).toBe(true));
     });
 });

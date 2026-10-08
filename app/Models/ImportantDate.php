@@ -14,7 +14,7 @@ class ImportantDate extends Model
 
     protected $attributes = ['source' => 'app', 'add_to_calendar' => false];
 
-    protected $hidden = ['google_resource_name', 'google_event_id', 'google_calendar_id'];
+    protected $hidden = ['google_resource_name', 'google_event_id', 'google_calendar_id', 'hidden_at'];
 
     protected function casts(): array
     {
@@ -22,6 +22,7 @@ class ImportantDate extends Model
             'date' => 'date:Y-m-d',
             'repeats_yearly' => 'boolean',
             'add_to_calendar' => 'boolean',
+            'hidden_at' => 'datetime',
         ];
     }
 

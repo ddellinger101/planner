@@ -46,7 +46,7 @@ class GoogleController extends Controller
             'sync_birthdays' => (bool) ($account?->sync_birthdays ?? true),
             'tasks_last_synced_at' => $account?->tasks_last_synced_at,
             'birthdays_synced_at' => $account?->birthdays_synced_at,
-            'birthday_count' => ImportantDate::where('source', BirthdaySync::SOURCE)
+            'birthday_count' => ImportantDate::where('source', BirthdaySync::SOURCE)->whereNull('hidden_at')
                 ->where('owner_user_id', $request->user()->id)->count(),
             'pending' => $account?->canSyncTasks() ? $this->tasks->pending($account)->count() : 0,
             'errors' => $account ? $mine()->where('sync_state', SyncState::Error)->count() : 0,
