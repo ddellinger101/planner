@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'household_id', 'name', 'email', 'email_verified_at', 'avatar_url', 'color', 'timezone',
-    'notification_preferences', 'day_start_hour', 'day_end_hour',
+    'notification_preferences', 'day_start_hour', 'day_end_hour', 'theme',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -27,6 +27,7 @@ class User extends Authenticatable
         'timezone' => 'America/New_York',
         'day_start_hour' => 6,
         'day_end_hour' => 23,
+        'theme' => 'fun',
     ];
 
     /**
@@ -42,6 +43,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /** The looks the planner can be drawn in; the same ids as in `resources/js/lib/theme.ts`. */
+    public const THEMES = ['fun', 'clean'];
 
     /**
      * The colors a person can be shown in. They are told apart from each

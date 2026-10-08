@@ -69,7 +69,7 @@
         min-height: 2.75rem;
         padding: 0.25rem 0.3rem;
         cursor: grab;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
     }
 }
 

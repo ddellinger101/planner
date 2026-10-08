@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { Navigate, Route, Routes } from 'react-router';
 import { fetchSession } from './api/session';
+import { applyTheme } from './lib/theme';
 import AppShell from './components/AppShell';
 import { PersonFilterProvider } from './context/PersonFilterContext';
 import { SessionProvider } from './context/SessionContext';
@@ -17,6 +19,14 @@ import { MorePage, NotFoundPage, SettingsPage } from './pages/SimplePages';
 
 export default function App() {
     const session = useQuery({ queryKey: ['session'], queryFn: fetchSession, retry: false });
+    const theme = session.data?.user.theme;
+
+    // Draw the planner in the look this person chose, on whatever device they sign in on.
+    useEffect(() => {
+        if (theme) {
+            applyTheme(theme);
+        }
+    }, [theme]);
 
     if (session.isPending) {
         return (

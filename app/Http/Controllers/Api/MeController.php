@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MeController extends Controller
 {
@@ -15,7 +17,7 @@ class MeController extends Controller
 
         return response()->json([
             'user' => $user->only([
-                'id', 'name', 'email', 'avatar_url', 'color', 'timezone', 'day_start_hour', 'day_end_hour',
+                'id', 'name', 'email', 'avatar_url', 'color', 'timezone', 'day_start_hour', 'day_end_hour', 'theme',
             ]),
             'household' => [
                 'id' => $user->household_id,
@@ -35,6 +37,7 @@ class MeController extends Controller
             'name' => ['string', 'min:1', 'max:60'],
             'color' => ['hex_color'],
             'timezone' => ['timezone:all'],
+            'theme' => [Rule::in(User::THEMES)],
             'day_start_hour' => ['integer', 'between:0,22'],
             // 24 means the timeline runs to midnight.
             'day_end_hour' => ['integer', 'between:1,24'],

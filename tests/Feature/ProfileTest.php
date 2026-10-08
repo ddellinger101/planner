@@ -19,6 +19,20 @@ it('changes the name, color and time zone a person is shown with', function () {
     expect($partner->refresh()->name)->toBe('Elizabeth');
 });
 
+it('remembers the theme a person picks, for them alone', function () {
+    $user = signIn();
+    $partner = User::factory()->create(['household_id' => $user->household_id]);
+
+    // Everyone starts on the original look.
+    $this->getJson('/api/me')->assertOk()->assertJsonPath('user.theme', 'fun');
+
+    $this->patchJson('/api/me', ['theme' => 'clean'])->assertOk()->assertJsonPath('user.theme', 'clean');
+
+    expect($partner->refresh()->theme)->toBe('fun');
+
+    $this->patchJson('/api/me', ['theme' => 'neon'])->assertJsonValidationErrors('theme');
+});
+
 it('rejects a profile that makes no sense', function () {
     signIn();
 

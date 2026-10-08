@@ -3,6 +3,7 @@ import { MapPinOff, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { updateProfile } from '@/api/session';
+import AppearanceSettings from '@/components/AppearanceSettings';
 import { MORE_PAGES } from '@/components/AppShell';
 import EmptyState from '@/components/EmptyState';
 import GoogleSettings from '@/components/GoogleSettings';
@@ -69,6 +70,7 @@ export function SettingsPage() {
                         <ProfileSettings />
                     </div>
                     <div className="col-12 col-lg-6 d-grid gap-3 align-content-start">
+                        <AppearanceSettings />
                         <TimelineHours />
                         <NotificationSettings />
                     </div>

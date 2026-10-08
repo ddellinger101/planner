@@ -1,4 +1,5 @@
 import { api, ApiError } from './client';
+import type { ThemeId } from '@/lib/theme';
 
 export type Member = {
     id: number;
@@ -11,6 +12,8 @@ export type Session = {
     user: Member & {
         email: string;
         timezone: string;
+        /** The look this person chose; see `lib/theme.ts`. */
+        theme: ThemeId;
         /** The hours the Day view's timeline covers; 24 means midnight. */
         day_start_hour: number;
         day_end_hour: number;
@@ -41,7 +44,10 @@ export async function fetchSession(): Promise<Session | null> {
 
 export const updateProfile = (
     changes: Partial<
-        Pick<Session['user'], 'name' | 'color' | 'timezone' | 'day_start_hour' | 'day_end_hour'>
+        Pick<
+            Session['user'],
+            'name' | 'color' | 'timezone' | 'theme' | 'day_start_hour' | 'day_end_hour'
+        >
     >,
 ) => api<Session>('/api/me', { method: 'PATCH', body: changes });
 

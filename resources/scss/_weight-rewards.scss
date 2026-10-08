@@ -130,7 +130,7 @@
     white-space: nowrap;
     pointer-events: none;
     background: var(--card);
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
 
@@ -151,7 +151,7 @@
     th,
     td {
         padding: 0.3rem 0.5rem 0.3rem 0;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
     }
 
     thead th {
@@ -250,7 +250,7 @@
         gap: 0.2rem 0.75rem;
         align-items: center;
         padding: 0.4rem 0;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
     }
 }
 
@@ -273,7 +273,7 @@
     }
 
     li + li {
-        border-top: 1px dashed var(--line-soft);
+        border-top: 1px var(--rule-style) var(--line-soft);
     }
 
     input {
@@ -355,7 +355,7 @@ a.button-plain {
     font-weight: 700;
     color: var(--ink);
     background: color-mix(in srgb, var(--danger) 18%, var(--card));
-    border-bottom: 1.5px solid var(--line);
+    border-bottom: var(--stroke) solid var(--line);
 
     svg {
         flex: none;
@@ -469,7 +469,7 @@ a.button-plain {
     color: var(--ink);
     background: transparent;
     border: 0;
-    border-bottom: 1.5px dashed var(--line-soft);
+    border-bottom: 1.5px var(--rule-style) var(--line-soft);
     border-radius: 0.25rem 0.25rem 0 0;
 
     &::placeholder {
@@ -499,7 +499,7 @@ a.button-plain {
     font-size: 0.95rem;
     color: var(--ink);
     background: color-mix(in srgb, var(--accent) 16%, var(--card));
-    border-bottom: 1.5px solid var(--line);
+    border-bottom: var(--stroke) solid var(--line);
 }
 
 // Profile ----------------------------------------------------------------------------

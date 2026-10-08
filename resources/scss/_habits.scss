@@ -15,7 +15,7 @@
         align-items: center;
         min-height: 3rem;
         padding: 0.25rem 0;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
 
         > .radial-swatch,
         > svg {

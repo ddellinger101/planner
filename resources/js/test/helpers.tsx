@@ -16,6 +16,7 @@ export const session: Session = {
         ...dustin,
         email: 'dustin@example.com',
         timezone: 'America/New_York',
+        theme: 'fun',
         day_start_hour: 6,
         day_end_hour: 23,
     },

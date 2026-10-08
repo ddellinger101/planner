@@ -17,9 +17,16 @@
 
         <title>{{ config('app.name') }}</title>
 
-        {{-- Follow the device's light or dark setting, before first paint. --}}
+        {{-- Use the chosen theme, and follow the device's light or dark setting, before first paint. --}}
         <script>
             (() => {
+                // The look chosen in Settings, remembered on this device (see lib/theme.ts).
+                try {
+                    document.documentElement.dataset.theme = localStorage.getItem('planner.theme') || 'fun';
+                } catch {
+                    document.documentElement.dataset.theme = 'fun';
+                }
+
                 const dark = window.matchMedia('(prefers-color-scheme: dark)');
                 const apply = () => (document.documentElement.dataset.bsTheme = dark.matches ? 'dark' : 'light');
                 apply();
