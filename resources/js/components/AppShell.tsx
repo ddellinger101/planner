@@ -16,7 +16,7 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import type { CalendarEvent } from '@/api/events';
 import { useGoogle } from '@/api/google';
@@ -38,6 +38,44 @@ import ReviewSheet from './review/ReviewSheet';
 
 const PROMPTED_KEY = 'planner.review.prompted';
 const WELCOMED_KEY = 'planner.welcomed';
+
+/**
+ * On a phone the page itself never scrolls: the content does, inside the
+ * shell. iOS still slides the whole page up to keep a focused field above
+ * the keyboard, and in a Home Screen app it can leave it there once the
+ * keyboard closes, with the bottom bar stranded mid-screen. Put it back.
+ */
+function useKeyboardRecovery() {
+    useEffect(() => {
+        const phone = window.matchMedia?.('(max-width: 767.98px)');
+
+        if (!phone) {
+            return;
+        }
+
+        let timer = 0;
+        const settle = () => {
+            window.clearTimeout(timer);
+            // After the keyboard's own animation, and only if no other field took focus.
+            timer = window.setTimeout(() => {
+                const typing = document.activeElement?.matches('input, textarea, select');
+
+                if (phone.matches && !typing && (window.scrollY !== 0 || window.scrollX !== 0)) {
+                    window.scrollTo(0, 0);
+                }
+            }, 250);
+        };
+
+        document.addEventListener('focusout', settle);
+        window.visualViewport?.addEventListener('resize', settle);
+
+        return () => {
+            window.clearTimeout(timer);
+            document.removeEventListener('focusout', settle);
+            window.visualViewport?.removeEventListener('resize', settle);
+        };
+    }, []);
+}
 
 function readFlag(key: string): boolean {
     try {
@@ -176,6 +214,22 @@ export default function AppShell() {
 
     const onMorePage = pathname === '/more' || MORE_PAGES.some((page) => page.path === pathname);
 
+    // A different section starts at its top. Paging between days or weeks keeps
+    // your place, so the part of the page you were reading stays in view.
+    const scroller = useRef<HTMLDivElement>(null);
+    const section = pathname.split('/')[1] ?? '';
+
+    useEffect(() => {
+        scroller.current?.scrollTo?.(0, 0);
+
+        // From tablet width up it is the document that scrolls.
+        if (window.scrollY !== 0) {
+            window.scrollTo(0, 0);
+        }
+    }, [section]);
+
+    useKeyboardRecovery();
+
     return (
         <ParentPromptProvider value={parentPrompt}>
             <ReviewProvider value={reviewControls}>
@@ -227,11 +281,14 @@ export default function AppShell() {
                         </aside>
                     )}
 
-                    <EventEditorProvider value={eventEditor}>
-                        <ItemEditorProvider value={editor}>
-                            <Outlet />
-                        </ItemEditorProvider>
-                    </EventEditorProvider>
+                    {/* On a phone this is what scrolls; the bar below it stays put. */}
+                    <div className="shell-scroll" ref={scroller}>
+                        <EventEditorProvider value={eventEditor}>
+                            <ItemEditorProvider value={editor}>
+                                <Outlet />
+                            </ItemEditorProvider>
+                        </EventEditorProvider>
+                    </div>
 
                     <button
                         type="button"

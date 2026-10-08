@@ -94,9 +94,10 @@
     }
 }
 
-// "Mark the goal done too?" floats above the navigation.
+// "Mark the goal done too?" floats above the navigation. Like the add button,
+// it sits in the shell on a phone and is pinned to the window from tablet up.
 .toast-prompt {
-    position: fixed;
+    position: absolute;
     right: 1rem;
     bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 5.5rem);
     left: 1rem;
@@ -123,6 +124,12 @@
         bottom: 1.75rem;
         left: auto;
         max-width: 30rem;
+    }
+}
+
+@include media-breakpoint-up(md) {
+    .toast-prompt {
+        position: fixed;
     }
 }
 
