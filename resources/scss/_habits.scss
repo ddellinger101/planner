@@ -102,6 +102,98 @@
     }
 }
 
+// On the Routines page the wheel shares its card with the streaks: beside
+// it on a wide screen, beneath it otherwise.
+.habit-glance {
+    display: grid;
+    gap: 1.25rem 2rem;
+    align-items: start;
+
+    @include media-breakpoint-up(xl) {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        align-items: center;
+    }
+}
+
+.streaks .field-label {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+    margin-bottom: 0.6rem;
+
+    svg {
+        color: var(--star);
+    }
+}
+
+.streak-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 0.6rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+// One habit's streak: the number leads, in the habit's color at its edge.
+.streak-tile {
+    display: grid;
+    gap: 0.05rem;
+    padding: 0.6rem 0.7rem 0.65rem;
+    background: color-mix(in srgb, var(--cat) 12%, var(--card));
+    border-left: 4px solid var(--cat-strong);
+    border-radius: 0.7rem;
+
+    // Nothing going at the moment: still listed, but it steps back.
+    &.is-idle {
+        background: none;
+        box-shadow: inset 0 0 0 1px var(--line-soft);
+
+        .streak-count {
+            color: var(--ink-soft);
+
+            svg {
+                color: var(--line);
+            }
+        }
+    }
+}
+
+.streak-count {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--ink);
+
+    svg {
+        flex: none;
+        color: var(--star);
+        fill: color-mix(in srgb, var(--star) 35%, transparent);
+    }
+}
+
+.streak-unit {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+}
+
+.streak-title {
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.streak-best {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+}
+
 .radial-segment {
     fill: var(--line-soft);
 

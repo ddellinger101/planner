@@ -69,6 +69,31 @@ describe('routine editors', () => {
         expect(within(await region('Morning routine')).getByText('Stretch')).toBeInTheDocument();
     });
 
+    it('shows the streaks beside the month, longest first, above the routines', async () => {
+        mockApi({
+            ...signedIn(),
+            'GET /api/habits': { body: habits },
+            'GET /api/habits/stats': { body: stats },
+        });
+
+        renderApp('/routines');
+
+        const streaks = within(await region('Current streaks'));
+        const tiles = await streaks.findAllByRole('listitem');
+        // One week outlasts four days.
+        expect(tiles[0]).toHaveTextContent('Guitar');
+        expect(tiles[0]).toHaveTextContent('1week in a row');
+        expect(tiles[0]).toHaveTextContent('Best: 6');
+        expect(tiles[1]).toHaveTextContent('Floss');
+        expect(tiles[1]).toHaveTextContent('4days in a row');
+
+        const month = screen.getByRole('heading', { name: 'Month at a glance' });
+        const routines = screen.getByRole('heading', { name: 'Your routines' });
+        expect(
+            month.compareDocumentPosition(routines) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+    });
+
     it('adds a habit to the routine it was started from', async () => {
         const { calls } = mockApi({
             ...signedIn(),
