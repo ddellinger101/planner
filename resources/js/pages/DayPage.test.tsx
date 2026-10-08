@@ -13,25 +13,85 @@ const region = (name: string | RegExp) => screen.findByRole('region', { name });
 const today = () => todayPeriod('day', 'America/New_York').key;
 
 describe('journal', () => {
-    it('saves gratitude when the field loses focus', async () => {
+    it('opens gratitude in full to write it, and shows it on one line afterwards', async () => {
+        let entries: object[] = [];
         const { calls } = mockApi({
             ...signedIn(),
-            'PUT /api/journal/2027-01-04/gratitude': ({ body }) => ({ body }),
+            'GET /api/journal': () => ({ body: entries }),
+            'PUT /api/journal/2027-01-04/gratitude': ({ body }) => {
+                entries = [
+                    {
+                        type: 'gratitude',
+                        minutes: null,
+                        period_key: '2027-01-04',
+                        carried: false,
+                        ...(body as object),
+                    },
+                ];
+
+                return { body: entries[0] };
+            },
+        });
+        const long =
+            'A slow morning with good coffee, the kids laughing at breakfast, and a walk before the rain came in';
+
+        renderApp('/day/2027-01-04');
+        const line = await screen.findByRole('button', { name: /I’m grateful for/ });
+        await waitFor(() => expect(line).toBeEnabled());
+        expect(line).toHaveTextContent('Write…');
+
+        await userEvent.click(line);
+        const dialog = within(screen.getByRole('dialog', { name: 'I’m grateful for' }));
+        const text = dialog.getByRole('textbox', { name: 'I’m grateful for' });
+
+        expect(text).toHaveFocus();
+        await userEvent.type(text, long);
+        await userEvent.click(dialog.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({ body: long }),
+        );
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        // The line shows it straight away, and holds the whole text for the popup.
+        expect(line).toHaveTextContent(long);
+
+        await userEvent.click(line);
+        expect(screen.getByRole('textbox', { name: 'I’m grateful for' })).toHaveValue(long);
+    });
+
+    it('leaves an entry alone when the popup is closed or nothing changed', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            'GET /api/journal': {
+                body: [
+                    {
+                        type: 'gratitude',
+                        body: 'Coffee',
+                        minutes: null,
+                        period_key: '2027-01-04',
+                        carried: false,
+                    },
+                ],
+            },
         });
 
         renderApp('/day/2027-01-04');
-        const field = await screen.findByLabelText('I’m grateful for');
-        await waitFor(() => expect(field).toBeEnabled());
-        await userEvent.type(field, 'Coffee{Enter}');
+        const line = await screen.findByRole('button', { name: /I’m grateful for/ });
+        await waitFor(() => expect(line).toHaveTextContent('Coffee'));
 
-        await waitFor(() =>
-            expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({ body: 'Coffee' }),
-        );
-        // The text stays put while the save is in flight.
-        expect(field).toHaveValue('Coffee');
+        await userEvent.click(line);
+        await userEvent.type(screen.getByRole('textbox', { name: 'I’m grateful for' }), ' and tea');
+        await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+        await userEvent.click(line);
+        expect(screen.getByRole('textbox', { name: 'I’m grateful for' })).toHaveValue('Coffee');
+        await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+        expect(calls.some((call) => call.method === 'PUT')).toBe(false);
+        expect(line).toHaveTextContent('Coffee');
     });
 
-    it('pre-fills a carried affirmation and says where it came from', async () => {
+    it('shows a carried affirmation, says where it came from, and keeps it once saved', async () => {
         const { calls } = mockApi({
             ...signedIn(),
             'GET /api/journal': {
@@ -49,21 +109,22 @@ describe('journal', () => {
         });
 
         renderApp('/day/2027-01-06');
-        const field = await screen.findByLabelText('Affirmation');
+        const line = await screen.findByRole('button', { name: /Affirmation/ });
 
-        await waitFor(() => expect(field).toHaveValue('I finish what I start'));
+        await waitFor(() => expect(line).toHaveTextContent('I finish what I start'));
         expect(screen.getByText('Carried from Mon, Jan 4')).toBeInTheDocument();
 
         // Just looking at it saves nothing.
-        await userEvent.click(field);
-        await userEvent.tab();
+        await userEvent.click(line);
+        await userEvent.click(screen.getByRole('button', { name: 'Close' }));
         expect(calls.some((call) => call.method === 'PUT')).toBe(false);
 
-        await userEvent.clear(field);
-        await userEvent.type(field, 'One thing at a time{Enter}');
+        // Saving it unchanged makes it this day's own.
+        await userEvent.click(line);
+        await userEvent.click(screen.getByRole('button', { name: 'Save' }));
         await waitFor(() =>
             expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
-                body: 'One thing at a time',
+                body: 'I finish what I start',
             }),
         );
     });
