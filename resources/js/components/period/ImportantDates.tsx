@@ -1,4 +1,4 @@
-import { CalendarCheck, CalendarHeart, Pencil, Repeat, Trash2 } from 'lucide-react';
+import { CalendarCheck, CalendarHeart, EyeOff, Pencil, Repeat, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useGoogle } from '@/api/google';
 import { useDeleteImportantDate, useSaveImportantDate, type ImportantDate } from '@/api/planning';
@@ -113,8 +113,20 @@ export default function ImportantDates({ month, dates }: Props) {
                                     </button>
                                 </>
                             ) : (
-                                // A contact's birthday is changed in Google Contacts.
-                                <span className="task-badge date-list-source">Contacts</span>
+                                // A contact's birthday is changed in Google Contacts,
+                                // but can be left out of the planner.
+                                <>
+                                    <span className="task-badge date-list-source">Contacts</span>
+                                    <button
+                                        type="button"
+                                        className="icon-button is-small task-delete-always"
+                                        aria-label={`Hide ${entry.title}`}
+                                        title="Hide from the planner. It stays in Google Contacts."
+                                        onClick={() => remove.mutate(entry.id)}
+                                    >
+                                        <EyeOff aria-hidden="true" size={15} />
+                                    </button>
+                                </>
                             )}
                         </li>
                     ))}

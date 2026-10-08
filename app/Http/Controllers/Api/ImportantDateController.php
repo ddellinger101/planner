@@ -28,7 +28,7 @@ class ImportantDateController extends Controller
         $to = CarbonImmutable::parse($range['to'], 'UTC');
         $occurrences = [];
 
-        foreach (ImportantDate::orderBy('date')->orderBy('id')->get() as $date) {
+        foreach (ImportantDate::whereNull('hidden_at')->orderBy('date')->orderBy('id')->get() as $date) {
             $years = $date->repeats_yearly ? range($from->year, $to->year) : [$date->date->year];
 
             foreach ($years as $year) {
@@ -74,7 +74,13 @@ class ImportantDateController extends Controller
 
     public function destroy(ImportantDate $importantDate): Response
     {
-        abort_if($importantDate->source !== 'app', 403, 'Birthdays from Google Contacts are removed in Google Contacts.');
+        // A contact's birthday is hidden, not deleted: its row is what stops
+        // the next read of Google Contacts from bringing it back.
+        if ($importantDate->source !== 'app') {
+            $importantDate->update(['hidden_at' => now()]);
+
+            return response()->noContent();
+        }
 
         $importantDate->delete();
 

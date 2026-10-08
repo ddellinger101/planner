@@ -289,6 +289,24 @@ describe('birthdays', function () {
         expect($this->account->refresh()->birthdays_synced_at)->not->toBeNull();
     });
 
+    it('keeps a birthday hidden once it has been removed here', function () {
+        $this->contacts->add('Elizabeth Hughes', 10, 2, 1975);
+        $this->contacts->add('Grace', 1, 9);
+        $this->sync->syncAccount($this->account);
+
+        $hidden = ImportantDate::where('title', 'Elizabeth Hughes’s birthday')->firstOrFail();
+        $this->deleteJson("/api/important-dates/{$hidden->id}")->assertNoContent();
+
+        // The next read of Google Contacts doesn't bring it back.
+        $this->sync->syncAccount($this->account);
+
+        $this->getJson('/api/important-dates?from=2027-01-01&to=2027-12-31')
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.title', 'Grace’s birthday');
+        $this->getJson('/api/google')->assertJsonPath('birthday_count', 1);
+        expect(ImportantDate::count())->toBe(2);
+    });
+
     it('handles a February 29 birthday with no year', function () {
         $this->contacts->add('Leap', 2, 29);
         $this->sync->syncAccount($this->account);
