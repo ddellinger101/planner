@@ -97,6 +97,65 @@ describe('profile', () => {
     });
 });
 
+describe('themes', () => {
+    it('draws the planner in the look the person chose', async () => {
+        mockApi({
+            ...signedIn(),
+            'GET /api/me': { body: { ...session, user: { ...session.user, theme: 'clean' } } },
+        });
+
+        renderApp('/settings');
+        await region('Appearance');
+
+        expect(document.documentElement.dataset.theme).toBe('clean');
+        // Remembered here, so the next visit starts in it before anything has loaded.
+        expect(window.localStorage.getItem('planner.theme')).toBe('clean');
+    });
+
+    it('switches theme from Settings, at once, and saves it', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            'PATCH /api/me': ({ body }) => ({
+                body: { ...session, user: { ...session.user, ...(body as object) } },
+            }),
+        });
+
+        renderApp('/settings');
+        const appearance = within(await region('Appearance'));
+        const theme = appearance.getByLabelText('Theme');
+
+        expect(theme).toHaveValue('fun');
+        expect(
+            within(theme)
+                .getAllByRole('option')
+                .map((option) => option.textContent),
+        ).toEqual(['Fun Theme', 'Clean Theme']);
+        expect(appearance.getByText(/bullet journal/)).toBeInTheDocument();
+
+        await userEvent.selectOptions(theme, 'Clean Theme');
+
+        expect(document.documentElement.dataset.theme).toBe('clean');
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ theme: 'clean' }),
+        );
+        await waitFor(() => expect(theme).toHaveValue('clean'));
+        expect(appearance.getByText(/system typeface/)).toBeInTheDocument();
+    });
+
+    it('goes back to the saved look if the change can’t be saved', async () => {
+        mockApi({ ...signedIn(), 'PATCH /api/me': { status: 500 } });
+
+        renderApp('/settings');
+        const appearance = within(await region('Appearance'));
+
+        await userEvent.selectOptions(appearance.getByLabelText('Theme'), 'Clean Theme');
+
+        expect(await appearance.findByRole('alert')).toHaveTextContent('That didn’t save.');
+        expect(document.documentElement.dataset.theme).toBe('fun');
+        expect(appearance.getByLabelText('Theme')).toHaveValue('fun');
+    });
+});
+
 describe('the person filter', () => {
     it('gives a new day task to the person whose planner is on screen', async () => {
         window.localStorage.setItem('planner.person', '2');
