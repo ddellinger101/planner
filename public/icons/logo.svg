@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Check-mark swoosh, leaf-style tapered tips. Blues: #3B82F6 light, #1E40AF dark -->
+  <path d="M4,62 C16,56 32,66 46,82 C64,50 86,22 116,4 C110,44 82,92 54,112 C46,118 36,116 30,108 C20,94 12,78 4,62 Z" fill="#3B82F6"/>
+  <path d="M116,4 C110,44 82,92 54,112 C46,118 36,116 30,108 C64,90 94,52 116,4 Z" fill="#1E40AF"/>
+
+  <!-- Planner page resting in the cradle of the check -->
+  <g transform="translate(3 5) rotate(-8 44 42)">
+    <rect x="20" y="22" width="44" height="46" rx="7" fill="#FFFFFF" stroke="#1E40AF" stroke-width="3"/>
+    <path d="M20,35 V29 a7,7 0 0 1 7,-7 H57 a7,7 0 0 1 7,7 V35 Z" fill="#1E40AF"/>
+    <rect x="29" y="15" width="6" height="13" rx="3" fill="#FFFFFF" stroke="#1E40AF" stroke-width="2"/>
+    <rect x="49" y="15" width="6" height="13" rx="3" fill="#FFFFFF" stroke="#1E40AF" stroke-width="2"/>
+    <rect x="27" y="41" width="7" height="7" rx="2" fill="#3B82F6"/>
+    <rect x="38" y="41" width="7" height="7" rx="2" fill="#3B82F6"/>
+    <rect x="49" y="41" width="7" height="7" rx="2" fill="#1E40AF"/>
+    <g stroke="#3B82F6" stroke-width="3" stroke-linecap="round">
+      <line x1="28" y1="55" x2="56" y2="55"/>
+      <line x1="28" y1="62" x2="46" y2="62"/>
+    </g>
+  </g>
+</svg>

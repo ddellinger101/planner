@@ -10,7 +10,7 @@
  *
  * Changing CACHE throws away everything cached by an earlier version.
  */
-const CACHE = 'planner-v1';
+const CACHE = 'planner-v2';
 const SHELL = '/';
 
 self.addEventListener('install', () => self.skipWaiting());
