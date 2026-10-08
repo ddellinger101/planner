@@ -362,13 +362,15 @@ describe('birthdays', function () {
         $this->patchJson('/api/google', ['sync_birthdays' => true])->assertJson(['birthday_count' => 1]);
     });
 
-    it('can\'t be edited or deleted in the planner', function () {
+    it('can\'t be edited in the planner, and is hidden rather than deleted', function () {
         $this->contacts->add('Ada', 12, 10);
         $this->sync->syncAccount($this->account);
         $id = ImportantDate::sole()->id;
 
         $this->patchJson("/api/important-dates/{$id}", ['title' => 'Renamed'])->assertForbidden();
-        $this->deleteJson("/api/important-dates/{$id}")->assertForbidden();
+        $this->deleteJson("/api/important-dates/{$id}")->assertNoContent();
+
+        expect(ImportantDate::sole()->hidden_at)->not->toBeNull();
     });
 
     it('does nothing without contacts access, and flags a revoked account', function () {
