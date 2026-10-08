@@ -13,6 +13,7 @@ import MonthCalendar, { calendarDays } from '@/components/period/MonthCalendar';
 import { BestPart, CategoryProgress, CompletionBar } from '@/components/period/Summaries';
 import { RoutineGrid, WeekMeals } from '@/components/period/WeekExtras';
 import WeekStrip from '@/components/period/WeekStrip';
+import WeekWeight from '@/components/period/WeekWeight';
 import { MonthHabits } from '@/pages/RoutinesPage';
 import { YearWeight } from '@/pages/WeightPage';
 import { useItemEditor } from '@/context/ItemEditorContext';
@@ -87,17 +88,20 @@ export function WeekPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
-            <div className="row g-3 align-items-center">
-                <div className="col-12 col-lg-6">
+            <div className="row g-3 align-items-stretch">
+                <div className="col-12 col-lg-5">
                     <BestPart key={period.key} period={period} />
                 </div>
-                <div className="col-12 col-lg-6">
+                <div className="col-12 col-lg-auto d-flex align-items-center">
                     <Link
                         className="button-ink d-inline-flex align-items-center gap-2"
                         to={`/plan/${period.key}`}
                     >
                         <CalendarCheck aria-hidden="true" size={18} /> Plan this week
                     </Link>
+                </div>
+                <div className="col-12 col-lg">
+                    <WeekWeight week={period} today={today} />
                 </div>
             </div>
 

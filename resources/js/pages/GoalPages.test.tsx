@@ -231,6 +231,67 @@ describe('week', () => {
         );
     });
 
+    it('shows the latest weight beside the goals for the week, month, quarter and year', async () => {
+        const { calls } = mockApi({
+            ...weekApi(),
+            'GET /api/weight': {
+                body: [
+                    { id: 1, date: '2026-12-28', weight: 184, unit: 'lb' },
+                    { id: 2, date: '2027-01-02', weight: 182.4, unit: 'lb' },
+                ],
+            },
+            'GET /api/weight/goals': {
+                body: [
+                    { scope: 'week', period_key: '2027-W01', target_weight: 182.4 },
+                    { scope: 'month', period_key: '2027-01', target_weight: 180 },
+                    { scope: 'year', period_key: '2027', target_weight: 185 },
+                    // Other periods' goals aren't this week's business.
+                    { scope: 'month', period_key: '2027-02', target_weight: 178 },
+                    { scope: 'quarter', period_key: '2026-Q4', target_weight: 159 },
+                ],
+            },
+        });
+
+        renderApp('/week/2027-W01');
+        const weight = within(await region('Weight'));
+
+        expect(
+            await weight.findByText('182.4 lb', { selector: '.week-weight-value' }),
+        ).toBeInTheDocument();
+        expect(weight.getByText('Saturday, Jan 2')).toBeInTheDocument();
+
+        const goal = (name: string) => weight.getByText(name).closest('div')!;
+        expect(goal('Week 1')).toHaveTextContent('182.4 lb');
+        expect(goal('Week 1')).toHaveTextContent('At goal');
+        expect(goal('January')).toHaveTextContent('180 lb');
+        expect(goal('January')).toHaveTextContent('2.4 lb above');
+        expect(goal('2027')).toHaveTextContent('185 lb');
+        expect(goal('2027')).toHaveTextContent('2.6 lb below');
+        expect(weight.queryByText('178 lb')).not.toBeInTheDocument();
+        expect(weight.queryByText('159 lb')).not.toBeInTheDocument();
+
+        expect(weight.getByRole('link', { name: 'Chart and history' })).toHaveAttribute(
+            'href',
+            '/weight',
+        );
+        // Your own weight, whatever view is chosen: no person is asked for.
+        expect(calls.find((call) => call.path === '/api/weight')?.query.has('person')).toBe(false);
+    });
+
+    it('says so when no weight or weight goal has been set', async () => {
+        mockApi(weekApi());
+
+        renderApp('/week/2027-W01');
+        const weight = within(await region('Weight'));
+
+        expect(await weight.findByText('Nothing logged yet.')).toBeInTheDocument();
+        expect(weight.getByText(/No weight goals set/)).toBeInTheDocument();
+        expect(weight.getByRole('link', { name: 'Log your weight' })).toHaveAttribute(
+            'href',
+            '/weight',
+        );
+    });
+
     it('lines routines up in a grid and checks them off by day', async () => {
         const { calls } = mockApi({
             ...weekApi([
