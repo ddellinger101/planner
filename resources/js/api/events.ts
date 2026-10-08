@@ -8,6 +8,8 @@ export type CalendarEvent = {
     google_event_id: string | null;
     title: string;
     location: string | null;
+    /** The notes Google Calendar keeps with it, which may hold simple HTML. */
+    description: string | null;
     all_day: boolean;
     /** UTC moments, for an event with times. */
     starts_at: string | null;
@@ -134,24 +136,23 @@ export function eventMinutes(
     const start = localParts(event.starts_at!, timeZone);
     const end = localParts(event.ends_at!, timeZone);
 
-    return {
+    const minutes = {
         start: start.date < day ? 0 : toMinutes(start.time),
         end: end.date > day ? 24 * 60 : toMinutes(end.time),
     };
+
+    // Midnight to midnight is the whole day, however the event was entered.
+    return minutes.start === 0 && minutes.end === 24 * 60 ? null : minutes;
 }
 
 /** "All day", "2:00 PM – 3:00 PM", or how a longer event touches this day. */
 export function eventTimeLabel(event: CalendarEvent, day: string, timeZone: string): string {
-    if (event.all_day) {
+    if (eventMinutes(event, day, timeZone) === null) {
         return 'All day';
     }
 
     const start = localParts(event.starts_at!, timeZone);
     const end = localParts(event.ends_at!, timeZone);
-
-    if (start.date < day && end.date > day) {
-        return 'All day';
-    }
 
     if (start.date < day) {
         return `Until ${formatTime(end.time)}`;

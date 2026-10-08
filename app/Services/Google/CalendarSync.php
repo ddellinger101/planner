@@ -197,6 +197,7 @@ class CalendarSync
             'owner_user_id' => $account->user_id,
             'title' => mb_substr($remote['title'] !== '' ? $remote['title'] : '(No title)', 0, 255),
             'location' => $remote['location'] !== null ? mb_substr($remote['location'], 0, 255) : null,
+            'description' => filled($remote['description']) ? mb_substr($remote['description'], 0, 8000) : null,
             'etag' => $remote['etag'],
             'recurring_event_id' => $remote['recurring_event_id'],
             'html_link' => $remote['html_link'] !== null ? mb_substr($remote['html_link'], 0, 1024) : null,

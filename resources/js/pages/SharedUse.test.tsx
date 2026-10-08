@@ -248,6 +248,7 @@ describe('the person filter', () => {
                         google_event_id: 'g3',
                         title: 'Dentist',
                         location: null,
+                        description: null,
                         all_day: true,
                         starts_at: null,
                         ends_at: null,

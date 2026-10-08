@@ -444,7 +444,30 @@ a.button-plain {
         height: 100%;
         align-content: flex-start;
         overflow: hidden;
+        // Sets it off from a longer event it lies over.
+        box-shadow: 0 0 0 1.5px var(--card);
     }
+
+    // The hours already say when; the name goes first, where an event laid
+    // over this one is least likely to cover it.
+    .event-chip-time {
+        order: 1;
+    }
+
+    .event-chip-owner {
+        order: 2;
+    }
+}
+
+// An event opened to read: its place and notes in full, however long.
+.event-details-text {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.sheet h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .month-day-chip.is-event {

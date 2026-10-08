@@ -146,6 +146,9 @@ export default function DayPage({ period }: { period: Period }) {
 
                                     return minutes ? [{ event, ...minutes }] : [];
                                 })}
+                                allDay={dayEvents.filter(
+                                    (event) => eventMinutes(event, date, user.timezone) === null,
+                                )}
                                 categories={categories.data ?? []}
                                 members={household.members}
                                 startHour={user.day_start_hour}

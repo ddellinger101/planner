@@ -635,3 +635,15 @@ describe('talking to Google Calendar', function () {
         }
     });
 });
+
+it('keeps the notes Google has with an event', function () {
+    $this->google->addEvent($this->mine, ['title' => 'Dentist', 'start' => '2027-01-05T14:00:00-05:00', 'description' => "Bring the insurance card.\nPark behind the building.", 'location' => '12 Main St']);
+    $this->google->addEvent($this->mine, ['title' => 'Lunch', 'start' => '2027-01-05T12:00:00-05:00', 'description' => '']);
+    pollCalendar();
+
+    $this->getJson('/api/events?from=2027-01-05&to=2027-01-05')->assertOk()
+        ->assertJsonPath('0.title', 'Lunch')
+        ->assertJsonPath('0.description', null)
+        ->assertJsonPath('1.description', "Bring the insurance card.\nPark behind the building.")
+        ->assertJsonPath('1.location', '12 Main St');
+});

@@ -1,5 +1,5 @@
 import { ExternalLink, MapPin, Repeat, Trash2 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import {
     eventDays,
     eventTimeLabel,
@@ -20,12 +20,21 @@ export type EventTarget =
 
 type Props = { target: EventTarget; onClose: () => void };
 
-/** Add or change a calendar event, or read one that only Google Calendar can change. */
+/**
+ * Add a calendar event, or open one: first to read it in full, since a chip
+ * only has room for the start of its title, and from there to change it,
+ * unless only Google Calendar can.
+ */
 export default function EventSheet({ target, onClose }: Props) {
+    const [editing, setEditing] = useState(false);
     const event = target.kind === 'edit' ? target.event : null;
 
-    return event && !event.editable ? (
-        <EventDetails event={event} onClose={onClose} />
+    return event && !editing ? (
+        <EventDetails
+            event={event}
+            onEdit={event.editable ? () => setEditing(true) : undefined}
+            onClose={onClose}
+        />
     ) : (
         <EventForm target={target} onClose={onClose} />
     );
@@ -212,10 +221,13 @@ function EventForm({ target, onClose }: Props) {
     );
 }
 
-function EventDetails({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+type DetailsProps = { event: CalendarEvent; onEdit?: () => void; onClose: () => void };
+
+function EventDetails({ event, onEdit, onClose }: DetailsProps) {
     const { user } = useSession();
     const { start, end } = eventDays(event, user.timezone);
     const dayName = (day: string) => periodName(parsePeriod(day)!);
+    const description = event.description ? plainText(event.description) : '';
 
     return (
         <Sheet title={event.title} labelledBy="event-sheet-title" onClose={onClose}>
@@ -231,17 +243,26 @@ function EventDetails({ event, onClose }: { event: CalendarEvent; onClose: () =>
                 )}
             </p>
             {event.location && (
-                <p className="mb-2 d-flex gap-2 align-items-start">
+                <p className="mb-2 d-flex gap-2 align-items-start event-details-text">
                     <MapPin aria-hidden="true" size={16} className="mt-1 flex-shrink-0" />
-                    {event.location}
+                    <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {event.location}
+                    </a>
                 </p>
             )}
+            {description && <p className="mb-3 event-details-text">{withLinks(description)}</p>}
             <p className="text-soft small">
-                {event.repeats
-                    ? 'A repeating event is changed in Google Calendar.'
-                    : `From the “${event.calendar_name ?? 'Google'}” calendar, which can’t be changed here.`}
+                {event.editable
+                    ? event.calendar_name && `On the “${event.calendar_name}” calendar.`
+                    : event.repeats
+                      ? 'A repeating event is changed in Google Calendar.'
+                      : `From the “${event.calendar_name ?? 'Google'}” calendar, which can’t be changed here.`}
             </p>
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex flex-wrap align-items-center gap-2">
                 {event.html_link && (
                     <a
                         className="button-plain d-inline-flex align-items-center gap-2"
@@ -252,10 +273,48 @@ function EventDetails({ event, onClose }: { event: CalendarEvent; onClose: () =>
                         Open in Google Calendar <ExternalLink aria-hidden="true" size={15} />
                     </a>
                 )}
-                <button type="button" className="button-ink ms-auto" onClick={onClose}>
-                    Done
-                </button>
+                {onEdit ? (
+                    <button type="button" className="button-ink ms-auto" onClick={onEdit}>
+                        Edit
+                    </button>
+                ) : (
+                    <button type="button" className="button-ink ms-auto" onClick={onClose}>
+                        Done
+                    </button>
+                )}
             </div>
         </Sheet>
+    );
+}
+
+/**
+ * Google Calendar keeps notes as plain text or, when they were formatted in
+ * its editor, as HTML. Either way they are shown as text: the markup is read
+ * for its line breaks and never put on the page.
+ */
+export function plainText(notes: string): string {
+    if (!/<[a-z!/][^>]*>/i.test(notes)) {
+        return notes.trim();
+    }
+
+    const lines = notes
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<li[^>]*>/gi, '• ')
+        .replace(/<\/(p|div|li|h[1-6])>/gi, '\n');
+    const text = new DOMParser().parseFromString(lines, 'text/html').body.textContent ?? '';
+
+    return text.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/** Text with its web addresses made into links. */
+function withLinks(text: string): ReactNode[] {
+    return text.split(/(https?:\/\/[^\s<>"]+)/g).map((part, index) =>
+        index % 2 === 1 ? (
+            <a key={index} href={part} target="_blank" rel="noreferrer">
+                {part}
+            </a>
+        ) : (
+            part
+        ),
     );
 }

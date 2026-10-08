@@ -224,7 +224,16 @@ add a theme, add it to `THEMES` in `theme.ts` and `User::THEMES`, and add a
   `position: fixed` below the `md` breakpoint, because iOS leaves fixed elements where the
   keyboard pushed them in a Home Screen app (`useKeyboardRecovery` also undoes the page
   shift). From `md` up the document scrolls as usual. Don't read `window.scrollY` for page
-  position; use the scroller.
+  position; use the scroller. The frame's height is `100%` handed down from `<html>`, not a
+  viewport unit: `dvh`/`lvh` count the status bar in an iOS Home Screen app and push the
+  bottom bar partly off screen.
+- On the Day view's Schedule, events lasting the whole day (all-day, or midnight to midnight)
+  sit in a strip above the hours. Timed blocks each run the full width; one starting during
+  another is laid over it and stepped in, and only blocks starting within half an hour of
+  each other share the width (`layOut` in `Timeline.tsx`; the stylesheet does the arithmetic
+  from `--depth`, `--column` and `--columns`).
+- Tapping an event opens it to read (title, place, notes) before any editing. Google's notes
+  can hold HTML; `plainText` reads them as text, and they are never put on the page as markup.
 - Push is sent with `contentEncoding: aes128gcm`; the library's default is an older format
   Safari can't read. `WebPushSenderTest` runs the real library against a mock HTTP client
   (set `OPENSSL_CONF` to PHP's `extras/ssl/openssl.cnf` to run it on Windows).

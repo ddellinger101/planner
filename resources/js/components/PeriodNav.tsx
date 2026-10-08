@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router';
 import {
     nextPeriod,
@@ -11,6 +11,21 @@ import {
 import { periodLabel, SCOPE_NAMES } from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
+// Below Bootstrap's "sm" breakpoint, where the header is a single tight row.
+const PHONE = '(max-width: 575.98px)';
+
+function useIsPhone(): boolean {
+    return useSyncExternalStore(
+        (changed) => {
+            const query = window.matchMedia?.(PHONE);
+            query?.addEventListener('change', changed);
+
+            return () => query?.removeEventListener('change', changed);
+        },
+        () => window.matchMedia?.(PHONE).matches ?? false,
+    );
+}
+
 export const periodPath = (period: Period) => `/${period.scope}/${period.key}`;
 
 /** Previous / next / today controls and a date picker for a period page. */
@@ -18,7 +33,9 @@ export default function PeriodNav({ period }: { period: Period }) {
     const navigate = useNavigate();
     const today = useToday();
     const dateInput = useRef<HTMLInputElement>(null);
-    const { title, subtitle } = periodLabel(period);
+    // The spoken name stays the long one; only what is drawn is shortened.
+    const { title: fullTitle } = periodLabel(period);
+    const { title, subtitle } = periodLabel(period, useIsPhone());
     const scopeName = SCOPE_NAMES[period.scope].toLowerCase();
     const go = (target: Period) => navigate(periodPath(target));
 
@@ -47,7 +64,13 @@ export default function PeriodNav({ period }: { period: Period }) {
 
             {/* The heading doubles as the "jump to a date" control. */}
             <div className="period-nav-title">
-                <h1 className="page-title">{title}</h1>
+                <h1
+                    // "Wednesday" and "September" are set a little smaller on a phone.
+                    className={`page-title${title.length > 8 ? ' is-long' : ''}`}
+                    aria-label={title === fullTitle ? undefined : fullTitle}
+                >
+                    {title}
+                </h1>
                 <button type="button" className="page-subtitle date-jump" onClick={openDatePicker}>
                     {subtitle}
                     <CalendarDays aria-hidden="true" size={14} />
