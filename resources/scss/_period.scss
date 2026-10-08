@@ -429,3 +429,68 @@
     font-weight: 700;
     list-style: none;
 }
+
+// The week's weight widget: the latest weight, then each goal it is measured against.
+.week-weight {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    align-items: center;
+    height: 100%;
+    padding: 0.75rem 1rem;
+}
+
+.week-weight-now {
+    display: grid;
+    gap: 0.1rem;
+
+    .field-label {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+    }
+}
+
+.week-weight-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+}
+
+.week-weight-empty {
+    flex: 1 1 12rem;
+}
+
+.week-weight-goals {
+    display: grid;
+    flex: 1 1 14rem;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: 0.5rem 1rem;
+    margin: 0;
+
+    > div {
+        padding-left: 0.75rem;
+        border-left: var(--stroke) solid var(--line-soft);
+    }
+
+    dt {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+    }
+
+    dd {
+        display: grid;
+        margin: 0;
+    }
+}
+
+.week-weight-target {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
