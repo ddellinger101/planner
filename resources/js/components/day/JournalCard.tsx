@@ -1,6 +1,7 @@
 import { Heart, Sparkles, Wind } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useJournal, useSaveJournal, type JournalEntry, type JournalType } from '@/api/day';
+import { Sheet } from '@/components/brain/BrainDumpSheets';
 import { useDraft } from '@/lib/useDraft';
 import { parsePeriod } from '@/lib/period';
 import { periodLabel } from '@/lib/periodLabels';
@@ -78,24 +79,31 @@ type LineProps = {
     onSave: (value: string) => void;
 };
 
-/** One line of the journal. It saves when you leave the field or press Enter. */
-function JournalLine({ icon, label, entry, loaded, hint, suffix, numeric, onSave }: LineProps) {
-    const saved = numeric ? String(entry?.minutes ?? '') : (entry?.body ?? '');
+/**
+ * One line of the journal. A number is typed in place and saves when you
+ * leave the field. Words are shown on one line, cut short if they run long,
+ * and open in full to read or change when the line is pressed.
+ */
+function JournalLine(props: LineProps) {
+    return props.numeric ? <NumberLine {...props} /> : <TextLine {...props} />;
+}
+
+const lineId = (label: string) => `journal-${label.replace(/\W+/g, '-').toLowerCase()}`;
+
+function NumberLine({ icon, label, entry, loaded, suffix, onSave }: LineProps) {
+    const saved = String(entry?.minutes ?? '');
     const draft = useDraft(saved);
+    const id = lineId(label);
 
     const commit = () => {
         const next = draft.value.trim();
 
-        // An untouched carried affirmation stays a suggestion; editing or
-        // re-entering it makes it today's own.
-        if (draft.touched && (next !== saved || entry?.carried)) {
+        if (draft.touched && next !== saved) {
             onSave(next);
         }
 
         draft.settle();
     };
-
-    const id = `journal-${label.replace(/\W+/g, '-').toLowerCase()}`;
 
     return (
         <div className="journal-line">
@@ -106,25 +114,118 @@ function JournalLine({ icon, label, entry, loaded, hint, suffix, numeric, onSave
             <div className="journal-field">
                 <input
                     id={id}
-                    type={numeric ? 'number' : 'text'}
-                    inputMode={numeric ? 'numeric' : undefined}
-                    min={numeric ? 0 : undefined}
-                    max={numeric ? 1440 : undefined}
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={1440}
                     value={draft.value}
                     disabled={!loaded}
-                    maxLength={numeric ? undefined : 500}
-                    aria-describedby={hint ? `${id}-hint` : undefined}
                     onChange={(event) => draft.set(event.target.value)}
                     onBlur={commit}
                     onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
                 />
                 {suffix && <span className="text-soft small">{suffix}</span>}
             </div>
+        </div>
+    );
+}
+
+function TextLine({ icon, label, entry, loaded, hint, onSave }: LineProps) {
+    const [open, setOpen] = useState(false);
+    const saved = entry?.body ?? '';
+    const id = lineId(label);
+
+    return (
+        <div className="journal-line">
+            <span className="journal-label" id={`${id}-label`}>
+                {icon}
+                {label}
+            </span>
+            <button
+                type="button"
+                id={id}
+                className="journal-open"
+                disabled={!loaded}
+                aria-labelledby={`${id}-label ${id}`}
+                aria-describedby={hint ? `${id}-hint` : undefined}
+                aria-haspopup="dialog"
+                onClick={() => setOpen(true)}
+            >
+                {saved === '' ? <span className="journal-placeholder">Write…</span> : saved}
+            </button>
             {hint && (
                 <span id={`${id}-hint`} className="journal-hint">
                     {hint}
                 </span>
             )}
+            {open && (
+                <JournalSheet
+                    label={label}
+                    saved={saved}
+                    // An untouched carried affirmation stays a suggestion; saving it,
+                    // changed or not, makes it today's own.
+                    alwaysSave={Boolean(entry?.carried)}
+                    hint={hint}
+                    onSave={onSave}
+                    onClose={() => setOpen(false)}
+                />
+            )}
         </div>
+    );
+}
+
+type SheetProps = {
+    label: string;
+    saved: string;
+    alwaysSave: boolean;
+    hint?: string;
+    onSave: (value: string) => void;
+    onClose: () => void;
+};
+
+/** The whole entry, with room to read and write it. */
+function JournalSheet({ label, saved, alwaysSave, hint, onSave, onClose }: SheetProps) {
+    const [text, setText] = useState(saved);
+
+    const submit = (event?: FormEvent) => {
+        event?.preventDefault();
+
+        const next = text.trim();
+
+        if (next !== saved || alwaysSave) {
+            onSave(next);
+        }
+
+        onClose();
+    };
+
+    return (
+        <Sheet title={label} labelledBy="journal-sheet-title" onClose={onClose} onSubmit={submit}>
+            <textarea
+                className="field-input journal-text"
+                aria-labelledby="journal-sheet-title"
+                rows={5}
+                maxLength={500}
+                value={text}
+                autoFocus
+                // Start typing at the end of what is already there.
+                onFocus={(event) => event.currentTarget.setSelectionRange(text.length, text.length)}
+                onChange={(event) => setText(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                        submit();
+                    }
+                }}
+            />
+            {hint && <p className="journal-hint mt-1 mb-0">{hint}. Save to keep it for today.</p>}
+            <div className="d-flex align-items-center gap-2 mt-3">
+                <button type="button" className="button-plain ms-auto" onClick={onClose}>
+                    Cancel
+                </button>
+                <button type="submit" className="button-ink">
+                    Save
+                </button>
+            </div>
+        </Sheet>
     );
 }

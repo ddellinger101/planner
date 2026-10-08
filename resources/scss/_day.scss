@@ -186,7 +186,8 @@
     display: grid;
     gap: 0.1rem;
 
-    label {
+    label,
+    .journal-label {
         display: flex;
         gap: 0.4rem;
         align-items: center;
@@ -226,6 +227,38 @@
             flex: 0 0 4.5rem;
         }
     }
+}
+
+// A written line: one line of it, with the rest a press away.
+.journal-open {
+    min-width: 0;
+    min-height: 2.4rem;
+    padding: 0 0.1rem;
+    overflow: hidden;
+    color: var(--ink);
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: none;
+    border: 0;
+    border-bottom: 1.5px var(--rule-style) var(--line-soft);
+    border-radius: 0;
+
+    &:hover,
+    &:focus-visible {
+        border-bottom-color: var(--accent);
+    }
+}
+
+.journal-placeholder {
+    color: var(--ink-soft);
+    opacity: 0.7;
+}
+
+.journal-text {
+    min-height: 8rem;
+    line-height: 1.5;
+    resize: vertical;
 }
 
 .journal-hint {

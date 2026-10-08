@@ -38,8 +38,30 @@ export function useSaveJournal(periodKey: string) {
                 method: 'PUT',
                 body: entry,
             }),
+        // Show what was written at once; the server's answer follows.
+        onMutate: async ({ type, body, minutes }) => {
+            const key = ['journal', periodKey];
+
+            await queryClient.cancelQueries({ queryKey: key });
+            const previous = queryClient.getQueryData<JournalEntry[]>(key);
+
+            queryClient.setQueryData<JournalEntry[]>(key, (entries = []) => [
+                ...entries.filter((entry) => entry.type !== type),
+                {
+                    type,
+                    body: body ?? null,
+                    minutes: minutes ?? null,
+                    period_key: periodKey,
+                    carried: false,
+                },
+            ]);
+
+            return { previous };
+        },
+        onError: (_error, _entry, context) =>
+            queryClient.setQueryData(['journal', periodKey], context?.previous),
         // Later days may be showing this affirmation as a carried one.
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['journal'] }),
+        onSettled: () => queryClient.invalidateQueries({ queryKey: ['journal'] }),
     });
 }
 
