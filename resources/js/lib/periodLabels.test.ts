@@ -17,6 +17,14 @@ describe('periodLabel', () => {
     ])('labels %s', (key, title, subtitle) => {
         expect(periodLabel(parse(key))).toEqual({ title, subtitle });
     });
+
+    it.each([
+        ['2027-Q4', 'Q4', 'Oct – Dec 2027'],
+        ['2027-09-30', 'Thursday', 'Sep 30, 2027'],
+        ['2027-03', 'March', '2027'],
+    ])('shortens %s for a phone', (key, title, subtitle) => {
+        expect(periodLabel(parse(key), true)).toEqual({ title, subtitle });
+    });
 });
 
 describe('periodName', () => {

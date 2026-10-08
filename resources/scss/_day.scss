@@ -315,6 +315,25 @@
     }
 }
 
+// Events that last the whole day: one line each, above the hours.
+.timeline-all-day {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0;
+    margin: 0 0 0.6rem;
+    list-style: none;
+
+    .event-chip {
+        flex-wrap: nowrap;
+    }
+
+    .event-chip-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
 .timeline-anytime {
     padding: 0.5rem;
     margin-bottom: 0.75rem;
@@ -388,6 +407,16 @@
     pointer-events: none;
 }
 
+// Every block runs to the right-hand edge. One laid over a longer block steps
+// in by its depth; blocks that start together split what width is left.
+.timeline-block,
+.timeline-event {
+    --indent: calc(var(--depth, 0) * 0.9rem);
+
+    left: calc(var(--indent) + (100% - var(--indent)) * var(--column, 0) / var(--columns, 1));
+    width: calc((100% - var(--indent)) / var(--columns, 1));
+}
+
 .timeline-block {
     position: absolute;
     align-items: flex-start;
@@ -395,6 +424,8 @@
     overflow: hidden;
     pointer-events: auto;
     background: color-mix(in srgb, var(--cat) 22%, var(--card));
+    // Sets it off from a longer block it lies over.
+    box-shadow: 0 0 0 1px var(--card);
     border: 1px solid var(--card);
     border-left: 4px solid var(--cat-strong);
     border-radius: 0.5rem;

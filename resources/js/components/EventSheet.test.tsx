@@ -25,6 +25,7 @@ function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
         google_event_id: 'g1',
         title: 'Dentist',
         location: null,
+        description: null,
         all_day: false,
         // 2:00 to 3:00 PM in New York.
         starts_at: '2027-01-04T19:00:00.000000Z',
@@ -137,6 +138,109 @@ describe('the day’s events', () => {
         expect(schedule.queryByRole('button', { name: /Conference/ })).not.toBeInTheDocument();
     });
 
+    it('keeps events that last the whole day above the hours', async () => {
+        const midnightToMidnight = makeEvent({
+            id: 3,
+            google_event_id: 'g3',
+            title: 'Wyeth',
+            starts_at: '2027-01-04T05:00:00.000000Z',
+            ends_at: '2027-01-05T05:00:00.000000Z',
+        });
+        mockApi({
+            ...signedIn(),
+            'GET /api/events': { body: [makeEvent(), allDay(), midnightToMidnight] },
+        });
+
+        renderApp('/day/2027-01-04');
+        const schedule = within(await region('Schedule'));
+        const wholeDay = within(await schedule.findByRole('list', { name: 'All-day events' }));
+
+        expect(wholeDay.getByRole('button', { name: 'Conference, All day' })).toBeInTheDocument();
+        expect(wholeDay.getByRole('button', { name: 'Wyeth, All day' })).toBeInTheDocument();
+        expect(wholeDay.queryByRole('button', { name: /Dentist/ })).not.toBeInTheDocument();
+
+        // The day isn't stretched back to midnight to fit them.
+        expect(schedule.queryByText('12 AM')).not.toBeInTheDocument();
+        expect(
+            within(schedule.getByRole('list', { name: 'Timed tasks and events' })).queryByRole(
+                'button',
+                { name: /Wyeth/ },
+            ),
+        ).not.toBeInTheDocument();
+    });
+
+    it('gives each event the full width, laying a later one over an earlier one', async () => {
+        const at = (id: number, title: string, start: string, end: string) =>
+            makeEvent({
+                id,
+                google_event_id: `g${id}`,
+                title,
+                starts_at: `2027-01-04T${start}:00.000000Z`,
+                ends_at: `2027-01-04T${end}:00.000000Z`,
+            });
+        mockApi({
+            ...signedIn(),
+            'GET /api/events': {
+                body: [
+                    at(1, 'Basketball', '20:00', '22:00'), // 3:00 to 5:00 PM
+                    at(2, 'Pickup', '20:45', '21:30'), // 3:45 to 4:30 PM
+                    at(3, 'Lunch', '17:00', '18:00'), // noon
+                    at(4, 'Call', '17:00', '17:30'), // noon as well
+                ],
+            },
+        });
+
+        renderApp('/day/2027-01-04');
+        const schedule = within(await region('Schedule'));
+        // How deep it is stacked, and its place among those that start with it.
+        const placeOf = async (name: RegExp) => {
+            const { style } = (await schedule.findByRole('button', { name })).closest('li')!;
+
+            return ['--depth', '--column', '--columns'].map((name) => style.getPropertyValue(name));
+        };
+
+        expect(await placeOf(/Basketball/)).toEqual(['0', '0', '1']);
+        // Stepped in, and otherwise as wide as the day.
+        expect(await placeOf(/Pickup/)).toEqual(['1', '0', '1']);
+        // Two that start together share the width, or one would hide the other.
+        expect(await placeOf(/Lunch/)).toEqual(['0', '0', '2']);
+        expect(await placeOf(/Call/)).toEqual(['0', '1', '2']);
+    });
+
+    it('opens an event to read it in full', async () => {
+        mockApi({
+            ...signedIn(),
+            'GET /api/events': {
+                body: [
+                    makeEvent({
+                        title: 'Dylan pickup and drop off at practice',
+                        location: '12 Main St',
+                        description:
+                            'Bring <b>cleats</b> &amp; water.<br>Map: https://example.com/field',
+                    }),
+                ],
+            },
+        });
+
+        renderApp('/day/2027-01-04');
+        await userEvent.click(
+            await within(await region('Schedule')).findByRole('button', { name: /Dylan pickup/ }),
+        );
+
+        const dialog = within(
+            screen.getByRole('dialog', { name: 'Dylan pickup and drop off at practice' }),
+        );
+        expect(dialog.getByText(/2:00 PM – 3:00 PM/)).toBeInTheDocument();
+        expect(dialog.getByRole('link', { name: '12 Main St' })).toHaveAttribute(
+            'href',
+            'https://www.google.com/maps/search/?api=1&query=12%20Main%20St',
+        );
+        expect(dialog.getByText(/Bring cleats & water./)).toBeInTheDocument();
+        expect(dialog.getByRole('link', { name: 'https://example.com/field' })).toBeInTheDocument();
+        expect(dialog.getByText(/On the “Dustin” calendar/)).toBeInTheDocument();
+        expect(dialog.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    });
+
     it('changes an event', async () => {
         const { calls } = mockApi({
             ...signedIn(),
@@ -148,6 +252,8 @@ describe('the day’s events', () => {
         await userEvent.click(
             await within(await region('Events')).findByRole('button', { name: /Dentist/ }),
         );
+
+        await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
         const dialog = within(screen.getByRole('dialog', { name: 'Edit event' }));
         expect(dialog.getByLabelText('Starts')).toHaveValue('14:00');
@@ -183,6 +289,7 @@ describe('the day’s events', () => {
         await userEvent.click(
             await within(await region('Events')).findByRole('button', { name: /Dentist/ }),
         );
+        await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
         await userEvent.click(screen.getByRole('button', { name: 'Delete this event' }));
 
         await waitFor(() => expect(calls.some((call) => call.method === 'DELETE')).toBe(true));
@@ -209,7 +316,7 @@ describe('the day’s events', () => {
             'href',
             'https://calendar.google.com/event?eid=g1',
         );
-        expect(dialog.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+        expect(dialog.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
     });
 
     it('adds an all-day event from the day', async () => {

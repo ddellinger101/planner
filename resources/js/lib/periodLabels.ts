@@ -25,15 +25,21 @@ function dateRange(start: string, end: string): string {
     return `${format(start, monthDay)} – ${last}, ${year(end)}`;
 }
 
-/** A heading and a smaller line of detail for a period. */
-export function periodLabel(period: Period): { title: string; subtitle: string } {
+/**
+ * A heading and a smaller line of detail for a period. The short form is for
+ * a phone's header, where the person filter shares the row: "Q4" and
+ * "Oct – Dec 2026" for "Quarter 4" and "October – December 2026".
+ */
+export function periodLabel(period: Period, short = false): { title: string; subtitle: string } {
+    const monthName = short ? 'short' : 'long';
+
     switch (period.scope) {
         case 'year':
             return { title: period.key, subtitle: '' };
         case 'quarter':
             return {
-                title: `Quarter ${period.key.slice(-1)}`,
-                subtitle: `${format(period.start, { month: 'long' })} – ${format(period.end, { month: 'long' })} ${year(period.start)}`,
+                title: `${short ? 'Q' : 'Quarter '}${period.key.slice(-1)}`,
+                subtitle: `${format(period.start, { month: monthName })} – ${format(period.end, { month: monthName })} ${year(period.start)}`,
             };
         case 'month':
             return { title: format(period.start, { month: 'long' }), subtitle: year(period.start) };
@@ -45,7 +51,11 @@ export function periodLabel(period: Period): { title: string; subtitle: string }
         case 'day':
             return {
                 title: format(period.start, { weekday: 'long' }),
-                subtitle: format(period.start, { month: 'long', day: 'numeric', year: 'numeric' }),
+                subtitle: format(period.start, {
+                    month: monthName,
+                    day: 'numeric',
+                    year: 'numeric',
+                }),
             };
     }
 }

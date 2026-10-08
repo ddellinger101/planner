@@ -5,17 +5,15 @@
 // last row. Nothing is pinned to the viewport with `position: fixed`, because
 // iOS misplaces fixed elements after the keyboard closes in a Home Screen app.
 // From tablet width up, the document scrolls as usual beside a fixed rail.
+//
+// The frame takes its height from the page (100% all the way down from <html>),
+// not from a viewport unit: in an iOS Home Screen app those units count the
+// status bar too, which pushed the bottom bar partly off the screen.
 .shell {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100dvh;
-
-    // Installed, there is no browser toolbar to allow for, and the largest
-    // viewport height doesn't change while the keyboard is up.
-    @media (display-mode: standalone) {
-        height: 100lvh;
-    }
+    height: 100%;
 
     @include media-breakpoint-up(md) {
         display: block;
@@ -42,8 +40,13 @@
     html:has(.shell),
     html:has(.shell) body {
         height: 100%;
+        min-height: 0;
         overflow: hidden;
         overscroll-behavior: none;
+    }
+
+    html:has(.shell) #app {
+        height: 100%;
     }
 }
 
@@ -148,6 +151,19 @@
     justify-content: space-between;
     min-height: var(--header-height);
     padding: 0.5rem 0.75rem;
+
+    // On a phone the person filter sits in the top right corner, beside the title.
+    @include media-breakpoint-down(sm) {
+        gap: 0.35rem 0.4rem;
+        align-items: flex-start;
+        padding: 0.5rem 0.6rem;
+
+        > .segmented {
+            margin-top: 0.2rem;
+            margin-left: auto;
+        }
+    }
+
     background: color-mix(in srgb, var(--paper) 88%, transparent);
     backdrop-filter: blur(6px);
     border-bottom: var(--stroke) solid var(--line);
@@ -158,6 +174,11 @@
     font-family: var(--font-display);
     font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
     line-height: 1;
+
+    // Sized to the screen on a phone, so a weekday fits beside the person filter.
+    @include media-breakpoint-down(sm) {
+        font-size: min(1.5rem, 5.6vw);
+    }
 }
 
 .page-subtitle {
