@@ -201,6 +201,15 @@ Bothdocs/` holds the plan, deployment notes, Google API notes and inspiration im
   JSON on the user, with defaults in `App\Support\NotificationPreferences`.
 - The queue is the database driver, drained every minute by the scheduler (`routes/console.php`),
   so the server needs no worker process beyond the cron entry.
+- On phones the document never scrolls: `.shell` is a screen-sized frame, the page scrolls
+  inside `.shell-scroll`, and the bottom bar is the frame's last row. Nothing in the shell is
+  `position: fixed` below the `md` breakpoint, because iOS leaves fixed elements where the
+  keyboard pushed them in a Home Screen app (`useKeyboardRecovery` also undoes the page
+  shift). From `md` up the document scrolls as usual. Don't read `window.scrollY` for page
+  position; use the scroller.
+- Push is sent with `contentEncoding: aes128gcm`; the library's default is an older format
+  Safari can't read. `WebPushSenderTest` runs the real library against a mock HTTP client
+  (set `OPENSSL_CONF` to PHP's `extras/ssl/openssl.cnf` to run it on Windows).
 - Scrolling containers that hold task rows need `position: relative`: Bootstrap's
   `visually-hidden` text is absolutely positioned and otherwise widens the whole page.
 - On the Day view, tasks with a `routine` appear in the routine checklists and not in the

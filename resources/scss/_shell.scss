@@ -1,11 +1,49 @@
 // App shell: a left rail on tablet and desktop, a bottom bar on phones.
+//
+// On a phone the shell is a frame exactly the size of the screen: the page
+// content scrolls inside it (.shell-scroll) and the bottom bar is the frame's
+// last row. Nothing is pinned to the viewport with `position: fixed`, because
+// iOS misplaces fixed elements after the keyboard closes in a Home Screen app.
+// From tablet width up, the document scrolls as usual beside a fixed rail.
 .shell {
-    min-height: 100dvh;
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+
+    // Installed, there is no browser toolbar to allow for, and the largest
+    // viewport height doesn't change while the keyboard is up.
+    @media (display-mode: standalone) {
+        height: 100lvh;
+    }
 
     @include media-breakpoint-up(md) {
-        padding-bottom: 0;
+        display: block;
+        height: auto;
+        min-height: 100dvh;
         padding-left: var(--rail-width);
+    }
+}
+
+.shell-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+
+    @include media-breakpoint-up(md) {
+        overflow: visible;
+    }
+}
+
+// With the shell on screen, the document itself has nothing to scroll.
+@include media-breakpoint-down(md) {
+    html:has(.shell),
+    html:has(.shell) body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
     }
 }
 
@@ -42,10 +80,9 @@
 }
 
 .bottom-nav {
-    position: fixed;
-    inset: auto 0 0;
     z-index: $zindex-fixed;
     display: flex;
+    flex: none;
     height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--card);
@@ -135,7 +172,8 @@
 }
 
 .fab {
-    position: fixed;
+    // Within the shell, which on a phone is exactly the screen.
+    position: absolute;
     right: 1.1rem;
     bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 1rem);
     z-index: $zindex-fixed;
@@ -155,6 +193,8 @@
     }
 
     @include media-breakpoint-up(md) {
+        // Here the document scrolls, so it is pinned to the window instead.
+        position: fixed;
         right: 1.75rem;
         bottom: 1.75rem;
     }
