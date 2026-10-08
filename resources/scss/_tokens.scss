@@ -1,5 +1,7 @@
 // Design tokens. Everything themeable is a custom property on :root so dark
-// mode is a second set of values, not a second stylesheet.
+// mode is a second set of values, not a second stylesheet. These are the Fun
+// theme's values; another theme (see _theme-clean.scss) changes them, and a
+// few shapes, under `[data-theme]` on the root element.
 :root {
     --paper: #fbf8f1;
     --paper-dot: rgb(43 42 51 / 16%);
@@ -19,6 +21,13 @@
     --cat-mix: #000;
     --cat-mix-amount: 16%;
     --cat-highlight-alpha: 34%;
+
+    // A solid control (the main button, the chosen segment) and what is drawn on it.
+    --fill: var(--ink);
+    --on-fill: var(--paper);
+    // The outline of boxes and controls, and the rule between rows of a list.
+    --stroke: 1.5px;
+    --rule-style: dashed;
 
     --font-display: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', cursive;
 

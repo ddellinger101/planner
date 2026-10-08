@@ -99,6 +99,24 @@ Bothapp/Support/Period.php` and `resources/js/lib/period.ts` are twins. Their te
   same cases; change both together.
 Bothdocs/` holds the plan, deployment notes, Google API notes and inspiration images.
 
+### Themes
+
+The look is a theme, chosen per person in Settings and stored on the user (`users.theme`).
+`resources/js/lib/theme.ts` lists them and sets `data-theme` on the root element; the blade
+template applies the one remembered on the device before first paint. Light and dark are
+separate: every theme has both and follows the device (`data-bs-theme`).
+
+- **Fun** (`fun`, the default): the bullet-journal look described above. Its values are the
+  tokens on `:root`.
+- **Clean** (`clean`): a system-app look in `_theme-clean.scss`: system typeface, white cards
+  on gray, hairlines, round checks, one blue tint. Category colors are the same in every theme.
+
+A theme changes tokens first (`--fill`/`--on-fill` for solid controls, `--stroke` for outline
+width, `--rule-style` for the rule between list rows, plus the colors and fonts) and reshapes
+components second. Write new component styles against the tokens so both themes get them. To
+add a theme, add it to `THEMES` in `theme.ts` and `User::THEMES`, and add a
+`_theme-<id>.scss` partial.
+
 ## Data model notes
 
 - Household data uses the `BelongsToHousehold` trait: a global scope limits every query to the

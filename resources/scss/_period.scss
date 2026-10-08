@@ -177,7 +177,7 @@
     td {
         padding: 0.15rem;
         text-align: center;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
     }
 
     thead th {
@@ -330,7 +330,7 @@
         border-color: transparent;
 
         &.is-today {
-            border-color: var(--ink);
+            border-color: var(--fill);
         }
 
         &.is-marked {
@@ -364,7 +364,7 @@
         column-gap: 0.25rem;
         align-items: center;
         padding: 0.3rem 0;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
     }
 }
 

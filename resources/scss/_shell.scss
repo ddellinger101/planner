@@ -58,7 +58,7 @@
     padding: 0.75rem 0.4rem;
     overflow-y: auto;
     background: var(--card);
-    border-right: 1.5px solid var(--line);
+    border-right: var(--stroke) solid var(--line);
 
     @include media-breakpoint-up(md) {
         display: flex;
@@ -86,7 +86,7 @@
     height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--card);
-    border-top: 1.5px solid var(--line);
+    border-top: var(--stroke) solid var(--line);
 
     @include media-breakpoint-up(md) {
         display: none;
@@ -150,7 +150,7 @@
     padding: 0.5rem 0.75rem;
     background: color-mix(in srgb, var(--paper) 88%, transparent);
     backdrop-filter: blur(6px);
-    border-bottom: 1.5px solid var(--line);
+    border-bottom: var(--stroke) solid var(--line);
 }
 
 .page-title {
@@ -181,8 +181,8 @@
     place-items: center;
     width: 3.5rem;
     height: 3.5rem;
-    color: var(--paper);
-    background: var(--ink);
+    color: var(--on-fill);
+    background: var(--fill);
     border: 0;
     border-radius: 50%;
     box-shadow: 0 6px 16px rgb(0 0 0 / 22%);

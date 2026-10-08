@@ -1,7 +1,7 @@
 // A section of the page, drawn like a ruled box in a bullet journal.
 .planner-card {
     background: var(--card);
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: var(--radius-card);
 }
 
@@ -106,7 +106,7 @@
         color: var(--ink);
         background: none;
         border: 0;
-        border-bottom: 1.5px dashed transparent;
+        border-bottom: 1.5px var(--rule-style) transparent;
         border-radius: 0;
 
         &::placeholder {
@@ -128,7 +128,7 @@
     padding: 0 0.35rem;
 
     & + & {
-        border-top: 1px dashed var(--line-soft);
+        border-top: 1px var(--rule-style) var(--line-soft);
     }
 }
 
@@ -391,7 +391,7 @@
     font-weight: 700;
     color: var(--ink);
     background: none;
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: 2rem;
 
     &:hover {
@@ -404,7 +404,7 @@
     flex: none;
     padding: 0.15rem;
     background: var(--card);
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: 2rem;
 
     button {
@@ -425,8 +425,8 @@
         }
 
         &[aria-pressed='true'] {
-            color: var(--paper);
-            background: var(--ink);
+            color: var(--on-fill);
+            background: var(--fill);
         }
     }
 }
@@ -477,7 +477,7 @@
     padding: 1.1rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
     overflow-y: auto;
     background: var(--card);
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-bottom: 0;
     border-radius: 1.2rem 1.2rem 0 0;
     animation: sheet-up 0.22s ease;
@@ -485,7 +485,7 @@
     @include media-breakpoint-up(md) {
         width: min(32rem, calc(100vw - 2rem));
         padding-bottom: 1.1rem;
-        border-bottom: 1.5px solid var(--line);
+        border-bottom: var(--stroke) solid var(--line);
         border-radius: 1.2rem;
     }
 }
@@ -506,7 +506,7 @@
     padding: 0.4rem 0.7rem;
     color: var(--ink);
     background: var(--paper);
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: 0.7rem;
 
     &:focus {
@@ -542,9 +542,9 @@
     min-height: 2.75rem;
     padding: 0 1.2rem;
     font-weight: 800;
-    color: var(--paper);
-    background: var(--ink);
-    border: 1.5px solid var(--ink);
+    color: var(--on-fill);
+    background: var(--fill);
+    border: 1.5px solid var(--fill);
     border-radius: 2rem;
 
     &:disabled {
@@ -558,7 +558,7 @@
     font-weight: 700;
     color: var(--ink);
     background: none;
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: 2rem;
 }
 
@@ -578,7 +578,7 @@
     }
 
     li + li {
-        border-top: 1px dashed var(--line-soft);
+        border-top: 1px var(--rule-style) var(--line-soft);
     }
 }
 
@@ -586,7 +586,7 @@
     width: 3rem;
     height: 3rem;
     object-fit: cover;
-    border: 1.5px solid var(--line);
+    border: var(--stroke) solid var(--line);
     border-radius: 50%;
 }
 

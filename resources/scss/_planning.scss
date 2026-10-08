@@ -49,7 +49,7 @@
         justify-content: space-between;
         min-height: 2.75rem;
         padding: 0.4rem 0;
-        border-bottom: 1px dashed var(--line-soft);
+        border-bottom: 1px var(--rule-style) var(--line-soft);
     }
 }
 
@@ -163,7 +163,7 @@
         }
 
         &.is-done .plan-step-number {
-            color: var(--paper);
+            color: var(--on-fill);
             background: var(--accent);
         }
     }
@@ -180,8 +180,8 @@
     border-radius: 50%;
 
     [aria-current='step'] & {
-        color: var(--paper);
-        background: var(--ink);
+        color: var(--on-fill);
+        background: var(--fill);
     }
 }
 
@@ -202,7 +202,7 @@ a.button-plain {
 }
 
 a.button-ink:hover {
-    color: var(--paper);
+    color: var(--on-fill);
 }
 
 .capture-form {

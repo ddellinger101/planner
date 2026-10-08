@@ -1,0 +1,432 @@
+// The Clean theme.
+//
+// The same planner drawn the way a platform design team would: the system
+// typeface, grouped white cards on a quiet gray ground, hairlines instead of
+// ink outlines, round checkboxes, and one tint color for everything you can
+// press. Color is saved for meaning, which here is the categories: their
+// colors are untouched, and each one's icon sits on a tile of it.
+//
+// It changes the tokens first and reshapes a handful of components second.
+// Anything not mentioned here is shared with the Fun theme.
+
+[data-theme='clean'] {
+    --paper: #f2f2f7;
+    --paper-dot: transparent;
+    --card: #fff;
+    --ink: #1c1c1e;
+    --ink-soft: #636366;
+    --line: #c6c6c8;
+    --line-soft: #e5e5ea;
+    --accent: #0071e3;
+    --star: #f59e0b;
+    --danger: #d70015;
+
+    --fill: var(--accent);
+    --on-fill: #fff;
+    --stroke: 0.5px;
+    --rule-style: solid;
+
+    // What a text field or a quiet button is filled with.
+    --control: rgb(118 118 128 / 12%);
+
+    --font-system:
+        -apple-system, blinkmacsystemfont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', roboto,
+        arial, sans-serif;
+    --font-display: var(--font-system);
+    --radius-card: 1rem;
+
+    --bs-body-font-family: var(--font-system);
+    --bs-link-color-rgb: 0, 113, 227;
+    --bs-link-hover-color-rgb: 0, 89, 179;
+
+    &[data-bs-theme='dark'] {
+        --paper: #000;
+        --card: #1c1c1e;
+        --ink: #f5f5f7;
+        --ink-soft: #aeaeb2;
+        --line: #48484a;
+        --line-soft: #2c2c2e;
+        --accent: #0a84ff;
+        --star: #ffd60a;
+        --danger: #ff6961;
+
+        --control: rgb(118 118 128 / 24%);
+
+        --bs-link-color-rgb: 10, 132, 255;
+        --bs-link-hover-color-rgb: 64, 156, 255;
+    }
+
+    // Ground and type ------------------------------------------------------------------
+
+    body {
+        background-image: none;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .font-display,
+    .page-title {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    // Section titles step down in size so the page title leads.
+    .font-display.h3 {
+        font-size: 1.35rem;
+    }
+
+    .font-display.h4,
+    .section-heading {
+        font-size: 1.2rem;
+    }
+
+    // A large title, as at the top of a system app.
+    .page-title {
+        font-size: clamp(1.7rem, 1.35rem + 1.4vw, 2.1rem);
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    // Small capital labels were set in the display face; in the system face they
+    // read as quiet column headings.
+    .week-meals dt,
+    .month-calendar-head,
+    .routine-grid thead th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        letter-spacing: 0.03em;
+    }
+
+    .field-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+    }
+
+    .journal-line label,
+    .reward-head h3 {
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    .journal-line label {
+        font-size: 1rem;
+    }
+
+    .reward-head h3 {
+        font-size: 1.25rem;
+    }
+
+    .plan-summary dd,
+    .radial-month {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    // Cards ----------------------------------------------------------------------------
+
+    .planner-card {
+        border: 0;
+        box-shadow:
+            0 0 0 0.5px rgb(0 0 0 / 4%),
+            0 1px 2px rgb(0 0 0 / 5%);
+    }
+
+    &[data-bs-theme='dark'] .planner-card {
+        box-shadow: none;
+    }
+
+    // The category is named plainly; its color moves to the icon's tile.
+    .highlight-heading {
+        padding: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.25;
+        text-transform: none;
+        letter-spacing: -0.01em;
+        background: none;
+    }
+
+    .category-box-header {
+        gap: 0.65rem;
+    }
+
+    .category-box-icon {
+        width: 1.9rem;
+        height: 1.9rem;
+        color: #fff;
+        background: var(--cat-strong);
+        border-radius: 0.5rem;
+
+        svg {
+            width: 1.15rem;
+            height: 1.15rem;
+        }
+    }
+
+    // Rows, as in a system list: a round check, and a hairline that starts
+    // after it instead of running edge to edge.
+    .check-box {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-width: 1.5px;
+        border-radius: 50%;
+    }
+
+    // The smaller boxes in tight lists are round too.
+    .task-row .check-box {
+        border-radius: 50%;
+    }
+
+    .task-row + .task-row {
+        background: linear-gradient(var(--line-soft), var(--line-soft)) no-repeat right top /
+            calc(100% - 3.1rem) 1px;
+        border-top: 0;
+    }
+
+    .task-badge {
+        font-weight: 600;
+    }
+
+    .inline-add input:focus {
+        border-bottom-color: var(--accent);
+    }
+
+    // Controls -------------------------------------------------------------------------
+
+    .button-ink,
+    .button-plain,
+    .today-button {
+        font-weight: 600;
+        border: 0;
+        border-radius: 0.75rem;
+    }
+
+    .button-plain,
+    .today-button {
+        color: var(--accent);
+        background: var(--control);
+    }
+
+    .button-ink.is-small,
+    .button-plain.is-small {
+        border-radius: 0.6rem;
+    }
+
+    .today-button:hover,
+    .button-plain:hover {
+        background: color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+
+    // The segmented control: a gray track with the chosen segment raised on it.
+    .segmented {
+        padding: 2px;
+        background: var(--control);
+        border: 0;
+        border-radius: 0.6rem;
+
+        button {
+            min-height: 2rem;
+            font-weight: 600;
+            color: var(--ink);
+            border-radius: 0.5rem;
+
+            &[aria-pressed='true'] {
+                color: var(--ink);
+                background: var(--card);
+                box-shadow:
+                    0 1px 3px rgb(0 0 0 / 12%),
+                    0 0 0 0.5px rgb(0 0 0 / 4%);
+            }
+        }
+    }
+
+    &[data-bs-theme='dark'] .segmented button[aria-pressed='true'] {
+        background: #636366;
+    }
+
+    .field-input {
+        background: var(--control);
+        border: 0;
+        border-radius: 0.65rem;
+    }
+
+    .chip {
+        font-weight: 600;
+        background: var(--control);
+        border: 0;
+
+        &[aria-pressed='true'],
+        &[aria-checked='true'] {
+            background: var(--cat-highlight);
+            box-shadow: inset 0 0 0 1.5px var(--cat-strong);
+        }
+    }
+
+    .day-toggle {
+        font-weight: 600;
+        background: var(--control);
+        border-color: transparent;
+    }
+
+    .icon-button {
+        border-radius: 50%;
+    }
+
+    .timeline-anytime {
+        background: color-mix(in srgb, var(--control) 50%, transparent);
+        border: 0;
+    }
+
+    .color-swatch[aria-checked='true'] {
+        box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    // Bars -----------------------------------------------------------------------------
+    // Translucent, with the page showing through as a blur.
+
+    .page-header {
+        background: color-mix(in srgb, var(--paper) 78%, transparent);
+        backdrop-filter: saturate(180%) blur(20px);
+    }
+
+    .bottom-nav,
+    .rail {
+        background: color-mix(in srgb, var(--card) 82%, transparent);
+        backdrop-filter: saturate(180%) blur(20px);
+    }
+
+    .nav-item-link {
+        font-size: 0.66rem;
+        font-weight: 500;
+
+        // The current tab takes the tint; no highlighter behind its icon.
+        &.active {
+            color: var(--accent);
+
+            .nav-item-icon {
+                background: none;
+            }
+        }
+    }
+
+    .rail {
+        .rail-brand {
+            color: var(--accent);
+        }
+
+        .nav-item-link.active .nav-item-icon {
+            background: color-mix(in srgb, var(--accent) 14%, transparent);
+        }
+    }
+
+    .fab {
+        box-shadow:
+            0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent),
+            0 1px 3px rgb(0 0 0 / 15%);
+
+        &:hover {
+            transform: scale(1.06);
+        }
+    }
+
+    // Sheets ---------------------------------------------------------------------------
+
+    .sheet-backdrop {
+        background: rgb(0 0 0 / 32%);
+    }
+
+    .sheet {
+        border: 0;
+        border-radius: 1.4rem 1.4rem 0 0;
+        box-shadow: 0 -8px 40px rgb(0 0 0 / 18%);
+
+        // The grabber at the top of a sheet that slides up from the bottom.
+        &::before {
+            display: block;
+            width: 2.25rem;
+            height: 0.3rem;
+            margin: -0.45rem auto 0.7rem;
+            content: '';
+            background: var(--line);
+            border-radius: 1rem;
+        }
+
+        @include media-breakpoint-up(md) {
+            border-radius: 1.1rem;
+            box-shadow: 0 20px 60px rgb(0 0 0 / 28%);
+
+            &::before {
+                display: none;
+            }
+        }
+    }
+
+    .toast-prompt,
+    .chart-tooltip {
+        border: 0;
+        box-shadow:
+            0 8px 28px rgb(0 0 0 / 18%),
+            0 0 0 0.5px rgb(0 0 0 / 6%);
+    }
+
+    // Calendar and planning ------------------------------------------------------------
+    // Today is the tinted disc behind its number, as in a system calendar,
+    // rather than a heavier outline around the whole day.
+
+    .month-day.is-today,
+    .month-calendar.is-compact .month-day.is-today {
+        border: var(--stroke) solid var(--line-soft);
+    }
+
+    .month-calendar.is-compact .month-day.is-today {
+        border-color: transparent;
+    }
+
+    .month-day.is-today .month-day-number {
+        display: grid;
+        place-items: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: -0.15rem 0 0 -0.15rem;
+        color: #fff;
+        background: var(--accent);
+        border-radius: 50%;
+    }
+
+    .month-calendar.is-compact .month-day.is-today .month-day-number {
+        margin: 0;
+    }
+
+    .week-day.is-today {
+        box-shadow:
+            0 0 0 2px var(--accent),
+            0 1px 2px rgb(0 0 0 / 5%);
+    }
+
+    .week-day.is-today .week-day-heading a {
+        color: var(--accent);
+    }
+
+    .month-day-chip {
+        font-weight: 600;
+        border-radius: 0.35rem;
+    }
+
+    .plan-steps button {
+        font-weight: 600;
+        background: var(--control);
+        border-color: transparent;
+
+        &[aria-current='step'] {
+            color: var(--accent);
+            background: color-mix(in srgb, var(--accent) 12%, transparent);
+            border-color: transparent;
+        }
+    }
+
+    .empty-state .empty-state-icon {
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+}

@@ -71,9 +71,9 @@
     border-radius: 50%;
 
     &[aria-pressed='true'] {
-        color: var(--paper);
-        background: var(--ink);
-        border-color: var(--ink);
+        color: var(--on-fill);
+        background: var(--fill);
+        border-color: var(--fill);
     }
 }
 
@@ -214,7 +214,7 @@
         background: none;
         border: 0;
         // A ruled line to write on.
-        border-bottom: 1.5px dashed var(--line-soft);
+        border-bottom: 1.5px var(--rule-style) var(--line-soft);
         border-radius: 0;
 
         &:focus {
@@ -256,7 +256,7 @@
         text-align: right;
         background: none;
         border: 0;
-        border-bottom: 1.5px dashed var(--cat-strong);
+        border-bottom: 1.5px var(--rule-style) var(--cat-strong);
         border-radius: 0;
 
         &:focus {
@@ -285,7 +285,7 @@
 .timeline-anytime {
     padding: 0.5rem;
     margin-bottom: 0.75rem;
-    border: 1.5px dashed var(--line-soft);
+    border: 1.5px var(--rule-style) var(--line-soft);
     border-radius: 0.7rem;
 
     &.is-drop-target {
@@ -465,7 +465,7 @@
         display: grid;
         gap: 0.35rem;
         padding: 0.5rem 0.3rem;
-        border-top: 1px dashed var(--line-soft);
+        border-top: 1px var(--rule-style) var(--line-soft);
     }
 }
 
