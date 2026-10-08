@@ -1,6 +1,5 @@
 import {
     Brain,
-    CalendarCheck,
     CalendarDays,
     CalendarRange,
     CircleAlert,
@@ -236,7 +235,7 @@ export default function AppShell() {
                 <div className="shell">
                     <nav className="rail" aria-label="Main">
                         <span className="rail-brand">
-                            <CalendarCheck aria-hidden="true" size={26} />
+                            <img src="/icons/logo.svg" alt="" width={34} height={34} />
                         </span>
                         {scopeLinks.map((link) => (
                             <NavItem key={link.label} {...link} />

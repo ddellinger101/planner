@@ -1,4 +1,4 @@
-import { CalendarCheck, CircleAlert, LogIn } from 'lucide-react';
+import { CircleAlert, LogIn } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const AUTH_ERRORS: Record<string, string> = {
@@ -14,7 +14,7 @@ export function WelcomeCard({ children }: { children: ReactNode }) {
                 <div className="col-12 col-md-8 col-lg-5">
                     <div className="planner-card p-4">
                         <h1 className="page-title d-flex align-items-center gap-2 mb-3">
-                            <CalendarCheck aria-hidden="true" style={{ color: 'var(--accent)' }} />
+                            <img src="/icons/logo.svg" alt="" width={40} height={40} />
                             My Planner
                         </h1>
                         {children}

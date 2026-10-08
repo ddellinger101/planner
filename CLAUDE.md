@@ -206,7 +206,7 @@ add a theme, add it to `THEMES` in `theme.ts` and `User::THEMES`, and add a
 - Contacts' birthdays are `important_dates` rows with `source = google_contacts`, owned by the
   person whose contacts they are, shown to the household, read-only in the planner, and stored
   in year 1904 when the contact has no birth year.
-- The app is installable: `public/manifest.webmanifest`, icons in `public/icons/`, and a
+- The app is installable: `public/manifest.webmanifest`, icons in `public/icons/` (all drawn from `logo.svg`, which is also the favicon and the mark in the rail; bump `CACHE` in `sw.js` when they change), and a
   hand-written service worker, `public/sw.js`, registered in production builds only. It tries
   the network first for pages and `GET /api/*` and falls back to what it kept, so the last
   pages opened can be read offline; hashed build assets are cache-first. Sign-out tells it to
