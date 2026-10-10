@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { updateProfile } from '@/api/session';
 import AppearanceSettings from '@/components/AppearanceSettings';
-import { MORE_PAGES } from '@/components/AppShell';
+import { MORE_ONLY_PAGES, MORE_SCOPES } from '@/components/AppShell';
 import EmptyState from '@/components/EmptyState';
 import GoogleSettings from '@/components/GoogleSettings';
 import NotificationSettings from '@/components/NotificationSettings';
@@ -46,7 +46,7 @@ export function MorePage() {
             <PageHeader showPersonFilter={false}>More</PageHeader>
             <main className="container-fluid page-body">
                 <ul className="planner-card more-list">
-                    {MORE_PAGES.map(({ path, label, icon: Icon }) => (
+                    {[...MORE_SCOPES, ...MORE_ONLY_PAGES].map(({ path, label, icon: Icon }) => (
                         <li key={path}>
                             <Link to={path}>
                                 <Icon aria-hidden="true" size={22} />

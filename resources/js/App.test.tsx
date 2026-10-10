@@ -315,6 +315,38 @@ describe('the app shell', () => {
         ).toBeInTheDocument();
     });
 
+    it('keeps the everyday places in the phone’s bottom bar', async () => {
+        mockApi(signedIn());
+
+        renderApp('/routines');
+
+        const bar = (await screen.findAllByRole('navigation', { name: 'Main' }))[1];
+        const links = within(bar).getAllByRole('link');
+
+        expect(links.map((link) => link.textContent)).toEqual([
+            'Day',
+            'Week',
+            'Month',
+            'Routines',
+            'Brain Dump',
+            'More',
+        ]);
+        expect(links[3]).toHaveAttribute('aria-current', 'page');
+        expect(links[5]).not.toHaveAttribute('aria-current');
+    });
+
+    it('lights “More” for the quarter and the year', async () => {
+        mockApi(signedIn());
+
+        renderApp('/quarter/2027-Q1');
+
+        const bar = (await screen.findAllByRole('navigation', { name: 'Main' }))[1];
+        expect(within(bar).getByRole('link', { name: 'More' })).toHaveAttribute(
+            'aria-current',
+            'page',
+        );
+    });
+
     it('has a page for every destination', async () => {
         mockApi(signedIn());
 
@@ -326,17 +358,18 @@ describe('the app shell', () => {
             .getAllByRole('link')
             .map((link) => [link.textContent, link.getAttribute('href')]);
 
+        // What the phone's bottom bar has no room for.
         expect(links).toEqual([
-            ['Brain Dump', '/brain-dump'],
-            ['Routines & Habits', '/routines'],
+            ['Quarter', '/quarter'],
+            ['Year', '/year'],
             ['Weight', '/weight'],
             ['Rewards', '/rewards'],
             ['Settings', '/settings'],
         ]);
 
-        await userEvent.click(within(list).getByRole('link', { name: 'Brain Dump' }));
+        await userEvent.click(within(list).getByRole('link', { name: 'Rewards' }));
         expect(
-            await screen.findByRole('heading', { level: 1, name: 'Brain Dump' }),
+            await screen.findByRole('heading', { level: 1, name: 'Rewards' }),
         ).toBeInTheDocument();
     });
 

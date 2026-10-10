@@ -108,6 +108,26 @@ export const MORE_PAGES: { path: string; label: string; icon: LucideIcon }[] = [
     { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
+// A phone's bottom bar has room for five places and "More". It holds the ones
+// used every day; the quarter and the year are a tap further, under "More".
+const BAR_SCOPES: Scope[] = ['day', 'week', 'month'];
+const BAR_PAGES = [
+    { path: '/routines', label: 'Routines' },
+    { path: '/brain-dump', label: 'Brain Dump' },
+];
+
+/** The quarter and year, as the "More" page lists them. */
+export const MORE_SCOPES = SCOPES.filter((scope) => !BAR_SCOPES.includes(scope)).map((scope) => ({
+    path: `/${scope}`,
+    label: SCOPE_NAMES[scope],
+    icon: SCOPE_ICONS[scope],
+}));
+
+/** The pages reached through "More" on a phone: everything the bar itself doesn't hold. */
+export const MORE_ONLY_PAGES = MORE_PAGES.filter(
+    (page) => !BAR_PAGES.some((barPage) => barPage.path === page.path),
+);
+
 type NavItemProps = {
     to: string;
     label: string;
@@ -211,7 +231,17 @@ export default function AppShell() {
             pathname.split('/')[1] === scope || (scope === 'week' && pathname.startsWith('/plan/')),
     }));
 
-    const onMorePage = pathname === '/more' || MORE_PAGES.some((page) => page.path === pathname);
+    const barLinks = [
+        ...scopeLinks.filter((_, index) => BAR_SCOPES.includes(SCOPES[index])),
+        ...BAR_PAGES.map(({ path, label }) => ({
+            to: path,
+            label,
+            icon: MORE_PAGES.find((page) => page.path === path)!.icon,
+            active: pathname === path,
+        })),
+    ];
+    // "More" is lit for anything the bar has no place of its own for.
+    const onMorePage = !barLinks.some((link) => link.active);
 
     // A different section starts at its top. Paging between days or weeks keeps
     // your place, so the part of the page you were reading stays in view.
@@ -345,7 +375,7 @@ export default function AppShell() {
                     )}
 
                     <nav className="bottom-nav" aria-label="Main">
-                        {scopeLinks.map((link) => (
+                        {barLinks.map((link) => (
                             <NavItem key={link.label} {...link} />
                         ))}
                         <NavItem to="/more" label="More" icon={Ellipsis} active={onMorePage} />
