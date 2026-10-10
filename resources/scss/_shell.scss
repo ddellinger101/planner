@@ -116,6 +116,11 @@
         flex: 0 0 auto;
     }
 
+    // One line each in the bar, so the icons stay level: "Brain Dump" only just fits.
+    .bottom-nav & {
+        white-space: nowrap;
+    }
+
     &:hover {
         color: var(--ink);
     }
