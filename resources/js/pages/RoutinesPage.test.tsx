@@ -119,6 +119,7 @@ describe('routine editors', () => {
                 title: 'Drink water',
                 routine: 'morning',
                 category_id: 1, // Health, by default
+                color: null, // its category's color, by default
                 target_per_week: 5,
                 user_id: 2,
             }),
@@ -159,6 +160,33 @@ describe('routine editors', () => {
 
         await userEvent.click(dialog.getByRole('button', { name: 'Delete habit' }));
         await waitFor(() => expect(calls.some((call) => call.method === 'DELETE')).toBe(true));
+    });
+
+    it('gives a habit a color of its own, and takes it away again', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            'GET /api/habits': { body: [habit({ color: '#4c9a2a' })] },
+            'PATCH /api/habits/1': ({ body }) => ({ body: habit(body as object) }),
+        });
+        const patches = () => calls.filter((call) => call.method === 'PATCH');
+
+        renderApp('/routines');
+        await userEvent.click(await screen.findByRole('button', { name: 'Edit Floss' }));
+
+        let dialog = within(screen.getByRole('dialog', { name: 'Edit habit' }));
+        expect(dialog.getByRole('radio', { name: 'Green' })).toBeChecked();
+        await userEvent.click(dialog.getByRole('radio', { name: 'Purple' }));
+        await userEvent.click(dialog.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => expect(patches()[0]?.body).toMatchObject({ color: '#8257d6' }));
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+        await userEvent.click(await screen.findByRole('button', { name: 'Edit Floss' }));
+        dialog = within(screen.getByRole('dialog', { name: 'Edit habit' }));
+        await userEvent.click(dialog.getByRole('radio', { name: 'Same as its category' }));
+        await userEvent.click(dialog.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => expect(patches()[1]?.body).toMatchObject({ color: null }));
     });
 
     it('moves a habit within its routine without disturbing the others', async () => {

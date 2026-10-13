@@ -13,9 +13,28 @@ export type HabitStats = {
     done_total: number;
 };
 
-export type HabitInput = Pick<Habit, 'title' | 'routine' | 'category_id' | 'target_per_week'> & {
+export type HabitInput = Pick<
+    Habit,
+    'title' | 'routine' | 'category_id' | 'color' | 'target_per_week'
+> & {
     user_id?: number;
 };
+
+/** The colors a habit can be given in place of its category's. */
+export const HABIT_COLORS: { value: string; name: string }[] = [
+    { value: '#d64545', name: 'Red' },
+    { value: '#e2711d', name: 'Orange' },
+    { value: '#d99a1c', name: 'Amber' },
+    { value: '#4c9a2a', name: 'Green' },
+    { value: '#2f8f83', name: 'Teal' },
+    { value: '#1ba3c6', name: 'Sky' },
+    { value: '#3b7dd8', name: 'Blue' },
+    { value: '#4f5bd5', name: 'Indigo' },
+    { value: '#8257d6', name: 'Purple' },
+    { value: '#c2409f', name: 'Magenta' },
+    { value: '#e8677a', name: 'Coral' },
+    { value: '#64748b', name: 'Slate' },
+];
 
 /** Every habit, in order, without its check history: for the routine editors. */
 export function useAllHabits(person: number | null) {

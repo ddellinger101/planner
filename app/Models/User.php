@@ -62,6 +62,16 @@ class User extends Authenticatable
             ?? self::PERSON_COLORS[0];
     }
 
+    /**
+     * People sign in with Google and have no password. Laravel ignores the
+     * remember-me cookie of a user whose password isn't a string, which
+     * signed everyone out whenever their session ran out.
+     */
+    public function getAuthPassword(): string
+    {
+        return $this->password ?? '';
+    }
+
     public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);

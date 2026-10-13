@@ -555,6 +555,24 @@ a.button-plain {
     }
 }
 
+// A longer row of choices, as in the habit sheet.
+.color-swatches.is-compact .color-swatch {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.6rem;
+
+    // The category's own color: a labelled pill sets it apart from the fixed ones.
+    &.is-category {
+        display: flex;
+        gap: 0.2rem;
+        align-items: center;
+        width: auto;
+        padding: 0 0.7rem;
+        font-size: 0.75rem;
+        border-radius: 1.2rem;
+    }
+}
+
 .person-dot.is-large {
     width: 3rem;
     height: 3rem;

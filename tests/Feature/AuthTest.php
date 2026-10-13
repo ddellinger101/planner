@@ -93,6 +93,32 @@ it('sends the browser to Google with basic profile scopes', function () {
         ->and($location)->not->toContain('calendar');
 });
 
+it('keeps you signed in after the session runs out, and renews the remember cookie', function () {
+    googleReturns('dustin@example.com');
+
+    $remember = collect($this->get('/auth/google/callback')->headers->getCookies())
+        ->first(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web_'));
+
+    expect($remember)->not->toBeNull();
+
+    // Opening the app later: the session is gone and only the remember cookie is left.
+    $this->app['auth']->forgetGuards();
+    $this->flushSession();
+
+    $response = $this->withUnencryptedCookie($remember->getName(), $remember->getValue())
+        ->withCredentials()
+        ->withHeader('Referer', config('app.url'))
+        ->getJson('/api/me')
+        ->assertOk()
+        ->assertJsonPath('user.email', 'dustin@example.com');
+
+    $renewed = collect($response->headers->getCookies())
+        ->first(fn ($cookie) => $cookie->getName() === $remember->getName());
+
+    expect($renewed)->not->toBeNull()
+        ->and($renewed->getExpiresTime())->toBeGreaterThan(now()->addYear()->getTimestamp());
+});
+
 it('signs out', function () {
     signIn();
 

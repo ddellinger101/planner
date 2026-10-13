@@ -105,3 +105,18 @@ it('lists the repeating tasks in a routine, one row per series', function () {
     $this->getJson('/api/items?series=1')->assertJsonCount(2);
     $this->getJson('/api/items?routine=bedtime')->assertJsonValidationErrors('routine');
 });
+
+it('gives a habit a color of its own, and takes it away again', function () {
+    $floss = habit();
+
+    $this->patchJson("/api/habits/{$floss->id}", ['color' => '#8257d6'])
+        ->assertOk()
+        ->assertJsonPath('color', '#8257d6');
+
+    $this->patchJson("/api/habits/{$floss->id}", ['color' => 'purple'])->assertUnprocessable();
+
+    // Back to its category's color.
+    $this->patchJson("/api/habits/{$floss->id}", ['color' => null])
+        ->assertOk()
+        ->assertJsonPath('color', null);
+});
