@@ -211,8 +211,16 @@ function JournalSheet({ label, saved, alwaysSave, hint, onSave, onClose }: Sheet
                 // Start typing at the end of what is already there.
                 onFocus={(event) => event.currentTarget.setSelectionRange(text.length, text.length)}
                 onChange={(event) => setText(event.target.value)}
+                // A phone's keyboard shows "done" where Enter is, and it saves.
+                enterKeyHint="done"
                 onKeyDown={(event) => {
-                    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                    // Enter saves; Shift+Enter starts a new line.
+                    if (
+                        event.key === 'Enter' &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing
+                    ) {
+                        event.preventDefault();
                         submit();
                     }
                 }}

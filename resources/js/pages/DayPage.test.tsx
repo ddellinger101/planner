@@ -59,6 +59,30 @@ describe('journal', () => {
         expect(screen.getByRole('textbox', { name: 'I’m grateful for' })).toHaveValue(long);
     });
 
+    it('saves an entry with Enter, as a phone’s keyboard does, and Shift+Enter adds a line', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            'PUT /api/journal/2027-01-04/gratitude': ({ body }) => ({ body }),
+        });
+
+        renderApp('/day/2027-01-04');
+        const line = await screen.findByRole('button', { name: /I’m grateful for/ });
+        await waitFor(() => expect(line).toBeEnabled());
+
+        await userEvent.click(line);
+        const text = screen.getByRole('textbox', { name: 'I’m grateful for' });
+
+        expect(text).toHaveAttribute('enterkeyhint', 'done');
+        await userEvent.type(text, 'Coffee{Shift>}{Enter}{/Shift}and tea{Enter}');
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+                body: 'Coffee\nand tea',
+            }),
+        );
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
     it('leaves an entry alone when the popup is closed or nothing changed', async () => {
         const { calls } = mockApi({
             ...signedIn(),

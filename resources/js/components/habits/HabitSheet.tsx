@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Trash2, X } from 'lucide-react';
+import { Check, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import type { Habit } from '@/api/day';
-import { useDeleteHabit, useSaveHabit } from '@/api/habits';
+import { HABIT_COLORS, useDeleteHabit, useSaveHabit } from '@/api/habits';
 import { fetchCategories } from '@/api/session';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useSession } from '@/context/SessionContext';
@@ -36,6 +36,8 @@ export default function HabitSheet({
         habit?.routine ?? (target.kind === 'create' ? target.routine : 'anytime'),
     );
     const [categoryId, setCategoryId] = useState<number | null | undefined>(habit?.category_id);
+    // No color of its own means the habit wears its category's.
+    const [color, setColor] = useState(habit?.color ?? null);
     const [target_, setTarget] = useState(habit?.target_per_week ?? 7);
     const [owner, setOwner] = useState(habit?.user_id ?? user.id);
     const [confirming, setConfirming] = useState(false);
@@ -45,6 +47,9 @@ export default function HabitSheet({
         categoryId === undefined
             ? (categories.data?.find((category) => category.slug === 'health')?.id ?? null)
             : categoryId;
+    const categoryColor = categories.data?.find(
+        (category) => category.id === selectedCategory,
+    )?.color;
     const busy = save.isPending || remove.isPending;
 
     useEffect(() => {
@@ -71,6 +76,7 @@ export default function HabitSheet({
                     title: title.trim(),
                     routine,
                     category_id: selectedCategory,
+                    color,
                     target_per_week: target_,
                     user_id: owner,
                 },
@@ -158,6 +164,42 @@ export default function HabitSheet({
                         >
                             <CategoryIcon icon={category.icon} size={17} />
                             {category.name}
+                        </button>
+                    ))}
+                </div>
+
+                <span className="field-label" id="habit-color">
+                    Color
+                </span>
+                <div
+                    className="color-swatches is-compact mb-3"
+                    role="radiogroup"
+                    aria-labelledby="habit-color"
+                >
+                    <button
+                        type="button"
+                        role="radio"
+                        className="color-swatch is-category"
+                        style={{ background: categoryColor ?? 'var(--accent)' }}
+                        aria-checked={color === null}
+                        aria-label="Same as its category"
+                        onClick={() => setColor(null)}
+                    >
+                        {color === null && <Check aria-hidden="true" size={16} />}
+                        Auto
+                    </button>
+                    {HABIT_COLORS.map(({ value, name }) => (
+                        <button
+                            key={value}
+                            type="button"
+                            role="radio"
+                            className="color-swatch"
+                            style={{ background: value }}
+                            aria-checked={color === value}
+                            aria-label={name}
+                            onClick={() => setColor(value)}
+                        >
+                            {color === value && <Check aria-hidden="true" size={16} />}
                         </button>
                     ))}
                 </div>
