@@ -20,7 +20,7 @@ import { useItemEditor } from '@/context/ItemEditorContext';
 import { useReview } from '@/context/PlannerContexts';
 import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
-import { childPeriods, parsePeriod, type Period } from '@/lib/period';
+import { childPeriods, nextPeriod, parsePeriod, periodContains, type Period } from '@/lib/period';
 import { periodLabel, periodShortName } from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
@@ -59,6 +59,18 @@ function ReviewBanner({ period }: { period: Period }) {
     );
 }
 
+/**
+ * The week the planning flow should open on. Weeks are planned ahead, so from
+ * Friday on the week in progress hands over to the one after it.
+ */
+export function weekToPlan(week: Period, today: string): { week: Period; label: string } {
+    const friday = childPeriods(week)[4].key;
+
+    return periodContains(week, today) && today >= friday
+        ? { week: nextPeriod(week), label: 'Plan next week' }
+        : { week, label: 'Plan this week' };
+}
+
 function SectionHeading({ children }: { children: string }) {
     return <h2 className="font-display section-heading">{children}</h2>;
 }
@@ -79,6 +91,7 @@ export function WeekPage({ period }: { period: Period }) {
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
     const checkHabit = useCheckHabit();
+    const plan = weekToPlan(period, today);
 
     const change = (item: Item, changes: ItemChanges) =>
         updateItem.mutate({ id: item.id, changes });
@@ -95,9 +108,9 @@ export function WeekPage({ period }: { period: Period }) {
                 <div className="col-12 col-lg-auto d-flex align-items-center">
                     <Link
                         className="button-ink d-inline-flex align-items-center gap-2"
-                        to={`/plan/${period.key}`}
+                        to={`/plan/${plan.week.key}`}
                     >
-                        <CalendarCheck aria-hidden="true" size={18} /> Plan this week
+                        <CalendarCheck aria-hidden="true" size={18} /> {plan.label}
                     </Link>
                 </div>
                 <div className="col-12 col-lg">

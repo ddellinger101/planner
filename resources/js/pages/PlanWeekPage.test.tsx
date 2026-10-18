@@ -184,6 +184,32 @@ describe('rollover review', () => {
 });
 
 describe('planning a week', () => {
+    it('plans the next week from Friday on, and this week before then', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        mockApi(signedIn());
+
+        try {
+            // Sunday, Oct 18 2026: the last day of Week 42.
+            vi.setSystemTime(new Date('2026-10-18T13:30:00-04:00'));
+            const { unmount } = renderApp('/week/2026-W42');
+            await userEvent.click(await screen.findByRole('link', { name: 'Plan next week' }));
+            expect(
+                await screen.findByRole('heading', { level: 1, name: 'Plan Week 43' }),
+            ).toBeInTheDocument();
+            unmount();
+
+            // Thursday of the same week still plans the week in progress.
+            vi.setSystemTime(new Date('2026-10-15T13:30:00-04:00'));
+            renderApp('/week/2026-W42');
+            expect(await screen.findByRole('link', { name: 'Plan this week' })).toHaveAttribute(
+                'href',
+                '/plan/2026-W42',
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('is reached from the Week view and walks through seven steps', async () => {
         mockApi(signedIn());
 
