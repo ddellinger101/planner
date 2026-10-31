@@ -20,8 +20,8 @@ import { useItemEditor } from '@/context/ItemEditorContext';
 import { useReview } from '@/context/PlannerContexts';
 import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
-import { childPeriods, nextPeriod, parsePeriod, periodContains, type Period } from '@/lib/period';
-import { periodLabel, periodShortName } from '@/lib/periodLabels';
+import { childPeriods, parsePeriod, type Period } from '@/lib/period';
+import { periodLabel, periodShortName, periodToPlan } from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
 const useCategories = () =>
@@ -59,16 +59,20 @@ function ReviewBanner({ period }: { period: Period }) {
     );
 }
 
-/**
- * The week the planning flow should open on. Weeks are planned ahead, so from
- * Friday on the week in progress hands over to the one after it.
- */
-export function weekToPlan(week: Period, today: string): { week: Period; label: string } {
-    const friday = childPeriods(week)[4].key;
+/** The way into the planning flow from a period's view. */
+function PlanLink({ period }: { period: Period }) {
+    const plan = periodToPlan(period, useToday());
 
-    return periodContains(week, today) && today >= friday
-        ? { week: nextPeriod(week), label: 'Plan next week' }
-        : { week, label: 'Plan this week' };
+    return (
+        plan && (
+            <Link
+                className="button-ink d-inline-flex align-items-center gap-2"
+                to={`/plan/${plan.period.key}`}
+            >
+                <CalendarCheck aria-hidden="true" size={18} /> {plan.label}
+            </Link>
+        )
+    );
 }
 
 function SectionHeading({ children }: { children: string }) {
@@ -91,7 +95,6 @@ export function WeekPage({ period }: { period: Period }) {
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
     const checkHabit = useCheckHabit();
-    const plan = weekToPlan(period, today);
 
     const change = (item: Item, changes: ItemChanges) =>
         updateItem.mutate({ id: item.id, changes });
@@ -106,12 +109,7 @@ export function WeekPage({ period }: { period: Period }) {
                     <BestPart key={period.key} period={period} />
                 </div>
                 <div className="col-12 col-lg-auto d-flex align-items-center">
-                    <Link
-                        className="button-ink d-inline-flex align-items-center gap-2"
-                        to={`/plan/${plan.week.key}`}
-                    >
-                        <CalendarCheck aria-hidden="true" size={18} /> {plan.label}
-                    </Link>
+                    <PlanLink period={period} />
                 </div>
                 <div className="col-12 col-lg">
                     <WeekWeight week={period} today={today} />
@@ -178,11 +176,14 @@ export function MonthPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
-            <div className="row g-3">
-                <div className="col-12 col-lg-6">
+            <div className="row g-3 align-items-stretch">
+                <div className="col-12 col-lg-5">
                     <BestPart key={period.key} period={period} />
                 </div>
-                <div className="col-12 col-lg-6">
+                <div className="col-12 col-lg-auto d-flex align-items-center">
+                    <PlanLink period={period} />
+                </div>
+                <div className="col-12 col-lg">
                     <CategoryProgress
                         title="Goal progress"
                         categories={categories}
@@ -242,6 +243,7 @@ export function QuarterPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
+            <PlanLink period={period} />
             <SectionHeading>Quarter goals</SectionHeading>
             <GoalBoxes period={period} />
 
@@ -288,6 +290,7 @@ export function YearPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
+            <PlanLink period={period} />
             <SectionHeading>One-year goals</SectionHeading>
             <GoalBoxes period={period} />
 

@@ -225,6 +225,33 @@ a.button-ink:hover {
     font-size: 0.85rem;
 }
 
+.place-period {
+    padding: 1rem;
+
+    &.is-drop-target {
+        background: color-mix(in srgb, var(--accent) 14%, var(--card));
+    }
+}
+
+.place-period-list {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    list-style: none;
+
+    li {
+        display: flex;
+        gap: 0.5rem;
+        align-items: baseline;
+    }
+
+    .month-day-dot {
+        flex: none;
+    }
+}
+
 .plan-summary {
     display: flex;
     flex-wrap: wrap;

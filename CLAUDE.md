@@ -148,8 +148,12 @@ add a theme, add it to `THEMES` in `theme.ts` and `User::THEMES`, and add a
   `carried_from_item_id` set and marks the original `dropped`, so it stops counting against
   the period it left. A `period_reviews` row records that a household finished reviewing a
   period, even with items left open.
-- A week goal pulled from a month goal, and a day task placed from a week goal, point at their
-  source with `parent_item_id`. Finishing one offers to finish the source (`ParentPrompt`).
+- A goal pulled from a larger period, and one placed in a smaller period or on a day, point at
+  their source with `parent_item_id`. Finishing one offers to finish the source (`ParentPrompt`).
+- The planning flow (`PlanPage.tsx`, `/plan/<key>`) covers weeks, months, quarters and years;
+  `stepsFor` lists each one's steps. Planning is done ahead, so a period view's button opens the
+  following period (`periodToPlan`). Its copy names periods ("Week 45") rather than saying "this
+  week", which would read wrong on the Sunday before.
 - Habit streaks and 30-day completion are computed in `app/Support/HabitStats.php`: daily
   habits streak in days, habits with a weekly target in weeks that met it, and a day or week
   still under way never breaks a streak. The `habits` query key holds both lists of habits and

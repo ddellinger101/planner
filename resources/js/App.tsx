@@ -11,7 +11,7 @@ import { SessionProvider } from './context/SessionContext';
 import { SCOPES } from './lib/periodLabels';
 import BrainDumpPage from './pages/BrainDumpPage';
 import PeriodPage from './pages/PeriodPage';
-import PlanWeekPage from './pages/PlanWeekPage';
+import PlanPage from './pages/PlanPage';
 import RewardsPage from './pages/RewardsPage';
 import RoutinesPage from './pages/RoutinesPage';
 import SignIn, { WelcomeCard } from './pages/SignIn';
@@ -69,7 +69,7 @@ export default function App() {
                         {SCOPES.map((scope) => (
                             <Route key={scope} path={`/${scope}/:key?`} element={<PeriodPage />} />
                         ))}
-                        <Route path="/plan/:key" element={<PlanWeekPage />} />
+                        <Route path="/plan/:key" element={<PlanPage />} />
                         <Route path="/brain-dump" element={<BrainDumpPage />} />
                         <Route path="/routines" element={<RoutinesPage />} />
                         <Route path="/weight" element={<WeightPage />} />

@@ -6,12 +6,13 @@ import { useItemsBetween } from '@/api/planning';
 import { useDeleteReward, useSaveReward, type Reward } from '@/api/rewards';
 import { fetchCategories } from '@/api/session';
 import { useSession } from '@/context/SessionContext';
-import { periodFromDate } from '@/lib/period';
+import { periodFromDate, type Period } from '@/lib/period';
+import { periodShortName } from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
 export type RewardTarget =
-    /** `starredThisWeek` starts with this week's starred goals already chosen. */
-    { kind: 'create'; starredThisWeek?: boolean } | { kind: 'edit'; reward: Reward };
+    /** `big3Of` starts with that period's starred goals chosen, due at its end. */
+    { kind: 'create'; big3Of?: Period } | { kind: 'edit'; reward: Reward };
 
 const SOURCES = [
     { key: 'week-goals', label: 'Week’s goals' },
@@ -20,7 +21,7 @@ const SOURCES = [
     { key: 'month-goals', label: 'Month’s goals' },
 ] as const;
 
-type SourceKey = (typeof SOURCES)[number]['key'];
+type SourceKey = (typeof SOURCES)[number]['key'] | 'big3-period';
 
 /** The date a UTC deadline falls on for someone in the given timezone. */
 const deadlineDate = (deadline: string, timeZone: string) =>
@@ -53,36 +54,36 @@ export default function RewardSheet({
     const weekTasks = useItemsBetween(week.start, week.end, null);
     const todayTasks = useItems({ periodKey: today, person: null });
     const monthGoals = useItems({ periodKey: month.key, person: null });
+    // A plan is usually for a later period, which none of the lists below reach.
+    const big3Of = target.kind === 'create' ? target.big3Of : undefined;
+    const big3Goals = useItems({ periodKey: (big3Of ?? week).key, person: null });
+    const planned = big3Of && big3Of.key !== week.key ? big3Of : undefined;
 
     const [title, setTitle] = useState(reward?.title ?? '');
     const [description, setDescription] = useState(reward?.description ?? '');
     const [deadline, setDeadline] = useState(
-        reward ? deadlineDate(reward.deadline, user.timezone) : week.end,
+        reward ? deadlineDate(reward.deadline, user.timezone) : (big3Of ?? week).end,
     );
     const [beneficiary, setBeneficiary] = useState<number | null>(
         reward?.beneficiary_user_id ?? null,
     );
-    const [source, setSource] = useState<SourceKey>('week-goals');
+    const [source, setSource] = useState<SourceKey>(planned ? 'big3-period' : 'week-goals');
     const [search, setSearch] = useState('');
     // Chosen tasks by id, kept across the lists so switching list loses nothing.
     const [chosen, setChosen] = useState<Map<number, Item> | null>(
         reward ? new Map(reward.items.map((item) => [item.id, item])) : null,
     );
 
-    const starred = [...(weekGoals.data ?? []), ...(weekTasks.data ?? [])].filter(
-        (item) => item.starred && item.status === 'open',
-    );
+    const isStarred = (item: Item) => item.starred && item.status === 'open';
+    const big3 = (big3Goals.data ?? []).filter(isStarred);
+    const starred = planned
+        ? big3
+        : [...(weekGoals.data ?? []), ...(weekTasks.data ?? [])].filter(isStarred);
     // "Create a reward for the Big 3" starts with them chosen, once they have loaded.
-    const selected =
-        chosen ??
-        new Map(
-            (target.kind === 'create' && target.starredThisWeek ? starred : []).map((item) => [
-                item.id,
-                item,
-            ]),
-        );
+    const selected = chosen ?? new Map((big3Of ? big3 : []).map((item) => [item.id, item]));
 
     const lists: Record<SourceKey, Item[] | undefined> = {
+        'big3-period': big3Goals.data,
         'week-goals': weekGoals.data,
         'week-tasks': weekTasks.data,
         today: todayTasks.data,
@@ -241,7 +242,17 @@ export default function RewardSheet({
                 </span>
                 <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
                     <div className="segmented" role="group" aria-label="Choose from">
-                        {SOURCES.map(({ key, label }) => (
+                        {[
+                            ...(planned
+                                ? [
+                                      {
+                                          key: 'big3-period' as const,
+                                          label: periodShortName(planned),
+                                      },
+                                  ]
+                                : []),
+                            ...SOURCES,
+                        ].map(({ key, label }) => (
                             <button
                                 key={key}
                                 type="button"
@@ -262,7 +273,8 @@ export default function RewardSheet({
                             setChosen(next);
                         }}
                     >
-                        <Star aria-hidden="true" size={14} /> All starred this week
+                        <Star aria-hidden="true" size={14} /> All starred{' '}
+                        {planned ? `in ${periodShortName(planned)}` : 'this week'}
                     </button>
                 </div>
                 <input

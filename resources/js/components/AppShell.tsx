@@ -21,7 +21,7 @@ import type { CalendarEvent } from '@/api/events';
 import { useGoogle } from '@/api/google';
 import type { Item } from '@/api/items';
 import { usePendingReviews } from '@/api/review';
-import { todayPeriod, type Scope } from '@/lib/period';
+import { parsePeriod, todayPeriod, type Scope } from '@/lib/period';
 import { relatedPeriod, SCOPE_NAMES, SCOPES } from '@/lib/periodLabels';
 import { useCurrentPeriod, useToday } from '@/lib/useCurrentPeriod';
 import { EventEditorProvider, type EventDraft } from '@/context/EventEditorContext';
@@ -226,9 +226,10 @@ export default function AppShell() {
         to: current ? periodPath(relatedPeriod(current, scope, today)) : `/${scope}`,
         label: SCOPE_NAMES[scope],
         icon: SCOPE_ICONS[scope],
-        // Planning a week is part of the Week view.
+        // Planning a period is part of that period's view.
         active:
-            pathname.split('/')[1] === scope || (scope === 'week' && pathname.startsWith('/plan/')),
+            pathname.split('/')[1] === scope ||
+            (pathname.startsWith('/plan/') && parsePeriod(pathname.split('/')[2])?.scope === scope),
     }));
 
     const barLinks = [

@@ -1,6 +1,12 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import {
+    useMutation,
+    useQueries,
+    useQuery,
+    useQueryClient,
+    type QueryClient,
+} from '@tanstack/react-query';
 import { useParentPrompt } from '@/context/PlannerContexts';
-import type { Scope } from '@/lib/period';
+import type { Period, Scope } from '@/lib/period';
 import { api } from './client';
 import type { Category } from './session';
 import { usePersonFilter } from '@/context/PersonFilterContext';
@@ -86,16 +92,27 @@ export const withPerson = (query: URLSearchParams, person: number | null, ownHea
     return query;
 };
 
+const periodItemsQuery = (periodKey: string, person: number | null, ownHealth: boolean) => ({
+    queryKey: ['items', 'period', periodKey, person, ownHealth],
+    queryFn: () =>
+        api<Item[]>(
+            `/api/items?${withPerson(new URLSearchParams({ period_key: periodKey }), person, ownHealth)}`,
+        ),
+});
+
 export function useItems({ periodKey, person }: Filters) {
     const { ownHealth } = usePersonFilter();
 
-    return useQuery({
-        queryKey: ['items', 'period', periodKey, person, ownHealth],
-        queryFn: () =>
-            api<Item[]>(
-                `/api/items?${withPerson(new URLSearchParams({ period_key: periodKey }), person, ownHealth)}`,
-            ),
-    });
+    return useQuery(periodItemsQuery(periodKey, person, ownHealth));
+}
+
+/** Both people's items across several periods, as one list. */
+export function useItemsIn(periods: Period[]) {
+    const { ownHealth } = usePersonFilter();
+
+    return useQueries({
+        queries: periods.map((period) => periodItemsQuery(period.key, null, ownHealth)),
+    }).flatMap((result) => result.data ?? []);
 }
 
 /** Open tasks from days before `before`. Pass null to skip the request. */
