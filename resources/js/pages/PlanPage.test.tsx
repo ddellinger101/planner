@@ -188,7 +188,7 @@ describe('planning a week', () => {
         mockApi(signedIn());
 
         renderApp('/week/2027-W01');
-        await userEvent.click(await screen.findByRole('link', { name: 'Plan this week' }));
+        await userEvent.click(await screen.findByRole('link', { name: 'Plan Week 1' }));
 
         expect(
             await screen.findByRole('heading', { level: 1, name: 'Plan Week 1' }),
@@ -210,7 +210,7 @@ describe('planning a week', () => {
 
         await userEvent.click(screen.getByRole('button', { name: /Next/ }));
         expect(
-            await screen.findByRole('heading', { name: 'Look back at last week' }),
+            await screen.findByRole('heading', { name: 'Look back at Week 53' }),
         ).toBeInTheDocument();
         // The Week tab stays highlighted while planning.
         expect(
@@ -311,9 +311,9 @@ describe('planning a week', () => {
         const first = within(await screen.findByRole('region', { name: 'January goals' }));
         const second = within(screen.getByRole('region', { name: 'February goals' }));
         // Already pulled in, so it can't be added twice.
-        expect(await second.findByRole('button', { name: 'In this week' })).toBeDisabled();
+        expect(await second.findByRole('button', { name: 'In Week 5' })).toBeDisabled();
 
-        await userEvent.click(await first.findByRole('button', { name: 'Add to this week' }));
+        await userEvent.click(await first.findByRole('button', { name: 'Add to Week 5' }));
         await waitFor(() =>
             expect(calls.find((call) => call.method === 'POST')?.body).toEqual({
                 title: 'Run a 10k',
@@ -450,14 +450,384 @@ describe('planning a week', () => {
         );
     });
 
-    it('rejects a key that isn’t a week', async () => {
+    it('rejects a day, or a key that isn’t a period', async () => {
         mockApi(signedIn());
 
-        renderApp('/plan/2027-01');
+        const { unmount } = renderApp('/plan/2027-01-04');
+        expect(
+            await screen.findByRole('heading', { name: 'There’s nothing to plan here' }),
+        ).toBeInTheDocument();
+        unmount();
+
+        renderApp('/plan/soon');
+        expect(
+            await screen.findByRole('heading', { name: 'There’s nothing to plan here' }),
+        ).toBeInTheDocument();
+    });
+});
+
+describe('what the Plan button plans', () => {
+    // Sunday, November 29 2026: last day of Week 48, near the end of the month.
+    const sunday = new Date('2026-11-29T13:30:00-05:00');
+
+    const onSunday = async (run: () => Promise<void>) => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(sunday);
+
+        try {
+            await run();
+        } finally {
+            vi.useRealTimers();
+        }
+    };
+
+    it.each([
+        ['/week/2026-W48', 'Plan next week', 'Plan Week 49', 'Week'],
+        ['/month/2026-11', 'Plan next month', 'Plan December', 'Month'],
+        ['/quarter/2026-Q4', 'Plan next quarter', 'Plan Quarter 1', 'Quarter'],
+        ['/year/2026', 'Plan next year', 'Plan 2027', 'Year'],
+    ])('from %s, opens the following period', async (path, label, heading, tab) => {
+        mockApi(signedIn());
+
+        await onSunday(async () => {
+            renderApp(path);
+            await userEvent.click(await screen.findByRole('link', { name: label }));
+
+            expect(
+                await screen.findByRole('heading', { level: 1, name: heading }),
+            ).toBeInTheDocument();
+            // The period's own tab stays highlighted while planning.
+            expect(
+                within(screen.getAllByRole('navigation', { name: 'Main' })[0]).getByRole('link', {
+                    name: tab,
+                }),
+            ).toHaveAttribute('aria-current', 'page');
+        });
+    });
+
+    it('offers no way to plan a period that is over', async () => {
+        mockApi(signedIn());
+
+        await onSunday(async () => {
+            renderApp('/month/2026-10');
+            await screen.findByRole('region', { name: 'Health' });
+
+            expect(screen.queryByRole('link', { name: /^Plan / })).not.toBeInTheDocument();
+        });
+    });
+
+    it('can step back to the period under way', async () => {
+        mockApi(signedIn());
+
+        await onSunday(async () => {
+            renderApp('/plan/2026-12');
+            await goToStep('Review');
+            await userEvent.click(await screen.findByRole('link', { name: 'Plan it instead' }));
+
+            expect(
+                await screen.findByRole('heading', { level: 1, name: 'Plan November' }),
+            ).toBeInTheDocument();
+            // A different period starts from the first step again.
+            expect(screen.getByRole('button', { name: '1Capture' })).toHaveAttribute(
+                'aria-current',
+                'step',
+            );
+            // Nothing further back is on offer.
+            expect(screen.queryByRole('link', { name: 'Plan it instead' })).not.toBeInTheDocument();
+        });
+    });
+});
+
+describe('planning a month, quarter or year', () => {
+    const stepNames = () =>
+        within(screen.getByRole('list', { name: 'Planning steps' }))
+            .getAllByRole('button')
+            .map((step) => step.textContent);
+
+    const bigGoal = (overrides: Partial<Item>) =>
+        makeItem({ due_date: null, assignee_user_id: null, ...overrides });
+
+    it.each([
+        [
+            '/plan/2027-02',
+            'Plan February',
+            ['1Capture', '2Review', '3Pull', '4Big 3', '5Place', '6Dates', '7Done'],
+        ],
+        [
+            '/plan/2027-Q2',
+            'Plan Quarter 2',
+            ['1Capture', '2Review', '3Pull', '4Big 3', '5Place', '6Done'],
+        ],
+        ['/plan/2027', 'Plan 2027', ['1Capture', '2Review', '3Goals', '4Big 3', '5Place', '6Done']],
+    ])('%s has its own steps', async (path, heading, steps) => {
+        mockApi(signedIn());
+
+        renderApp(path);
+
+        expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+        expect(stepNames()).toEqual(steps);
+    });
+
+    it('reviews the month before, carrying into the month being planned', async () => {
+        const leftover = bigGoal({ id: 31, title: 'Paint', scope: 'month', period_key: '2027-01' });
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...itemsApi({ '2027-01': [leftover] }),
+            'POST /api/items/31/carry': { status: 201, body: leftover },
+        });
+
+        renderApp('/plan/2027-02');
+        await goToStep('Review');
+        expect(
+            await screen.findByRole('heading', { name: 'Look back at January 2027' }),
+        ).toBeInTheDocument();
+        await userEvent.click(await screen.findByRole('button', { name: 'Carry forward' }));
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.path === '/api/items/31/carry')?.body).toEqual({
+                period_key: '2027-02',
+            }),
+        );
+    });
+
+    it('pulls a month’s goals from its quarter, and a quarter’s from its year', async () => {
+        const quarterGoal = bigGoal({
+            id: 61,
+            title: 'Run a 10k',
+            scope: 'quarter',
+            period_key: '2027-Q1',
+            assignee_user_id: 2,
+        });
+        const yearGoal = bigGoal({ id: 62, title: 'Save more', scope: 'year', period_key: '2027' });
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...itemsApi({ '2027-Q1': [quarterGoal], '2027': [yearGoal] }),
+            'POST /api/items': ({ body }) => ({ status: 201, body: makeItem(body as object) }),
+        });
+
+        const { unmount } = renderApp('/plan/2027-02');
+        await goToStep('Pull');
+        await userEvent.click(await screen.findByRole('button', { name: 'Add to February 2027' }));
+        await waitFor(() =>
+            expect(calls.filter((call) => call.method === 'POST').at(-1)?.body).toEqual({
+                title: 'Run a 10k',
+                category_id: 1,
+                scope: 'month',
+                period_key: '2027-02',
+                parent_item_id: 61,
+                starred: false,
+                assignee_user_id: 2,
+            }),
+        );
+        unmount();
+
+        renderApp('/plan/2027-Q1');
+        await goToStep('Pull');
+        await userEvent.click(await screen.findByRole('button', { name: 'Add to Quarter 1' }));
+        await waitFor(() =>
+            expect(calls.filter((call) => call.method === 'POST').at(-1)?.body).toMatchObject({
+                scope: 'quarter',
+                period_key: '2027-Q1',
+                parent_item_id: 62,
+            }),
+        );
+    });
+
+    it('sets a year’s goals with nothing to pull from', async () => {
+        mockApi(signedIn());
+
+        renderApp('/plan/2027');
+        await goToStep('Goals');
 
         expect(
-            await screen.findByRole('heading', { name: 'That week doesn’t exist' }),
+            await screen.findByRole('heading', { name: 'Set the goals for 2027' }),
         ).toBeInTheDocument();
+        expect(await screen.findByRole('region', { name: 'Health' })).toBeInTheDocument();
+    });
+
+    it('places a month’s goal in a week, by menu or by dragging, but only once', async () => {
+        const monthGoal = bigGoal({
+            id: 80,
+            title: 'Fix the fence',
+            scope: 'month',
+            period_key: '2027-02',
+        });
+        const inWeek = bigGoal({
+            id: 81,
+            title: 'Fix the fence',
+            scope: 'week',
+            period_key: '2027-W05',
+            parent_item_id: 80,
+        });
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...itemsApi({ '2027-02': [monthGoal], '2027-W05': [inWeek] }),
+            'POST /api/items': ({ body }) => ({ status: 201, body: makeItem(body as object) }),
+        });
+
+        renderApp('/plan/2027-02');
+        await goToStep('Place');
+        expect(await screen.findByRole('heading', { name: 'Give it a week' })).toBeInTheDocument();
+
+        const row = within(await screen.findByRole('list', { name: 'Goals to place' }));
+        expect(await row.findByText('Week 5')).toBeInTheDocument();
+        // It shows in its week's card as well.
+        const placedWeek = within(screen.getByRole('region', { name: 'Week 5' }));
+        expect(placedWeek.getByText('Fix the fence')).toBeInTheDocument();
+
+        await userEvent.selectOptions(row.getByLabelText('Week for Fix the fence'), '2027-W06');
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'POST')?.body).toEqual({
+                title: 'Fix the fence',
+                category_id: 1,
+                scope: 'week',
+                period_key: '2027-W06',
+                parent_item_id: 80,
+                assignee_user_id: null,
+            }),
+        );
+
+        const drop = (name: string) => {
+            const card = screen.getByRole('region', { name });
+            fireEvent(
+                card,
+                createEvent.drop(card, {
+                    dataTransfer: { types: ['application/x-planner-item'], getData: () => '80' },
+                }),
+            );
+        };
+        const posts = () => calls.filter((call) => call.method === 'POST');
+
+        drop('Week 7');
+        await waitFor(() => expect(posts().at(-1)?.body).toMatchObject({ period_key: '2027-W07' }));
+
+        // Already in Week 5: nothing new.
+        const before = posts().length;
+        drop('Week 5');
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(posts()).toHaveLength(before);
+    });
+
+    it('offers a quarter’s months and a year’s quarters to place in', async () => {
+        const quarterGoal = bigGoal({ id: 1, title: 'Q', scope: 'quarter', period_key: '2027-Q2' });
+        const yearGoal = bigGoal({ id: 2, title: 'Y', scope: 'year', period_key: '2027' });
+        mockApi({ ...signedIn(), ...itemsApi({ '2027-Q2': [quarterGoal], '2027': [yearGoal] }) });
+
+        const optionsFor = async (label: string) =>
+            within(await screen.findByLabelText(label))
+                .getAllByRole('option')
+                .map((option) => option.textContent);
+
+        const { unmount } = renderApp('/plan/2027-Q2');
+        await goToStep('Place');
+        expect(await optionsFor('Month for Q')).toEqual([
+            'Add to a month…',
+            'April 2027',
+            'May 2027',
+            'June 2027',
+        ]);
+        unmount();
+
+        renderApp('/plan/2027');
+        await goToStep('Place');
+        expect(await optionsFor('Quarter for Y')).toEqual([
+            'Add to a quarter…',
+            'Quarter 1 (January – March 2027)',
+            'Quarter 2 (April – June 2027)',
+            'Quarter 3 (July – September 2027)',
+            'Quarter 4 (October – December 2027)',
+        ]);
+    });
+
+    it('checks a month’s calendar and marks a date', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            'POST /api/important-dates': ({ body }) => ({ status: 201, body }),
+        });
+
+        renderApp('/plan/2027-02');
+        await goToStep('Dates');
+        expect(
+            await screen.findByRole('heading', { name: 'Check the calendar' }),
+        ).toBeInTheDocument();
+
+        await userEvent.type(screen.getByLabelText('What is it?'), 'Recital');
+        fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2027-02-14' } });
+        await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.method === 'POST')?.body).toMatchObject({
+                title: 'Recital',
+                date: '2027-02-14',
+            }),
+        );
+    });
+
+    it('sums up, and links the reward to the period that was planned', async () => {
+        const planned = bigGoal({
+            id: 1,
+            title: 'Run a 10k',
+            scope: 'month',
+            period_key: '2027-02',
+            starred: true,
+        });
+        const unplaced = bigGoal({ id: 2, title: 'Read', scope: 'month', period_key: '2027-02' });
+        mockApi({
+            ...signedIn(),
+            ...itemsApi({
+                '2027-02': [planned, unplaced],
+                '2027-W06': [
+                    bigGoal({
+                        id: 3,
+                        scope: 'week',
+                        period_key: '2027-W06',
+                        parent_item_id: 1,
+                    }),
+                ],
+            }),
+        });
+
+        renderApp('/plan/2027-02');
+        await goToStep('Done');
+
+        const summary = (await screen.findByText('Goals')).closest('dl')!;
+        await waitFor(() => expect(summary).toHaveTextContent('Given a week1'));
+        expect(summary).toHaveTextContent('Goals2');
+        expect(screen.getByRole('link', { name: /Create a reward/ })).toHaveAttribute(
+            'href',
+            '/rewards?new=big3&period=2027-02',
+        );
+        expect(screen.getByRole('link', { name: 'Open the month' })).toHaveAttribute(
+            'href',
+            '/month/2027-02',
+        );
+    });
+
+    it('starts a reward with the planned period’s Big 3, due when that period ends', async () => {
+        mockApi({
+            ...signedIn(),
+            ...itemsApi({
+                '2027-02': [
+                    bigGoal({
+                        id: 1,
+                        title: 'Run a 10k',
+                        scope: 'month',
+                        period_key: '2027-02',
+                        starred: true,
+                    }),
+                ],
+            }),
+        });
+
+        renderApp('/rewards?new=big3&period=2027-02');
+        const dialog = within(await screen.findByRole('dialog', { name: 'New reward' }));
+
+        expect(await dialog.findByRole('checkbox', { name: 'Run a 10k' })).toBeChecked();
+        expect(dialog.getByLabelText('Earn it by the end of')).toHaveValue('2027-02-28');
+        expect(dialog.getByRole('button', { name: 'February 2027' })).toHaveAttribute(
+            'aria-pressed',
+            'true',
+        );
     });
 });
 

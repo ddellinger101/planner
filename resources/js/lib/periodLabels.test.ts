@@ -1,9 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import { parsePeriod, type Period } from './period';
-import { formatTime, periodLabel, periodName, relatedPeriod } from './periodLabels';
+import { formatTime, periodLabel, periodName, periodToPlan, relatedPeriod } from './periodLabels';
 import { periodFromPath } from './useCurrentPeriod';
 
 const parse = (key: string) => parsePeriod(key) as Period;
+
+describe('periodToPlan', () => {
+    it.each([
+        // A Sunday, the last day of its week.
+        ['2026-W44', '2026-11-01', '2026-W45', 'Plan next week'],
+        // The rule doesn't depend on the day: a Monday looks ahead as well.
+        ['2026-W45', '2026-11-02', '2026-W46', 'Plan next week'],
+        ['2026-11', '2026-11-29', '2026-12', 'Plan next month'],
+        ['2026-Q4', '2026-11-29', '2027-Q1', 'Plan next quarter'],
+        ['2026', '2026-11-29', '2027', 'Plan next year'],
+        // Across a year boundary.
+        ['2026-12', '2026-12-27', '2027-01', 'Plan next month'],
+        ['2026-W53', '2027-01-03', '2027-W01', 'Plan next week'],
+        // Already looking at the next period: the same plan.
+        ['2026-12', '2026-11-29', '2026-12', 'Plan next month'],
+        // Further ahead plans what's on screen, by name.
+        ['2027-02', '2026-11-29', '2027-02', 'Plan February 2027'],
+        ['2027-W10', '2026-11-29', '2027-W10', 'Plan Week 10'],
+        ['2027-Q3', '2026-11-29', '2027-Q3', 'Plan Quarter 3'],
+        ['2028', '2026-11-29', '2028', 'Plan 2028'],
+    ])('from %s on %s plans %s', (viewed, today, planned, label) => {
+        const plan = periodToPlan(parse(viewed), today);
+
+        expect(plan?.period.key).toBe(planned);
+        expect(plan?.label).toBe(label);
+    });
+
+    it('has nothing to plan once a period is over', () => {
+        expect(periodToPlan(parse('2026-10'), '2026-11-01')).toBeNull();
+    });
+});
 
 describe('periodLabel', () => {
     it.each([

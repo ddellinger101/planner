@@ -217,7 +217,7 @@ Desktop layout: three columns. Mobile: stacked in this order.
 - **Week strip:** Mon–Sun columns with each day's tasks (compact) so the week can be planned by dragging tasks between days (desktop). Mobile: horizontally swipeable day cards.
 - **Meal Plan Mon–Sun** grid (same data as the Day view, from Chef). Empty days show a gentle "Plan in Chef" link.
 - **Routine grid for the week** (inspired by the "Housework" M–S check grid): rows = habits/routine items, columns = days.
-- **"Plan this week"** button → Weekly Planning flow (Phase 5).
+- **"Plan next week"** button → Planning flow (6.2). The Month, Quarter and Year views have the same button.
 
 ### Month
 - "Best Part About This Month".
@@ -290,6 +290,18 @@ Inspired by the "Plan Your Week in 15 Minutes" inspiration image. A guided, skip
 7. **Done** — summary + optional "Create a reward for this week's Big 3?"
 
 When a linked week item is checked off, show the parent month goal and offer "Mark the month goal done too?"
+
+### 6.2.1 Planning a month, quarter or year
+The same stepper, at `/plan/<period key>`. Planning is done ahead, usually on a Sunday, so a period view's Plan button opens the **following** period: the current week, month, quarter or year hands over to the next. A later period plans itself, a past one has no button, and while planning the period right after today's, a link offers today's period instead (for a Sunday that falls on the 1st).
+
+| Scope | Steps |
+| ------- | ------------------------------------------------- |
+| Week | Capture, Review, Pull (month), Big 3, Place (days), Meals, Done |
+| Month | Capture, Review, Pull (quarter), Big 3, Place (weeks), Dates, Done |
+| Quarter | Capture, Review, Pull (year), Big 3, Place (months), Done |
+| Year | Capture, Review, Goals, Big 3, Place (quarters), Done |
+
+Placing a goal in a smaller period copies it there linked by `parent_item_id`, the same link the Pull step makes.
 
 ### 6.3 Add to Plan (from Brain Dump)
 Described above. Must be a 2-tap action for the common case: tap **Add to Plan** → choose "Today / Tomorrow / This week / Pick date" → saved with the mapped category.

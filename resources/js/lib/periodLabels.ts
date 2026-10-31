@@ -1,4 +1,4 @@
-import { periodContains, periodFromDate, type Period, type Scope } from './period';
+import { nextPeriod, periodContains, periodFromDate, type Period, type Scope } from './period';
 
 const LOCALE = 'en-US';
 
@@ -107,3 +107,23 @@ export const SCOPE_NAMES: Record<Scope, string> = {
     quarter: 'Quarter',
     year: 'Year',
 };
+
+/**
+ * What a period view's Plan button opens. Planning is done ahead, usually on a
+ * Sunday, so the period under way hands over to the one after it. A period
+ * further ahead plans itself, and one already over has nothing left to plan.
+ */
+export function periodToPlan(
+    period: Period,
+    today: string,
+): { period: Period; label: string } | null {
+    if (period.end < today) {
+        return null;
+    }
+
+    const upcoming = nextPeriod(periodFromDate(period.scope, today));
+
+    return period.start <= upcoming.start
+        ? { period: upcoming, label: `Plan next ${SCOPE_NAMES[period.scope].toLowerCase()}` }
+        : { period, label: `Plan ${periodShortName(period)}` };
+}

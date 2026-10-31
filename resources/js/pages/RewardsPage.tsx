@@ -13,6 +13,8 @@ import RewardSheet, { type RewardTarget } from '@/components/rewards/RewardSheet
 import TaskRow from '@/components/TaskRow';
 import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
+import { parsePeriod, periodFromDate } from '@/lib/period';
+import { useToday } from '@/lib/useCurrentPeriod';
 
 const HOUR = 3_600_000;
 
@@ -47,9 +49,15 @@ const formatDay = (timestamp: string, timeZone: string) =>
 export default function RewardsPage() {
     const rewards = useRewards();
     const [params, setParams] = useSearchParams();
-    // The weekly planning flow links here to make a reward of the Big 3.
+    const today = useToday();
+    // The planning flow links here to make a reward of the Big 3 it just chose.
     const [sheet, setSheet] = useState<RewardTarget | null>(
-        params.get('new') === 'big3' ? { kind: 'create', starredThisWeek: true } : null,
+        params.get('new') === 'big3'
+            ? {
+                  kind: 'create',
+                  big3Of: parsePeriod(params.get('period') ?? '') ?? periodFromDate('week', today),
+              }
+            : null,
     );
     const { person } = usePersonFilter();
     // A reward for both people shows under either of them.

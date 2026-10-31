@@ -21,7 +21,7 @@ import { useReview } from '@/context/PlannerContexts';
 import { usePersonFilter } from '@/context/PersonFilterContext';
 import { useSession } from '@/context/SessionContext';
 import { childPeriods, parsePeriod, type Period } from '@/lib/period';
-import { periodLabel, periodShortName } from '@/lib/periodLabels';
+import { periodLabel, periodShortName, periodToPlan } from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
 const useCategories = () =>
@@ -59,6 +59,22 @@ function ReviewBanner({ period }: { period: Period }) {
     );
 }
 
+/** The way into the planning flow from a period's view. */
+function PlanLink({ period }: { period: Period }) {
+    const plan = periodToPlan(period, useToday());
+
+    return (
+        plan && (
+            <Link
+                className="button-ink d-inline-flex align-items-center gap-2"
+                to={`/plan/${plan.period.key}`}
+            >
+                <CalendarCheck aria-hidden="true" size={18} /> {plan.label}
+            </Link>
+        )
+    );
+}
+
 function SectionHeading({ children }: { children: string }) {
     return <h2 className="font-display section-heading">{children}</h2>;
 }
@@ -93,12 +109,7 @@ export function WeekPage({ period }: { period: Period }) {
                     <BestPart key={period.key} period={period} />
                 </div>
                 <div className="col-12 col-lg-auto d-flex align-items-center">
-                    <Link
-                        className="button-ink d-inline-flex align-items-center gap-2"
-                        to={`/plan/${period.key}`}
-                    >
-                        <CalendarCheck aria-hidden="true" size={18} /> Plan this week
-                    </Link>
+                    <PlanLink period={period} />
                 </div>
                 <div className="col-12 col-lg">
                     <WeekWeight week={period} today={today} />
@@ -165,11 +176,14 @@ export function MonthPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
-            <div className="row g-3">
-                <div className="col-12 col-lg-6">
+            <div className="row g-3 align-items-stretch">
+                <div className="col-12 col-lg-5">
                     <BestPart key={period.key} period={period} />
                 </div>
-                <div className="col-12 col-lg-6">
+                <div className="col-12 col-lg-auto d-flex align-items-center">
+                    <PlanLink period={period} />
+                </div>
+                <div className="col-12 col-lg">
                     <CategoryProgress
                         title="Goal progress"
                         categories={categories}
@@ -229,6 +243,7 @@ export function QuarterPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
+            <PlanLink period={period} />
             <SectionHeading>Quarter goals</SectionHeading>
             <GoalBoxes period={period} />
 
@@ -275,6 +290,7 @@ export function YearPage({ period }: { period: Period }) {
     return (
         <>
             <ReviewBanner period={period} />
+            <PlanLink period={period} />
             <SectionHeading>One-year goals</SectionHeading>
             <GoalBoxes period={period} />
 
