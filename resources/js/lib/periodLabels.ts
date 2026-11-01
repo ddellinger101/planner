@@ -127,3 +127,41 @@ export function periodToPlan(
         ? { period: upcoming, label: `Plan next ${SCOPE_NAMES[period.scope].toLowerCase()}` }
         : { period, label: `Plan ${periodShortName(period)}` };
 }
+
+// How many periods the planner offers, counting the one under way.
+const PLAN_CHOICES: Record<Scope, number> = { day: 1, week: 8, month: 12, quarter: 4, year: 3 };
+
+/**
+ * The periods that can be planned instead of this one: the one under way and
+ * those ahead, plus this one if a link has brought us somewhere outside them.
+ */
+export function periodsToPlan(period: Period, today: string): Period[] {
+    const choices = [periodFromDate(period.scope, today)];
+
+    while (choices.length < PLAN_CHOICES[period.scope]) {
+        choices.push(nextPeriod(choices[choices.length - 1]));
+    }
+
+    return choices.some((choice) => choice.key === period.key)
+        ? choices
+        : [...choices, period].sort((a, b) => a.start.localeCompare(b.start));
+}
+
+/**
+ * A planner choice's name, saying which is which: "Next month: December 2026".
+ * Kept short enough for the menu to show it whole on a phone.
+ */
+export function planChoiceName(period: Period, today: string): string {
+    const current = periodFromDate(period.scope, today);
+    const { title, subtitle } = periodLabel(period, true);
+    const name = period.scope === 'quarter' ? `${title} (${subtitle})` : periodName(period);
+    const relative =
+        period.key === current.key ? 'This' : period.key === nextPeriod(current).key ? 'Next' : '';
+
+    if (!relative) {
+        return name;
+    }
+
+    // "This week" already says what "Week 44" would.
+    return `${relative} ${SCOPE_NAMES[period.scope].toLowerCase()}: ${period.scope === 'week' ? subtitle : name}`;
+}

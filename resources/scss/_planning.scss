@@ -135,6 +135,11 @@
 
 // Planning steps --------------------------------------------------------------------
 
+.plan-period {
+    max-width: 26rem;
+    margin-bottom: 1rem;
+}
+
 .plan-steps {
     display: flex;
     gap: 0.35rem;

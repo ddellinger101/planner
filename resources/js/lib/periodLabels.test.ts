@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { parsePeriod, type Period } from './period';
-import { formatTime, periodLabel, periodName, periodToPlan, relatedPeriod } from './periodLabels';
+import {
+    formatTime,
+    periodLabel,
+    periodName,
+    periodsToPlan,
+    periodToPlan,
+    planChoiceName,
+    relatedPeriod,
+} from './periodLabels';
 import { periodFromPath } from './useCurrentPeriod';
 
 const parse = (key: string) => parsePeriod(key) as Period;
@@ -33,6 +41,46 @@ describe('periodToPlan', () => {
 
     it('has nothing to plan once a period is over', () => {
         expect(periodToPlan(parse('2026-10'), '2026-11-01')).toBeNull();
+    });
+});
+
+describe('periodsToPlan', () => {
+    const keys = (viewed: string, today: string) =>
+        periodsToPlan(parse(viewed), today).map((period) => period.key);
+
+    it.each([
+        // The Sunday that ends a week and starts a month.
+        ['2026-W45', '2026-11-01', '2026-W44', '2026-W51', 8],
+        ['2026-12', '2026-11-01', '2026-11', '2027-10', 12],
+        ['2027-Q1', '2026-11-01', '2026-Q4', '2027-Q3', 4],
+        ['2027', '2026-11-01', '2026', '2028', 3],
+    ])('from %s on %s runs from %s to %s', (viewed, today, first, last, count) => {
+        const choices = keys(viewed, today);
+
+        expect(choices[0]).toBe(first);
+        expect(choices.at(-1)).toBe(last);
+        expect(choices).toHaveLength(count);
+    });
+
+    it('keeps a period outside the list in it, in date order', () => {
+        expect(keys('2026-10', '2026-11-01').slice(0, 2)).toEqual(['2026-10', '2026-11']);
+        expect(keys('2028-06', '2026-11-01').slice(-2)).toEqual(['2027-10', '2028-06']);
+    });
+});
+
+describe('planChoiceName', () => {
+    it.each([
+        ['2026-W44', 'This week: Oct 26 – Nov 1, 2026'],
+        ['2026-W45', 'Next week: Nov 2 – 8, 2026'],
+        ['2026-W46', 'Week 46 (Nov 9 – 15, 2026)'],
+        ['2026-11', 'This month: November 2026'],
+        ['2026-12', 'Next month: December 2026'],
+        ['2027-01', 'January 2027'],
+        ['2026-Q4', 'This quarter: Q4 (Oct – Dec 2026)'],
+        ['2027-Q2', 'Q2 (Apr – Jun 2027)'],
+        ['2027', 'Next year: 2027'],
+    ])('%s is "%s"', (key, name) => {
+        expect(planChoiceName(parse(key), '2026-11-01')).toBe(name);
     });
 });
 
