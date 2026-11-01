@@ -83,15 +83,16 @@
     padding: 0.2rem 0.5rem;
 }
 
-// One column on phones, in reading order. Two on tablets, three on desktop,
-// with the schedule running the full height of its column.
+// One column on phones, in reading order, with the schedule last. Two on
+// tablets, three on desktop, with the schedule running the full height of its column.
 .day-grid {
     display: grid;
     grid-template-areas:
         'journal'
         'boxes'
-        'timeline'
-        'side';
+        'events'
+        'side'
+        'timeline';
     gap: 1rem;
     align-items: start;
 
@@ -99,15 +100,17 @@
         grid-template-areas:
             'journal timeline'
             'boxes timeline'
-            'side timeline';
+            'side timeline'
+            'events timeline';
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
 
     @include media-breakpoint-up(xl) {
         grid-template-areas:
             'journal boxes timeline'
-            'side boxes timeline';
-        grid-template-rows: auto 1fr;
+            'side boxes timeline'
+            'events boxes timeline';
+        grid-template-rows: auto auto 1fr;
         grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 4fr);
     }
 }
@@ -136,6 +139,11 @@
 
 .day-side {
     grid-area: side;
+}
+
+.day-events {
+    grid-area: events;
+    min-width: 0;
 }
 
 .day-progress {
@@ -460,10 +468,30 @@
     .routine-heading,
     > .d-flex,
     > p,
-    > dl {
+    > dl,
+    > .streaks,
+    .routine-tasks {
         padding-right: 0.55rem;
         padding-left: 0.55rem;
     }
+
+    > .streaks {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.routine-tasks {
+    margin: 0.6rem 0 0.1rem;
+}
+
+.routine-add select {
+    flex: none;
+    min-height: 2.75rem;
+    padding: 0 0.2rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
 }
 
 .side-card {

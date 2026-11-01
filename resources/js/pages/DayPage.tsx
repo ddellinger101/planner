@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CircleAlert } from 'lucide-react';
 import { useCheckHabit, useHabitsOn } from '@/api/day';
 import { eventMinutes, eventsFor, eventsOn, useEvents } from '@/api/events';
+import { useHabitStats } from '@/api/habits';
 import {
     useCreateItem,
     useDeleteItem,
@@ -46,6 +47,7 @@ export default function DayPage({ period }: { period: Period }) {
     // Routines and habits are personal: always your own, whatever view is chosen.
     const ownItems = useItems({ periodKey: date, person: user.id });
     const habits = useHabitsOn(date, user.id);
+    const habitStats = useHabitStats(user.id);
     const nowMinutes = useNowMinutes(user.timezone, isToday);
 
     const createItem = useCreateItem();
@@ -137,6 +139,10 @@ export default function DayPage({ period }: { period: Period }) {
                             ))}
                         </div>
 
+                        <div className="day-events">
+                            <DayEvents date={date} isToday={isToday} events={dayEvents} />
+                        </div>
+
                         <div className="day-timeline">
                             <Timeline
                                 items={all}
@@ -163,6 +169,7 @@ export default function DayPage({ period }: { period: Period }) {
                             <Routines
                                 items={routineItems}
                                 habits={habits.data ?? []}
+                                stats={habitStats.data ?? {}}
                                 categories={categories.data ?? []}
                                 members={household.members}
                                 onAdd={(routine, title) =>
@@ -183,7 +190,6 @@ export default function DayPage({ period }: { period: Period }) {
                                 }
                             />
                             <MealPlan date={date} />
-                            <DayEvents date={date} isToday={isToday} events={dayEvents} />
                         </div>
                     </div>
                 )}

@@ -26,6 +26,7 @@ import type { Routine } from '@/api/items';
 import { fetchCategories, type Category } from '@/api/session';
 import HabitSheet, { type HabitTarget } from '@/components/habits/HabitSheet';
 import RadialTracker from '@/components/habits/RadialTracker';
+import Streaks from '@/components/habits/Streaks';
 import PageHeader from '@/components/PageHeader';
 import { RoutineGrid } from '@/components/period/WeekExtras';
 import { useItemEditor } from '@/context/ItemEditorContext';
@@ -150,63 +151,6 @@ export default function RoutinesPage() {
         </>
     );
 }
-
-type StreaksProps = {
-    habits: Habit[];
-    stats: Record<number, HabitStats>;
-    categories: Category[];
-};
-
-/**
- * How long each habit has been kept up, as of now: the longest run first.
- * These are today's figures, whichever month the wheel beside them shows.
- */
-function Streaks({ habits, stats, categories }: StreaksProps) {
-    const colorOf = (habit: Habit) =>
-        habit.color ?? categories.find((category) => category.id === habit.category_id)?.color;
-    const streaks = habits
-        .flatMap((habit) => (stats[habit.id] ? [{ habit, ...stats[habit.id] }] : []))
-        // Longest first, counting a week as seven days so the two kinds compare.
-        .sort((a, b) => inDays(b) - inDays(a));
-
-    if (streaks.length === 0) {
-        return null;
-    }
-
-    return (
-        <section className="streaks" aria-labelledby="streaks-heading">
-            <h3 id="streaks-heading" className="field-label">
-                <Flame aria-hidden="true" size={14} /> Current streaks
-            </h3>
-            <ul className="streak-list">
-                {streaks.map(({ habit, current_streak, best_streak, streak_unit }) => (
-                    <li
-                        key={habit.id}
-                        className={`streak-tile cat${current_streak === 0 ? ' is-idle' : ''}`}
-                        style={{ '--cat': colorOf(habit) } as CSSProperties}
-                    >
-                        <span className="streak-count">
-                            <Flame aria-hidden="true" size={22} />
-                            {current_streak}
-                        </span>
-                        <span className="streak-unit">
-                            {current_streak === 1 ? streak_unit.slice(0, -1) : streak_unit} in a row
-                        </span>
-                        <span className="streak-title">{habit.title}</span>
-                        <span className="streak-best">
-                            {current_streak > 0 && current_streak >= best_streak
-                                ? 'Your best yet'
-                                : `Best: ${best_streak}`}
-                        </span>
-                    </li>
-                ))}
-            </ul>
-        </section>
-    );
-}
-
-const inDays = (streak: HabitStats) =>
-    streak.current_streak * (streak.streak_unit === 'weeks' ? 7 : 1);
 
 type StepperProps = {
     label: string;

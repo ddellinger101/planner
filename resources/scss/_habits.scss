@@ -135,6 +135,39 @@
     list-style: none;
 }
 
+// Small enough to sit above a checklist: the count and unit on one line, the name under.
+.streak-list.is-compact {
+    grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+    gap: 0.4rem;
+
+    .streak-tile {
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 0.25rem;
+        align-items: baseline;
+        align-content: start;
+        padding: 0.3rem 0.45rem 0.35rem;
+        border-left-width: 3px;
+        border-radius: 0.5rem;
+    }
+
+    .streak-count {
+        gap: 0.15rem;
+        align-self: center;
+        font-size: 1.15rem;
+    }
+
+    .streak-unit {
+        font-size: 0.68rem;
+    }
+
+    .streak-title {
+        grid-column: 1 / -1;
+        margin-top: 0.05rem;
+        font-size: 0.74rem;
+        line-height: 1.2;
+    }
+}
+
 // One habit's streak: the number leads, in the habit's color at its edge.
 .streak-tile {
     display: grid;

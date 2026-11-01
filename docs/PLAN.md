@@ -197,13 +197,13 @@ One table for everything checkable: **items**.
 - A **person filter** (Dustin / Elizabeth / Both) in the header, remembered per device.
 
 ### Daily Agenda (home)
-Desktop layout: three columns. Mobile: stacked in this order.
+Desktop layout: three columns. Mobile: stacked with Today's Events after the category boxes and the timeline last.
 
 1. **Header:** day name and date, weather-free; streak/progress ring for today's tasks.
 2. **Gratitude** (single line) and **Affirmation** (pre-filled from the previous day, editable, with a small "carried from Mon" label).
 3. **Category boxes:** Health (+ today's weight entry), Finances, Home, Family, Only 4 You, Other. Each box: color-coded header with icon, checkbox list, star toggle, inline add.
 4. **Hourly timeline:** the day from ~6 AM to 11 PM (configurable), showing **timed tasks and calendar events in time order**, colored by category or calendar. **Untimed tasks for the day are listed above the timeline** (per spec). Drag a task onto the timeline to give it a time (desktop; long-press on mobile is a stretch goal).
-5. **Routines:** Morning and Evening routine checklists (routine tasks + habits for today).
+5. **Routines & habits:** one card. Small current-streak tiles, every habit to check off underneath (morning, evening and anytime in one list), then any routine tasks under Morning/Evening labels.
 6. **Meal Plan:** Breakfast / Lunch / Dinner / Snacks, read from Chef's Menu calendar. Each meal links to its recipe in Chef when the event includes a link; an **"Open in Chef"** button jumps to Chef for that day/week.
 7. **Today's Events** (from Google Calendar, both users when filter = Both) and **Important Dates** chips.
 8. **Starred** tasks are pinned to the top of their box with a star accent.
