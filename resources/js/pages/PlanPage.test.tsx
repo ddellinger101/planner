@@ -516,24 +516,57 @@ describe('what the Plan button plans', () => {
         });
     });
 
-    it('can step back to the period under way', async () => {
+    it.each([
+        ['/plan/2026-W49', 'Week to plan', '2026-W48', 'Plan Week 48'],
+        ['/plan/2026-12', 'Month to plan', '2026-11', 'Plan November'],
+        ['/plan/2027-Q1', 'Quarter to plan', '2026-Q4', 'Plan Quarter 4'],
+        ['/plan/2027', 'Year to plan', '2026', 'Plan 2026'],
+    ])('from %s, the "%s" menu reaches the period under way', async (path, menu, key, heading) => {
         mockApi(signedIn());
 
         await onSunday(async () => {
-            renderApp('/plan/2026-12');
+            renderApp(path);
             await goToStep('Review');
-            await userEvent.click(await screen.findByRole('link', { name: 'Plan it instead' }));
+            await userEvent.selectOptions(await screen.findByLabelText(menu), key);
 
             expect(
-                await screen.findByRole('heading', { level: 1, name: 'Plan November' }),
+                await screen.findByRole('heading', { level: 1, name: heading }),
             ).toBeInTheDocument();
+            expect(screen.getByLabelText(menu)).toHaveValue(key);
             // A different period starts from the first step again.
             expect(screen.getByRole('button', { name: '1Capture' })).toHaveAttribute(
                 'aria-current',
                 'step',
             );
-            // Nothing further back is on offer.
-            expect(screen.queryByRole('link', { name: 'Plan it instead' })).not.toBeInTheDocument();
+        });
+    });
+
+    it('offers the period under way and those ahead, and says which is which', async () => {
+        mockApi(signedIn());
+
+        await onSunday(async () => {
+            renderApp('/plan/2026-12');
+
+            const options = within(await screen.findByLabelText('Month to plan')).getAllByRole(
+                'option',
+            ) as HTMLOptionElement[];
+
+            expect(options.slice(0, 3).map((option) => option.text)).toEqual([
+                'This month: November 2026',
+                'Next month: December 2026',
+                'January 2027',
+            ]);
+            expect(options.find((option) => option.selected)?.value).toBe('2026-12');
+        });
+    });
+
+    it('still shows a period outside the usual choices as the one being planned', async () => {
+        mockApi(signedIn());
+
+        await onSunday(async () => {
+            renderApp('/plan/2026-10');
+
+            expect(await screen.findByLabelText('Month to plan')).toHaveValue('2026-10');
         });
     });
 });

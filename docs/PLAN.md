@@ -292,7 +292,7 @@ Inspired by the "Plan Your Week in 15 Minutes" inspiration image. A guided, skip
 When a linked week item is checked off, show the parent month goal and offer "Mark the month goal done too?"
 
 ### 6.2.1 Planning a month, quarter or year
-The same stepper, at `/plan/<period key>`. Planning is done ahead, usually on a Sunday, so a period view's Plan button opens the **following** period: the current week, month, quarter or year hands over to the next. A later period plans itself, a past one has no button, and while planning the period right after today's, a link offers today's period instead (for a Sunday that falls on the 1st).
+The same stepper, at `/plan/<period key>`. Planning is done ahead, usually on a Sunday, so a period view's Plan button opens the **following** period: the current week, month, quarter or year hands over to the next. A later period plans itself and a past one has no button. A menu at the top of the flow switches to another period of the same size, from the one under way onward (for a Sunday that falls on the 1st), and starts again from the first step.
 
 | Scope | Steps |
 | ------- | ------------------------------------------------- |

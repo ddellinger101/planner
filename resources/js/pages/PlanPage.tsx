@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Check, Gift, MapPinOff, Star } from 'lucide-react';
 import { useEffect, useState, type ComponentType, type CSSProperties, type DragEvent } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { CHEF_URL, useMeals } from '@/api/day';
 import { eventsFor, useEvents } from '@/api/events';
 import { useCreateItem, useItems, useItemsIn, useUpdateItem, type Item } from '@/api/items';
@@ -24,13 +24,19 @@ import {
     childPeriods,
     parentPeriod,
     parsePeriod,
-    periodContains,
     periodMonths,
     previousPeriod,
     type Period,
     type Scope,
 } from '@/lib/period';
-import { periodLabel, periodName, periodShortName, SCOPE_NAMES } from '@/lib/periodLabels';
+import {
+    periodLabel,
+    periodName,
+    periodShortName,
+    periodsToPlan,
+    planChoiceName,
+    SCOPE_NAMES,
+} from '@/lib/periodLabels';
 import { useToday } from '@/lib/useCurrentPeriod';
 
 const BIG = 3;
@@ -71,12 +77,12 @@ export default function PlanPage() {
 
 function PlanFlow({ period }: StepProps) {
     const today = useToday();
+    const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const steps = stepsFor(period);
     const { Body } = steps[step];
     const last = step === steps.length - 1;
     const { title, subtitle } = periodLabel(period);
-    const previous = previousPeriod(period);
 
     return (
         <>
@@ -87,13 +93,26 @@ function PlanFlow({ period }: StepProps) {
                 </div>
             </PageHeader>
             <main className="container-fluid page-body">
-                {/* The Plan buttons look ahead, so this is the way to the period under way. */}
-                {periodContains(previous, today) && (
-                    <p className="text-soft small mb-2">
-                        Still need {periodShortName(previous)}?{' '}
-                        <Link to={`/plan/${previous.key}`}>Plan it instead</Link>
-                    </p>
-                )}
+                {/* The Plan buttons look ahead, so this is the way to any other period. */}
+                <div className="plan-period">
+                    <label className="field-label" htmlFor="plan-period">
+                        {SCOPE_NAMES[period.scope]} to plan
+                    </label>
+                    <select
+                        id="plan-period"
+                        className="field-input"
+                        value={period.key}
+                        onChange={(event) =>
+                            navigate(`/plan/${event.target.value}`, { replace: true })
+                        }
+                    >
+                        {periodsToPlan(period, today).map((choice) => (
+                            <option key={choice.key} value={choice.key}>
+                                {planChoiceName(choice, today)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                 <ol className="plan-steps" aria-label="Planning steps">
                     {steps.map(({ name }, index) => (
