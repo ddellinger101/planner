@@ -93,6 +93,7 @@ class ReviewController extends Controller
                 'parent_item_id' => $item->currentParentId(),
                 'carried_from_item_id' => $item->id,
                 'starred' => $item->starred,
+                'times_carried' => $item->times_carried + 1,
             ];
 
             $existing = Item::sameGoalIn($target->key(), $item->title, $item->assignee_user_id);

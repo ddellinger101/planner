@@ -53,6 +53,7 @@ class Item extends Model
             'due_date' => 'date:Y-m-d',
             'recurrence_date' => 'date:Y-m-d',
             'starred' => 'boolean',
+            'times_carried' => 'integer',
             'completed_at' => 'datetime',
             'google_updated_at' => 'datetime',
         ];
@@ -66,6 +67,11 @@ class Item extends Model
                 $item->completed_at = $item->status === ItemStatus::Done
                     ? ($item->completed_at ?? now())
                     : null;
+            }
+
+            // Reworded is a fresh start: the count is what asks for a rewording.
+            if ($item->exists && $item->isDirty('title')) {
+                $item->times_carried = 0;
             }
 
             // A change Google should hear about, unless it came from Google.
@@ -168,13 +174,14 @@ class Item extends Model
      * Pick up what a goal brings when it turns out to be one already here,
      * rather than copying it in next to itself.
      *
-     * @param  array{parent_item_id?: int|null, carried_from_item_id?: int|null, starred?: bool}  $from
+     * @param  array{parent_item_id?: int|null, carried_from_item_id?: int|null, starred?: bool, times_carried?: int}  $from
      */
     public function absorb(array $from): self
     {
         $this->parent_item_id ??= $from['parent_item_id'] ?? null;
         $this->carried_from_item_id ??= $from['carried_from_item_id'] ?? null;
         $this->starred = $this->starred || ($from['starred'] ?? false);
+        $this->times_carried = max($this->times_carried ?? 0, $from['times_carried'] ?? 0);
         $this->save();
 
         return $this;

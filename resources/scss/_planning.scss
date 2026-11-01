@@ -155,6 +155,42 @@
     border-top: var(--stroke) solid var(--line);
 }
 
+.goal-checkup {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-top: var(--stroke) solid var(--line);
+    }
+}
+
+.goal-checkup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.reword-goal {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    margin-top: 0.3rem;
+
+    .field-input {
+        flex: 1 1 14rem;
+        width: auto;
+    }
+}
+
 .plan-steps {
     display: flex;
     gap: 0.35rem;

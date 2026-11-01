@@ -1065,3 +1065,232 @@ describe('recognizing a goal that is already there', () => {
         );
     });
 });
+
+describe('goals that can finish', () => {
+    const december = (id: number, title: string, overrides: Partial<Item> = {}) =>
+        goal({ id, title, scope: 'month', period_key: '2026-12', ...overrides });
+    const november = (id: number, title: string, overrides: Partial<Item> = {}) =>
+        goal({ id, title, scope: 'month', period_key: '2026-11', ...overrides });
+    const habit = (id: number, title: string) => ({
+        id,
+        user_id: 1,
+        title,
+        category_id: 1,
+        icon: null,
+        color: null,
+        routine: 'anytime',
+        target_per_week: 7,
+        active_from: '2026-10-01',
+        active_to: null,
+        checks: [],
+    });
+    const habitsApi = (habits: unknown[]) => ({ 'GET /api/habits': { body: habits } });
+    const dropped = (calls: { method: string; path: string; body: unknown }[], id: number) =>
+        calls.some(
+            (call) =>
+                call.method === 'PATCH' &&
+                call.path === `/api/items/${id}` &&
+                (call.body as { status?: string }).status === 'dropped',
+        );
+
+    it('asks about a goal an existing habit covers, and removes it on request', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...habitsApi([habit(1, 'No Smoking')]),
+            ...itemsApi({
+                '2026-12': [
+                    december(10, 'Quit smoking', { assignee_user_id: 1 }),
+                    december(11, 'Release the book'),
+                ],
+            }),
+            'PATCH /api/items/10': ({ body }) => ({
+                body: { ...december(10, ''), ...(body as object) },
+            }),
+        });
+
+        renderApp('/plan/2026-12');
+        await goToStep('Big 3');
+
+        const section = await screen.findByRole('region', { name: 'Goals that are habits' });
+        expect(within(section).getByText(/Looks like your “No Smoking” habit/)).toBeInTheDocument();
+        expect(within(section).queryByText('Release the book')).not.toBeInTheDocument();
+
+        await userEvent.click(within(section).getByRole('button', { name: 'Remove the goal' }));
+        await waitFor(() => expect(dropped(calls, 10)).toBe(true));
+    });
+
+    it('notes a habit in the Pull step', async () => {
+        mockApi({
+            ...signedIn(),
+            ...habitsApi([habit(1, 'No Drinking')]),
+            ...itemsApi({
+                '2026-Q4': [
+                    goal({
+                        id: 1,
+                        title: 'Cut the drinking',
+                        scope: 'quarter',
+                        period_key: '2026-Q4',
+                        assignee_user_id: 1,
+                    }),
+                ],
+            }),
+        });
+
+        renderApp('/plan/2026-12');
+        await goToStep('Pull');
+
+        expect(await screen.findByText(/Looks like your “No Drinking” habit/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Add anyway' })).toBeInTheDocument();
+    });
+
+    it('asks how a vague goal will be done, and saves a new wording', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...habitsApi([]),
+            ...itemsApi({
+                '2026-12': [
+                    december(10, 'Keep paying credit cards'),
+                    december(11, 'Release the book'),
+                ],
+            }),
+            'PATCH /api/items/10': ({ body }) => ({
+                body: { ...december(10, ''), ...(body as object) },
+            }),
+        });
+
+        renderApp('/plan/2026-12');
+        await goToStep('Big 3');
+
+        const section = await screen.findByRole('region', { name: 'Goals with no finish line' });
+        expect(within(section).queryByText('Release the book')).not.toBeInTheDocument();
+
+        await userEvent.click(within(section).getByRole('button', { name: 'Reword' }));
+        const input = within(section).getByLabelText('New wording for Keep paying credit cards');
+        await userEvent.clear(input);
+        await userEvent.type(input, 'Pay $500 toward the cards by Dec 31{Enter}');
+
+        await waitFor(() =>
+            expect(calls.find((call) => call.path === '/api/items/10')?.body).toEqual({
+                title: 'Pay $500 toward the cards by Dec 31',
+            }),
+        );
+    });
+
+    it('stops asking about wording kept as is, even on a new copy of the goal', async () => {
+        mockApi({
+            ...signedIn(),
+            ...habitsApi([]),
+            ...itemsApi({
+                '2026-12': [december(10, 'Focus on diet')],
+                '2027-01': [
+                    goal({ id: 20, title: 'Focus on diet', scope: 'month', period_key: '2027-01' }),
+                ],
+            }),
+        });
+
+        const { unmount } = renderApp('/plan/2026-12');
+        await goToStep('Big 3');
+        await userEvent.click(await screen.findByRole('button', { name: 'Keep as is' }));
+
+        expect(screen.queryByText('How will you know it’s done?')).not.toBeInTheDocument();
+        unmount();
+
+        renderApp('/plan/2027-01');
+        await goToStep('Big 3');
+        await screen.findByRole('button', { name: 'Star Focus on diet' });
+        expect(screen.queryByText('How will you know it’s done?')).not.toBeInTheDocument();
+    });
+
+    it('turns a goal into a habit, filled in from its wording, and closes the goal', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...habitsApi([]),
+            ...itemsApi({
+                '2026-11': [
+                    november(1, 'Gym 3x a week', { times_carried: 2, assignee_user_id: 1 }),
+                ],
+            }),
+            'POST /api/habits': { status: 201, body: habit(9, 'Gym') },
+            'PATCH /api/items/1': ({ body }) => ({
+                body: { ...november(1, ''), ...(body as object) },
+            }),
+        });
+
+        renderApp('/plan/2026-12');
+        await goToStep('Review');
+        await userEvent.click(await screen.findByRole('button', { name: 'Make it a habit' }));
+
+        const sheet = await screen.findByRole('dialog', { name: 'New habit' });
+        expect(within(sheet).getByLabelText('Habit')).toHaveValue('Gym');
+        expect(within(sheet).getByLabelText('How often')).toHaveValue('3');
+
+        await userEvent.click(within(sheet).getByRole('button', { name: 'Add habit' }));
+
+        await waitFor(() => expect(dropped(calls, 1)).toBe(true));
+        expect(
+            calls.find((call) => call.method === 'POST' && call.path === '/api/habits')?.body,
+        ).toMatchObject({ title: 'Gym', target_per_week: 3, user_id: 1 });
+    });
+
+    it('leaves the goal open if the habit is cancelled', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...habitsApi([]),
+            ...itemsApi({ '2026-11': [november(1, 'Stretch', { times_carried: 2 })] }),
+        });
+
+        renderApp('/plan/2026-12');
+        await goToStep('Review');
+        await userEvent.click(await screen.findByRole('button', { name: 'Make it a habit' }));
+        await userEvent.click(
+            within(await screen.findByRole('dialog', { name: 'New habit' })).getByRole('button', {
+                name: 'Cancel',
+            }),
+        );
+
+        expect(screen.queryByRole('dialog', { name: 'New habit' })).not.toBeInTheDocument();
+        expect(dropped(calls, 1)).toBe(false);
+    });
+
+    it('asks about a goal carried twice, and leaves it out of carrying everything', async () => {
+        const { calls } = mockApi({
+            ...signedIn(),
+            ...habitsApi([habit(1, 'Keto')]),
+            ...itemsApi({
+                '2026-11': [
+                    november(1, 'Test drive a Bronco', { times_carried: 2 }),
+                    november(2, 'Keto', { assignee_user_id: 1 }),
+                    november(3, 'Paint the hallway', { times_carried: 1 }),
+                    november(4, 'Book the flu shots'),
+                ],
+            }),
+            'POST /api/items/3/carry': { status: 201, body: december(13, 'Paint the hallway') },
+            'POST /api/items/4/carry': { status: 201, body: december(14, 'Book the flu shots') },
+        });
+
+        renderApp('/plan/2026-12');
+        await goToStep('Review');
+
+        const bronco = await screen.findByRole('group', { name: 'Test drive a Bronco' });
+        expect(await screen.findByText(/Carried 2 times already/)).toBeInTheDocument();
+        expect(within(bronco).getByRole('button', { name: 'Reword' })).toBeInTheDocument();
+        expect(within(bronco).getByRole('button', { name: 'Make it a habit' })).toBeInTheDocument();
+        expect(within(bronco).getByRole('button', { name: /Carry anyway/ })).toBeInTheDocument();
+        // One carry short of the limit, nothing is asked.
+        expect(
+            within(screen.getByRole('group', { name: 'Paint the hallway' })).queryByRole('button', {
+                name: 'Reword',
+            }),
+        ).not.toBeInTheDocument();
+
+        await userEvent.click(
+            await screen.findByRole('button', { name: 'Carry the other 2 forward' }),
+        );
+
+        await waitFor(() =>
+            expect(
+                calls.filter((call) => call.path.endsWith('/carry')).map((call) => call.path),
+            ).toEqual(['/api/items/3/carry', '/api/items/4/carry']),
+        );
+    });
+});
