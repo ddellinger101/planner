@@ -47,6 +47,7 @@ export function makeItem(overrides: Partial<Item> = {}): Item {
         recurrence_parent_id: null,
         parent_item_id: null,
         carried_from_item_id: null,
+        times_carried: 0,
         sort: 0,
         created_by: 1,
         assignee_user_id: 1,

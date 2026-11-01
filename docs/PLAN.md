@@ -305,6 +305,8 @@ Placing a goal in a smaller period copies it there linked by `parent_item_id`, t
 
 A goal belongs in a period once. Adding, pulling, placing or carrying a goal into a period that already has that title (ignoring case and punctuation, and only for the same person or a shared goal) keeps the one that's there. A goal in other words can't be told apart for certain, so it only prompts: the Pull step and the rollover review note what looks like it, "Carry all" leaves it for a decision, and the Big 3 step offers to keep one wording of any goals that look alike. Day tasks are exempt, since a goal is often scheduled on several days.
 
+A goal should be able to finish. Habits own what repeats; a goal is a result with an end. So the Big 3 step also asks about goals that look like an existing habit (remove the goal, or keep it) and goals that name a direction with no number or date (reword, make it a habit, or keep it). Keeping one as is stops asking about that wording, on that device. The Pull step and the review note a likely habit too. A goal counts its `times_carried`: once it has rolled over twice, the review asks for a finish line, a habit or a drop, and "Carry all" leaves it out. Rewording a goal resets the count.
+
 ### 6.3 Add to Plan (from Brain Dump)
 Described above. Must be a 2-tap action for the common case: tap **Add to Plan** → choose "Today / Tomorrow / This week / Pick date" → saved with the mapped category.
 

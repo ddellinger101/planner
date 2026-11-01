@@ -4,7 +4,7 @@ type Goal = { title: string; assignee_user_id: number | null };
 // less" and "Limit drinking to 2 days a week" all come down to drinking.
 const FILLER = new Set(
     `a about all an and around at back be by could cut day do down for from get go in increase
-    into keep less limit made make minimal more of on one or other our quit ramp reduce start stop
+    into keep less limit made make minimal more no not of on one or other our quit ramp reduce start stop
     the to try up use who with work finish focus plan here my your their week month quarter year
     daily weekly monthly january february march april may june july august september october
     november december`.split(/\s+/),

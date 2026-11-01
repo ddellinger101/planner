@@ -8,7 +8,16 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useSession } from '@/context/SessionContext';
 
 export type HabitTarget =
-    { kind: 'create'; routine: Habit['routine'] } | { kind: 'edit'; habit: Habit };
+    | {
+          kind: 'create';
+          routine: Habit['routine'];
+          /** What to start with, when the habit comes from a goal. */
+          title?: string;
+          target?: number;
+          categoryId?: number | null;
+          owner?: number | null;
+      }
+    | { kind: 'edit'; habit: Habit };
 
 const ROUTINES: { value: Habit['routine']; label: string }[] = [
     { value: 'morning', label: 'Morning' },
@@ -19,9 +28,11 @@ const ROUTINES: { value: Habit['routine']; label: string }[] = [
 /** Add a habit, or change or delete one. */
 export default function HabitSheet({
     target,
+    onSaved,
     onClose,
 }: {
     target: HabitTarget;
+    onSaved?: () => void;
     onClose: () => void;
 }) {
     const { user, household } = useSession();
@@ -30,16 +41,19 @@ export default function HabitSheet({
     const remove = useDeleteHabit();
     const titleInput = useRef<HTMLInputElement>(null);
     const habit = target.kind === 'edit' ? target.habit : null;
+    const start = target.kind === 'create' ? target : null;
 
-    const [title, setTitle] = useState(habit?.title ?? '');
+    const [title, setTitle] = useState(habit?.title ?? start?.title ?? '');
     const [routine, setRoutine] = useState(
         habit?.routine ?? (target.kind === 'create' ? target.routine : 'anytime'),
     );
-    const [categoryId, setCategoryId] = useState<number | null | undefined>(habit?.category_id);
+    const [categoryId, setCategoryId] = useState<number | null | undefined>(
+        habit ? habit.category_id : start?.categoryId,
+    );
     // No color of its own means the habit wears its category's.
     const [color, setColor] = useState(habit?.color ?? null);
-    const [target_, setTarget] = useState(habit?.target_per_week ?? 7);
-    const [owner, setOwner] = useState(habit?.user_id ?? user.id);
+    const [target_, setTarget] = useState(habit?.target_per_week ?? start?.target ?? 7);
+    const [owner, setOwner] = useState(habit?.user_id ?? start?.owner ?? user.id);
     const [confirming, setConfirming] = useState(false);
 
     // A new habit starts in Health, where most habits belong.
@@ -80,7 +94,12 @@ export default function HabitSheet({
                     target_per_week: target_,
                     user_id: owner,
                 },
-                { onSuccess: onClose },
+                {
+                    onSuccess: () => {
+                        onSaved?.();
+                        onClose();
+                    },
+                },
             );
         }
     };

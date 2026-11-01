@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Check, Gift, MapPinOff, Star } from 'lucide-react';
 import { useEffect, useState, type ComponentType, type CSSProperties, type DragEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { CHEF_URL, useMeals } from '@/api/day';
+import { CHEF_URL, useHabitsBetween, useMeals } from '@/api/day';
 import { eventsFor, useEvents } from '@/api/events';
 import { useCreateItem, useItems, useItemsIn, useUpdateItem, type Item } from '@/api/items';
 import { useImportantDates, useItemsBetween } from '@/api/planning';
@@ -12,6 +12,7 @@ import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/PageHeader';
 import { periodPath } from '@/components/PeriodNav';
 import GoalBoxes from '@/components/period/GoalBoxes';
+import GoalCheckup from '@/components/period/GoalCheckup';
 import ImportantDates from '@/components/period/ImportantDates';
 import MonthCalendar, { calendarDays } from '@/components/period/MonthCalendar';
 import { WeekMeals } from '@/components/period/WeekExtras';
@@ -37,6 +38,7 @@ import {
     planChoiceName,
     SCOPE_NAMES,
 } from '@/lib/periodLabels';
+import { habitFor } from '@/lib/goalChecks';
 import { isSameGoal, lookAlikeGroups, looksLikeSameGoal } from '@/lib/sameGoal';
 import { useToday } from '@/lib/useCurrentPeriod';
 
@@ -276,6 +278,7 @@ function SourceGoals({
     const categories = useCategories();
     const goals = useItems({ periodKey: source.key, person: null });
     const createItem = useCreateItem();
+    const habits = useHabitsBetween(period.start, period.end, null).data ?? [];
     const open = (goals.data ?? []).filter((goal) => goal.status === 'open');
     const name = periodShortName(period);
     const colorOf = (goal: Item) =>
@@ -299,6 +302,7 @@ function SourceGoals({
                         const alike = pulled
                             ? undefined
                             : here.find((item) => looksLikeSameGoal(item, goal));
+                        const habit = pulled ? undefined : habitFor(goal, habits);
 
                         return (
                             <li
@@ -312,6 +316,11 @@ function SourceGoals({
                                     {alike && (
                                         <span className="same-goal-note">
                                             Looks like “{alike.title}”, already in {name}
+                                        </span>
+                                    )}
+                                    {habit && (
+                                        <span className="same-goal-note">
+                                            Looks like your “{habit.title}” habit
                                         </span>
                                     )}
                                 </span>
@@ -336,7 +345,7 @@ function SourceGoals({
                                         <>
                                             <Check aria-hidden="true" size={14} /> In {name}
                                         </>
-                                    ) : alike ? (
+                                    ) : alike || habit ? (
                                         'Add anyway'
                                     ) : (
                                         `Add to ${name}`
@@ -383,6 +392,7 @@ function BigThree({ period }: StepProps) {
                 {starred} of {BIG} chosen
             </p>
             <LookAlikes goals={open} />
+            <GoalCheckup goals={open} period={period} />
             {goals.isSuccess && open.length === 0 ? (
                 <p className="text-soft">No goals for {name} yet. Go back a step to add some.</p>
             ) : (
@@ -423,11 +433,12 @@ function BigThree({ period }: StepProps) {
 
 const KEPT_APART = 'planner.goals-kept-apart';
 
+// By wording, not id: goals carried on to the next period aren't asked about again.
 const groupKey = (group: Item[]) =>
     group
-        .map((goal) => goal.id)
-        .sort((a, b) => a - b)
-        .join('-');
+        .map((goal) => goal.title.toLowerCase())
+        .sort()
+        .join('|');
 
 /** Offer to merge goals that look like one goal, with the last word left to the person. */
 function LookAlikes({ goals }: { goals: Item[] }) {

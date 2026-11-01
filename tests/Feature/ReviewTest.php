@@ -170,3 +170,50 @@ describe('carrying into a period that already has the goal', function () {
             ->assertJsonPath('parent_item_id', $january->id);
     });
 });
+
+describe('counting how often a goal has been carried', function () {
+    it('adds one each time it is carried', function () {
+        $first = openGoal('2026-12');
+
+        $this->postJson("/api/items/{$first->id}/carry", ['period_key' => '2027-01'])
+            ->assertJsonPath('times_carried', 1);
+
+        $second = Item::where('period_key', '2027-01')->sole();
+
+        $this->postJson("/api/items/{$second->id}/carry", ['period_key' => '2027-02'])
+            ->assertJsonPath('times_carried', 2);
+    });
+
+    it('keeps the higher count when it merges with a goal already there', function () {
+        $here = openGoal('2027-01', ['title' => 'Gym']);
+        $old = openGoal('2026-12', ['title' => 'Gym', 'times_carried' => 3]);
+
+        $this->postJson("/api/items/{$old->id}/carry", ['period_key' => '2027-01'])
+            ->assertJsonPath('id', $here->id)
+            ->assertJsonPath('times_carried', 4);
+    });
+
+    it('starts again when the goal is reworded, and not for other changes', function () {
+        $goal = openGoal('2027-01', ['title' => 'Cut the drinking', 'times_carried' => 3]);
+
+        $this->patchJson("/api/items/{$goal->id}", ['starred' => true])
+            ->assertJsonPath('times_carried', 3);
+
+        $this->patchJson("/api/items/{$goal->id}", ['title' => 'No more than 2 drinking days a week'])
+            ->assertJsonPath('times_carried', 0);
+    });
+
+    it('works out the count for goals carried before it was kept', function () {
+        $migration = require database_path('migrations/2026_11_02_000001_add_times_carried_to_items.php');
+        $first = openGoal('2026-10');
+        $second = openGoal('2026-11', ['carried_from_item_id' => $first->id]);
+        $third = openGoal('2026-12', ['carried_from_item_id' => $second->id]);
+
+        $migration->down();
+        $migration->up();
+
+        expect($first->fresh()->times_carried)->toBe(0)
+            ->and($second->fresh()->times_carried)->toBe(1)
+            ->and($third->fresh()->times_carried)->toBe(2);
+    });
+});

@@ -39,6 +39,8 @@ export type Item = {
     parent_item_id: number | null;
     /** The item this one was carried forward from at a period rollover. */
     carried_from_item_id: number | null;
+    /** How many periods this goal has rolled over from, since it was last reworded. */
+    times_carried: number;
     sort: number;
     created_by: number;
     /** null means the item belongs to both people. */
