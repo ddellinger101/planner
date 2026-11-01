@@ -138,4 +138,60 @@ class Item extends Model
     {
         return $this->belongsTo(self::class, 'carried_from_item_id');
     }
+
+    /**
+     * The goal already in a period under the same title, ignoring case and
+     * punctuation, if any. Each person's goals are their own, so one of theirs
+     * is not the same goal as one of someone else's. See sameGoal.ts for the
+     * twin of this comparison.
+     */
+    public static function sameGoalIn(string $periodKey, string $title, ?int $assigneeId): ?self
+    {
+        $key = self::titleKey($title);
+
+        return self::where('period_key', $periodKey)
+            ->where('status', '!=', ItemStatus::Dropped)
+            ->when($assigneeId !== null, fn ($q) => $q->where(fn ($q) => $q
+                ->whereNull('assignee_user_id')
+                ->orWhere('assignee_user_id', $assigneeId)))
+            ->orderBy('id')
+            ->get()
+            ->first(fn (self $item) => self::titleKey($item->title) === $key);
+    }
+
+    private static function titleKey(string $title): string
+    {
+        return trim(preg_replace('/[^\p{L}\p{N}]+/u', ' ', mb_strtolower($title)));
+    }
+
+    /**
+     * Pick up what a goal brings when it turns out to be one already here,
+     * rather than copying it in next to itself.
+     *
+     * @param  array{parent_item_id?: int|null, carried_from_item_id?: int|null, starred?: bool}  $from
+     */
+    public function absorb(array $from): self
+    {
+        $this->parent_item_id ??= $from['parent_item_id'] ?? null;
+        $this->carried_from_item_id ??= $from['carried_from_item_id'] ?? null;
+        $this->starred = $this->starred || ($from['starred'] ?? false);
+        $this->save();
+
+        return $this;
+    }
+
+    /**
+     * The goal this one serves as it stands now: when the goal it was pulled
+     * from has since been carried forward, that's the latest copy.
+     */
+    public function currentParentId(): ?int
+    {
+        $id = $this->parent_item_id;
+
+        while ($id !== null && ($next = self::where('carried_from_item_id', $id)->value('id')) !== null) {
+            $id = $next;
+        }
+
+        return $id;
+    }
 }

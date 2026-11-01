@@ -37,6 +37,7 @@ import {
     planChoiceName,
     SCOPE_NAMES,
 } from '@/lib/periodLabels';
+import { isSameGoal, lookAlikeGroups, looksLikeSameGoal } from '@/lib/sameGoal';
 import { useToday } from '@/lib/useCurrentPeriod';
 
 const BIG = 3;
@@ -291,9 +292,13 @@ function SourceGoals({
             ) : (
                 <ul className="review-list">
                     {open.map((goal) => {
-                        const pulled = pulledInto.some(
-                            (item) => item.parent_item_id === goal.id && item.status !== 'dropped',
+                        const here = pulledInto.filter((item) => item.status !== 'dropped');
+                        const pulled = here.some(
+                            (item) => item.parent_item_id === goal.id || isSameGoal(item, goal),
                         );
+                        const alike = pulled
+                            ? undefined
+                            : here.find((item) => looksLikeSameGoal(item, goal));
 
                         return (
                             <li
@@ -304,6 +309,11 @@ function SourceGoals({
                                 <span className="review-title">
                                     <span className="month-day-dot is-done" aria-hidden="true" />
                                     {goal.title}
+                                    {alike && (
+                                        <span className="same-goal-note">
+                                            Looks like “{alike.title}”, already in {name}
+                                        </span>
+                                    )}
                                 </span>
                                 <button
                                     type="button"
@@ -326,6 +336,8 @@ function SourceGoals({
                                         <>
                                             <Check aria-hidden="true" size={14} /> In {name}
                                         </>
+                                    ) : alike ? (
+                                        'Add anyway'
                                     ) : (
                                         `Add to ${name}`
                                     )}
@@ -370,6 +382,7 @@ function BigThree({ period }: StepProps) {
             <p className="fw-bold" aria-live="polite">
                 {starred} of {BIG} chosen
             </p>
+            <LookAlikes goals={open} />
             {goals.isSuccess && open.length === 0 ? (
                 <p className="text-soft">No goals for {name} yet. Go back a step to add some.</p>
             ) : (
@@ -405,6 +418,73 @@ function BigThree({ period }: StepProps) {
                 </ul>
             )}
         </>
+    );
+}
+
+const KEPT_APART = 'planner.goals-kept-apart';
+
+const groupKey = (group: Item[]) =>
+    group
+        .map((goal) => goal.id)
+        .sort((a, b) => a - b)
+        .join('-');
+
+/** Offer to merge goals that look like one goal, with the last word left to the person. */
+function LookAlikes({ goals }: { goals: Item[] }) {
+    const updateItem = useUpdateItem();
+    // Remembered, so that goals they've said are different stop being asked about.
+    const [keptApart, setKeptApart] = useState<string[]>(() =>
+        JSON.parse(window.localStorage.getItem(KEPT_APART) ?? '[]'),
+    );
+    const groups = lookAlikeGroups(goals).filter((group) => !keptApart.includes(groupKey(group)));
+
+    const keepOne = (kept: Item, group: Item[]) => {
+        group
+            .filter((goal) => goal.id !== kept.id)
+            .forEach((goal) => updateItem.mutate({ id: goal.id, changes: { status: 'dropped' } }));
+
+        if (!kept.starred && group.some((goal) => goal.starred)) {
+            updateItem.mutate({ id: kept.id, changes: { starred: true } });
+        }
+    };
+
+    const keepAll = (group: Item[]) => {
+        const next = [...keptApart, groupKey(group)];
+
+        window.localStorage.setItem(KEPT_APART, JSON.stringify(next));
+        setKeptApart(next);
+    };
+
+    if (groups.length === 0) {
+        return null;
+    }
+
+    return (
+        <section className="planner-card p-3 mb-3" aria-label="Goals that look the same">
+            <h3 className="font-display h4">These look like the same goal</h3>
+            <p className="text-soft small">Keep the wording you like best, or keep them all.</p>
+            {groups.map((group) => (
+                <div key={groupKey(group)} className="same-goal-group" role="group">
+                    {group.map((goal) => (
+                        <button
+                            key={goal.id}
+                            type="button"
+                            className="button-plain is-small"
+                            onClick={() => keepOne(goal, group)}
+                        >
+                            Keep “{goal.title}”
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        className="button-plain is-small"
+                        onClick={() => keepAll(group)}
+                    >
+                        Keep them all
+                    </button>
+                </div>
+            ))}
+        </section>
     );
 }
 

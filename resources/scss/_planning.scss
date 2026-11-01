@@ -140,6 +140,21 @@
     margin-bottom: 1rem;
 }
 
+.same-goal-note {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+}
+
+.same-goal-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: var(--stroke) solid var(--line);
+}
+
 .plan-steps {
     display: flex;
     gap: 0.35rem;

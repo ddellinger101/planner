@@ -70,7 +70,8 @@ class ReviewController extends Controller
     /**
      * Carry an open goal into a later period. The original is closed (as
      * dropped, so it no longer counts against its own period) and the copy
-     * points back at it.
+     * points back at it. If the later period already has this goal, that one
+     * takes its place instead of a copy.
      */
     public function carry(Request $request, Item $item): JsonResponse
     {
@@ -88,12 +89,18 @@ class ReviewController extends Controller
         abort_if($target->start->lte($from->start), 422, 'An item can only be carried to a later period.');
 
         $copy = DB::transaction(function () use ($item, $target, $request) {
-            $copy = Item::create([
-                ...$item->only([
-                    'title', 'notes', 'category_id', 'scope', 'starred', 'assignee_user_id', 'parent_item_id',
-                ]),
-                'period_key' => $target->key(),
+            $carried = [
+                'parent_item_id' => $item->currentParentId(),
                 'carried_from_item_id' => $item->id,
+                'starred' => $item->starred,
+            ];
+
+            $existing = Item::sameGoalIn($target->key(), $item->title, $item->assignee_user_id);
+
+            $copy = $existing?->absorb($carried) ?? Item::create([
+                ...$item->only(['title', 'notes', 'category_id', 'scope', 'assignee_user_id']),
+                ...$carried,
+                'period_key' => $target->key(),
                 'created_by' => $request->user()->id,
             ]);
 

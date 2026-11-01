@@ -131,3 +131,42 @@ describe('carry forward', function () {
         $this->getJson('/api/reviews/pending')->assertExactJson([]);
     });
 });
+
+describe('carrying into a period that already has the goal', function () {
+    it('keeps the one already there instead of copying it', function () {
+        $here = openGoal('2027-01', ['title' => 'Gym 3x a week']);
+        $old = openGoal('2026-12', ['title' => 'gym 3X a week!', 'starred' => true]);
+
+        $this->postJson("/api/items/{$old->id}/carry", ['period_key' => '2027-01'])
+            ->assertCreated()
+            ->assertJsonPath('id', $here->id)
+            ->assertJsonPath('starred', true)
+            ->assertJsonPath('carried_from_item_id', $old->id);
+
+        expect(Item::where('period_key', '2027-01')->count())->toBe(1)
+            ->and($old->fresh()->status->value)->toBe('dropped');
+    });
+
+    it('ignores a dropped goal and someone else’s goal of the same name', function () {
+        $other = User::factory()->create(['household_id' => $this->user->household_id]);
+        openGoal('2027-01', ['title' => 'Gym', 'status' => 'dropped']);
+        openGoal('2027-01', ['title' => 'Gym', 'assignee_user_id' => $other->id]);
+        $old = openGoal('2026-12', ['title' => 'Gym', 'assignee_user_id' => $this->user->id]);
+
+        $this->postJson("/api/items/{$old->id}/carry", ['period_key' => '2027-01'])->assertCreated();
+
+        expect(Item::where('period_key', '2027-01')->count())->toBe(3);
+    });
+
+    it('links the copy to the current version of a goal carried on ahead of it', function () {
+        $december = openGoal('2026-12', ['title' => 'Paint']);
+        $week = openGoal('2026-W53', ['title' => 'Paint', 'parent_item_id' => $december->id]);
+
+        $this->postJson("/api/items/{$december->id}/carry", ['period_key' => '2027-01'])->assertCreated();
+        $january = Item::where('period_key', '2027-01')->sole();
+
+        $this->postJson("/api/items/{$week->id}/carry", ['period_key' => '2027-W01'])
+            ->assertCreated()
+            ->assertJsonPath('parent_item_id', $january->id);
+    });
+});

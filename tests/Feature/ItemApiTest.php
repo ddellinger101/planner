@@ -214,3 +214,39 @@ it('links a week item to the month goal it was pulled from', function () {
 
     expect($goal->children()->count())->toBe(1);
 });
+
+describe('adding a goal a period already has', function () {
+    beforeEach(function () {
+        $this->user = signIn();
+        $this->category = Category::where('slug', 'home')->value('id');
+    });
+
+    $add = fn (array $extra = []) => [
+        'title' => 'Visit parents', 'category_id' => null, 'scope' => 'month', 'period_key' => '2027-01', ...$extra,
+    ];
+
+    it('keeps the one that is there and links it to the goal it was pulled from', function () use ($add) {
+        $quarter = Item::factory()->ownedBy($this->user)->period('2027-Q1')->create();
+        $here = Item::factory()->ownedBy($this->user)->period('2027-01')->create(['title' => 'Visit Parents', 'assignee_user_id' => null]);
+
+        $this->postJson('/api/items', $add(['category_id' => $this->category, 'parent_item_id' => $quarter->id]))
+            ->assertOk()
+            ->assertJsonPath('id', $here->id)
+            ->assertJsonPath('parent_item_id', $quarter->id);
+
+        expect(Item::where('period_key', '2027-01')->count())->toBe(1);
+    });
+
+    it('adds it again once the earlier one is dropped', function () use ($add) {
+        Item::factory()->ownedBy($this->user)->period('2027-01')->create(['title' => 'Visit parents', 'status' => 'dropped']);
+
+        $this->postJson('/api/items', $add(['category_id' => $this->category]))->assertCreated();
+    });
+
+    it('still lets the same task sit on a day twice', function () {
+        $task = ['title' => 'Stretch', 'category_id' => $this->category, 'scope' => 'day', 'period_key' => '2027-01-04'];
+
+        $this->postJson('/api/items', $task)->assertCreated();
+        $this->postJson('/api/items', $task)->assertCreated();
+    });
+});
