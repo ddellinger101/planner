@@ -1,15 +1,18 @@
-import { Moon, Sunrise } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 import { useState, type CSSProperties, type FormEvent } from 'react';
 import type { Habit } from '@/api/day';
+import type { HabitStats } from '@/api/habits';
 import type { Item, ItemChanges, Routine } from '@/api/items';
 import type { Category, Member } from '@/api/session';
 import { assigneeOf } from '@/components/CategoryBox';
+import Streaks from '@/components/habits/Streaks';
 import TaskRow from '@/components/TaskRow';
 
 type Props = {
     /** The day's tasks that belong to a routine. */
     items: Item[];
     habits: Habit[];
+    stats: Record<number, HabitStats>;
     categories: Category[];
     members: Member[];
     onAdd: (routine: Routine, title: string) => void;
@@ -18,37 +21,30 @@ type Props = {
     onCheckHabit: (habit: Habit, done: boolean) => void;
 };
 
-const ROUTINES: { key: Routine; title: string; icon: typeof Sunrise }[] = [
-    { key: 'morning', title: 'Morning routine', icon: Sunrise },
-    { key: 'evening', title: 'Evening routine', icon: Moon },
+const TASK_GROUPS: { key: Routine; title: string }[] = [
+    { key: 'morning', title: 'Morning tasks' },
+    { key: 'evening', title: 'Evening tasks' },
 ];
 
-/** The morning and evening checklists: routine tasks and habits together. */
-export default function Routines(props: Props) {
-    return (
-        <>
-            {ROUTINES.map((routine) => (
-                <RoutineCard key={routine.key} routine={routine} {...props} />
-            ))}
-        </>
-    );
-}
+// One list, in roughly the order the day goes.
+const HABIT_ORDER: Habit['routine'][] = ['morning', 'evening', 'anytime'];
 
-function RoutineCard({
-    routine,
+/** The day's streaks, every habit to check off beneath them, then any routine tasks. */
+export default function Routines({
     items,
     habits,
+    stats,
     categories,
     members,
     onAdd,
     onChange,
     onEdit,
     onCheckHabit,
-}: Props & { routine: (typeof ROUTINES)[number] }) {
+}: Props) {
     const [title, setTitle] = useState('');
-    const Icon = routine.icon;
-    const tasks = items.filter((item) => item.routine === routine.key && item.status !== 'dropped');
-    const routineHabits = habits.filter((habit) => habit.routine === routine.key);
+    const [routine, setRoutine] = useState<Routine>('morning');
+    const live = items.filter((item) => item.status !== 'dropped');
+    const ordered = HABIT_ORDER.flatMap((key) => habits.filter((habit) => habit.routine === key));
     const colorOf = (categoryId: number | null) =>
         categories.find((category) => category.id === categoryId)?.color;
 
@@ -56,28 +52,32 @@ function RoutineCard({
         event.preventDefault();
 
         if (title.trim()) {
-            onAdd(routine.key, title.trim());
+            onAdd(routine, title.trim());
             setTitle('');
         }
     };
 
     return (
-        <section className="planner-card routine-card" aria-labelledby={`routine-${routine.key}`}>
-            <h2 id={`routine-${routine.key}`} className="font-display h4 routine-heading">
-                <Icon aria-hidden="true" size={20} />
-                {routine.title}
+        <section className="planner-card routine-card" aria-labelledby="day-routines">
+            <h2 id="day-routines" className="font-display h4 routine-heading">
+                <Repeat aria-hidden="true" size={20} />
+                Routines &amp; habits
             </h2>
 
-            {tasks.length + routineHabits.length === 0 ? (
-                <p className="category-box-empty">Nothing in this routine yet.</p>
-            ) : (
+            <Streaks habits={ordered} stats={stats} categories={categories} compact />
+
+            {ordered.length + live.length === 0 && (
+                <p className="category-box-empty">No habits or routine tasks yet.</p>
+            )}
+
+            {ordered.length > 0 && (
                 <ul className="task-list">
-                    {routineHabits.map((habit) => {
+                    {ordered.map((habit) => {
                         const done = habit.checks.some((check) => check.done);
 
                         return (
                             <li
-                                key={`habit-${habit.id}`}
+                                key={habit.id}
                                 className={`cat task-row${done ? ' is-done' : ''}`}
                                 style={
                                     {
@@ -111,34 +111,57 @@ function RoutineCard({
                                 </button>
                                 <div className="task-body">
                                     <span className="task-title">{habit.title}</span>
-                                    <span className="task-badge">Habit</span>
                                 </div>
                             </li>
                         );
                     })}
-                    {tasks.map((item) => (
-                        <TaskRow
-                            key={item.id}
-                            item={item}
-                            color={colorOf(item.category_id) ?? 'var(--accent)'}
-                            assignee={assigneeOf(item, members)}
-                            onChange={(changes) => onChange(item, changes)}
-                            onEdit={() => onEdit(item)}
-                        />
-                    ))}
                 </ul>
             )}
 
-            <form className="inline-add" onSubmit={submit}>
+            {TASK_GROUPS.map((group) => {
+                const tasks = live.filter((item) => item.routine === group.key);
+
+                return (
+                    tasks.length > 0 && (
+                        <section key={group.key} aria-labelledby={`routine-${group.key}`}>
+                            <h3 id={`routine-${group.key}`} className="field-label routine-tasks">
+                                {group.title}
+                            </h3>
+                            <ul className="task-list">
+                                {tasks.map((item) => (
+                                    <TaskRow
+                                        key={item.id}
+                                        item={item}
+                                        color={colorOf(item.category_id) ?? 'var(--accent)'}
+                                        assignee={assigneeOf(item, members)}
+                                        onChange={(changes) => onChange(item, changes)}
+                                        onEdit={() => onEdit(item)}
+                                    />
+                                ))}
+                            </ul>
+                        </section>
+                    )
+                );
+            })}
+
+            <form className="inline-add routine-add" onSubmit={submit}>
                 <input
                     type="text"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
-                    placeholder="Add to this routine…"
-                    aria-label={`Add to the ${routine.title.toLowerCase()}`}
+                    placeholder="Add a routine task…"
+                    aria-label="Add a routine task"
                     maxLength={255}
                     enterKeyHint="done"
                 />
+                <select
+                    value={routine}
+                    onChange={(event) => setRoutine(event.target.value as Routine)}
+                    aria-label="Which routine"
+                >
+                    <option value="morning">Morning</option>
+                    <option value="evening">Evening</option>
+                </select>
             </form>
         </section>
     );

@@ -298,16 +298,14 @@ describe('routines', () => {
         renderApp('/day/2027-01-04');
 
         expect(
-            await within(await region('Morning routine')).findByRole('checkbox', {
+            await within(await region('Morning tasks')).findByRole('checkbox', {
                 name: 'Make the bed',
             }),
         ).toBeInTheDocument();
         expect(
             within(await region('Health')).queryByRole('checkbox', { name: 'Make the bed' }),
         ).not.toBeInTheDocument();
-        expect(
-            within(await region('Evening routine')).getByText('Nothing in this routine yet.'),
-        ).toBeInTheDocument();
+        expect(screen.queryByRole('region', { name: 'Evening tasks' })).not.toBeInTheDocument();
     });
 
     it('adds a task to a routine', async () => {
@@ -317,8 +315,12 @@ describe('routines', () => {
         });
 
         renderApp('/day/2027-01-04');
+        await userEvent.selectOptions(
+            await screen.findByRole('combobox', { name: 'Which routine' }),
+            'evening',
+        );
         await userEvent.type(
-            await screen.findByRole('textbox', { name: 'Add to the evening routine' }),
+            screen.getByRole('textbox', { name: 'Add a routine task' }),
             'Lay out clothes{Enter}',
         );
 
@@ -356,7 +358,7 @@ describe('routines', () => {
         });
 
         renderApp('/day/2027-01-04');
-        const habit = await within(await region('Evening routine')).findByRole('checkbox', {
+        const habit = await within(await region('Routines & habits')).findByRole('checkbox', {
             name: 'Floss',
         });
         await userEvent.click(habit);
@@ -364,6 +366,56 @@ describe('routines', () => {
         await waitFor(() =>
             expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({ done: true }),
         );
+    });
+
+    it('lists every habit together under small streaks, anytime ones too', async () => {
+        const habit = (id: number, title: string, routine: string) => ({
+            id,
+            user_id: 1,
+            title,
+            category_id: 1,
+            icon: null,
+            color: null,
+            routine,
+            checks: [],
+        });
+
+        mockApi({
+            ...signedIn(),
+            'GET /api/habits': {
+                body: [
+                    habit(1, 'Walk', 'anytime'),
+                    habit(2, 'Floss', 'evening'),
+                    habit(3, 'Vitamins', 'morning'),
+                ],
+            },
+            'GET /api/habits/stats': {
+                body: {
+                    1: {
+                        streak_unit: 'days',
+                        current_streak: 6,
+                        best_streak: 9,
+                        completion: 80,
+                        done_total: 40,
+                    },
+                },
+            },
+        });
+
+        renderApp('/day/2027-01-04');
+        const card = within(await region('Routines & habits'));
+
+        await card.findByRole('checkbox', { name: 'Walk' });
+        expect(card.getAllByRole('checkbox').map((box) => box.getAttribute('aria-label'))).toEqual([
+            'Vitamins',
+            'Floss',
+            'Walk',
+        ]);
+
+        const streak = within(await card.findByRole('region', { name: 'Current streaks' }));
+        expect(streak.getByRole('listitem')).toHaveTextContent('6days in a row');
+        expect(streak.getByRole('listitem')).toHaveTextContent('Walk');
+        expect(streak.queryByText(/Best/)).not.toBeInTheDocument();
     });
 });
 
