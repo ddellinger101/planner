@@ -303,6 +303,8 @@ The same stepper, at `/plan/<period key>`. Planning is done ahead, usually on a 
 
 Placing a goal in a smaller period copies it there linked by `parent_item_id`, the same link the Pull step makes.
 
+A goal belongs in a period once. Adding, pulling, placing or carrying a goal into a period that already has that title (ignoring case and punctuation, and only for the same person or a shared goal) keeps the one that's there. A goal in other words can't be told apart for certain, so it only prompts: the Pull step and the rollover review note what looks like it, "Carry all" leaves it for a decision, and the Big 3 step offers to keep one wording of any goals that look alike. Day tasks are exempt, since a goal is often scheduled on several days.
+
 ### 6.3 Add to Plan (from Brain Dump)
 Described above. Must be a 2-tap action for the common case: tap **Add to Plan** → choose "Today / Tomorrow / This week / Pick date" → saved with the mapped category.
 

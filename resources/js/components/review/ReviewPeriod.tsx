@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Check, X } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import { useItems, useUpdateItem } from '@/api/items';
+import { useItems, useUpdateItem, type Item } from '@/api/items';
 import { useCarryItem } from '@/api/review';
 import { fetchCategories } from '@/api/session';
 import CategoryIcon from '@/components/CategoryIcon';
 import { BestPart } from '@/components/period/Summaries';
 import { parsePeriod } from '@/lib/period';
 import { periodShortName } from '@/lib/periodLabels';
+import { isSameGoal, looksLikeSameGoal } from '@/lib/sameGoal';
 
 type Props = {
     /** The period being looked back on. */
@@ -26,10 +27,21 @@ export default function ReviewPeriod({ periodKey, nextPeriodKey }: Props) {
     const categories = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
     // Both people's items: the review is for the household.
     const items = useItems({ periodKey, person: null });
+    const nextItems = useItems({ periodKey: nextPeriodKey, person: null });
     const updateItem = useUpdateItem();
     const carry = useCarryItem();
 
     const open = (items.data ?? []).filter((item) => item.status === 'open');
+    const alreadyThere = (item: Item) =>
+        (nextItems.data ?? [])
+            .filter((other) => other.status !== 'dropped')
+            .find((other) => isSameGoal(other, item) || looksLikeSameGoal(other, item));
+    // The same title merges by itself; a different wording is for a person to call.
+    const carryable = open.filter((item) => {
+        const there = alreadyThere(item);
+
+        return !there || isSameGoal(there, item);
+    });
     const groups = (categories.data ?? [])
         .map((category) => ({
             category,
@@ -38,7 +50,7 @@ export default function ReviewPeriod({ periodKey, nextPeriodKey }: Props) {
         .filter((group) => group.items.length > 0);
 
     const carryAll = () =>
-        open.forEach((item) => carry.mutate({ id: item.id, periodKey: nextPeriodKey }));
+        carryable.forEach((item) => carry.mutate({ id: item.id, periodKey: nextPeriodKey }));
 
     return (
         <div className="review-period">
@@ -73,7 +85,15 @@ export default function ReviewPeriod({ periodKey, nextPeriodKey }: Props) {
                             <ul className="review-list">
                                 {categoryItems.map((item) => (
                                     <li key={item.id}>
-                                        <span className="review-title">{item.title}</span>
+                                        <span className="review-title">
+                                            {item.title}
+                                            {alreadyThere(item) && (
+                                                <span className="same-goal-note">
+                                                    Already in {periodShortName(next)} as “
+                                                    {alreadyThere(item)!.title}”
+                                                </span>
+                                            )}
+                                        </span>
                                         <span
                                             className="overdue-actions"
                                             role="group"
@@ -123,14 +143,17 @@ export default function ReviewPeriod({ periodKey, nextPeriodKey }: Props) {
                             </ul>
                         </section>
                     ))}
-                    {open.length > 1 && (
+                    {carryable.length > 1 && (
                         <button
                             type="button"
                             className="button-plain align-self-start"
-                            disabled={carry.isPending}
+                            // Until the next period is known, nor is what's already in it.
+                            disabled={carry.isPending || !nextItems.isSuccess}
                             onClick={carryAll}
                         >
-                            Carry all {open.length} forward
+                            {carryable.length === open.length
+                                ? `Carry all ${open.length} forward`
+                                : `Carry the other ${carryable.length} forward`}
                         </button>
                     )}
                 </>

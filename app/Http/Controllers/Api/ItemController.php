@@ -131,6 +131,16 @@ class ItemController extends Controller
             $data['assignee_user_id'] = $personal ? $request->user()->id : null;
         }
 
+        // A goal belongs in a period once. Tasks can repeat: the same chore can
+        // sit on a day twice, and a goal is often scheduled on several days.
+        if ($period->scope !== Scope::Day) {
+            $existing = Item::sameGoalIn($period->key(), $data['title'], $data['assignee_user_id']);
+
+            if ($existing) {
+                return response()->json($existing->absorb($data)->refresh());
+            }
+        }
+
         $item = Item::create([...$data, 'created_by' => $request->user()->id]);
 
         if ($item->recurrence_rule) {
